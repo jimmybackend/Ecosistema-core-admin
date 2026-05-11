@@ -102,3 +102,29 @@ Pendiente para PR posterior:
 
 - Autorización fina por roles/permisos.
 - Creación automática de usuarios, roles o módulos al crear tenant (no implementado).
+
+## Usuarios (alcance actual)
+
+Rutas protegidas por sesión autenticada (sin roles/permisos aún):
+
+- `GET /users`
+- `GET /users/create`
+- `POST /users`
+- `GET /users/{id}/edit`
+- `POST /users/{id}`
+- `POST /users/{id}/status`
+- `POST /users/{id}/password`
+
+Este módulo usa la tabla real `core_users` con los campos:
+
+- `id`, `tenant_id`, `email`, `username`, `password_hash`, `display_name`, `first_name`, `last_name`, `phone`, `user_type`, `status`, `email_verified_at`, `phone_verified_at`, `last_login_at`, `created_at`, `updated_at`
+
+Uso limitado de `core_tenants`:
+
+- Solo para seleccionar tenant en formularios y mostrar nombre/slug del tenant en listado de usuarios.
+
+No implementado todavía:
+
+- Roles/permisos y autorización fina.
+- Integraciones de correo (Mail), Cloud, invitaciones o recuperación de contraseña.
+- API JSON o workers.

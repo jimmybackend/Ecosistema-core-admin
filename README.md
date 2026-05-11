@@ -4,43 +4,23 @@ Este repositorio contiene la aplicación operativa/admin **Ecosistema Core Admin
 
 ## Estado actual
 
-Este PR corresponde a la **Capa 3 — Configuración de entorno y conexión PDO segura**.
+Este PR corresponde a la **Capa 4 — Crear layout base reutilizable**.
 
 ## Incluye
 
-- Carga local de variables de entorno desde `.env` (si existe), sin sobreescribir variables ya definidas por el entorno.
-- Archivo de ejemplo `.env.example` para configuración base.
-- Configuración de base de datos por entorno en `config/database.php`.
-- Fábrica PDO (`app/Core/Database/PdoFactory.php`) con configuración segura para errores y prepared statements reales.
-- Ruta técnica `/health/db` para validar conectividad PDO sin consultar tablas.
+- Estructura mínima de vistas PHP reutilizables en `resources/views` (layout, parciales y página inicial).
+- Clase de renderizado `App\Http\View\View` para cargar vistas desde `resources/views` sin motor externo.
+- Helper global `e()` para escape HTML con `htmlspecialchars`, `ENT_QUOTES` y `UTF-8`.
+- Ruta `/` renderizando layout admin base (sin login, sin sesiones, sin consultas SQL).
+- Ruta `/health/db` se mantiene como validación técnica de conexión PDO.
 
 ## No incluye aún
 
-- Migraciones o creación de tablas.
+- Login real o middleware de autenticación.
+- Sesiones reales de usuario.
 - Consulta de `core_users`.
-- Autenticación/login.
-- Dashboard funcional.
-- API separada, workers o procesos externos.
-
-## Configuración de entorno
-
-1. Copiar archivo de ejemplo:
-
-```bash
-cp .env.example .env
-```
-
-2. Editar `.env` y ajustar variables de base de datos según tu entorno:
-
-- `DB_HOST`
-- `DB_PORT`
-- `DB_DATABASE`
-- `DB_USERNAME`
-- `DB_PASSWORD`
-- `DB_CHARSET`
-- `DB_COLLATION`
-
-> Nota: `.env` no se debe commitear y contiene valores locales/sensibles.
+- Migraciones o cambios de base de datos.
+- API separada, workers o frontend público.
 
 ## Ejecución local rápida
 
@@ -48,17 +28,15 @@ cp .env.example .env
 php -S 127.0.0.1:8000 -t public
 ```
 
-Luego abrir: <http://127.0.0.1:8000>
+Luego abrir:
 
-## Validación de conexión PDO
+- Home/layout base: <http://127.0.0.1:8000/>
+- Health PDO técnico: <http://127.0.0.1:8000/health/db>
 
-Con el servidor corriendo, abrir:
+## Qué validar manualmente
 
-- <http://127.0.0.1:8000/health/db>
+- `/` carga el layout administrativo visual base usando `public/assets/css/ecosistema-ui.css`.
+- `/` no abre conexión PDO ni ejecuta consultas SQL.
+- `/health/db` responde `OK` o `ERROR` controlado sin exponer credenciales.
 
-La ruta responde:
-
-- `OK` si logra abrir conexión PDO.
-- `ERROR` si no conecta (sin exponer credenciales).
-
-Esta capa valida conectividad de base de datos únicamente; **todavía no implementa login**.
+Esta capa deja la base visual lista para el siguiente paso: login visual, previo a la autenticación real.

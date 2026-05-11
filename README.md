@@ -4,7 +4,7 @@ Este repositorio contiene la aplicación operativa/admin **Ecosistema Core Admin
 
 ## Estado actual
 
-Este PR corresponde a **Conectar login real con `core_users`**.
+Este PR corresponde a **Crear dashboard**.
 
 ## Incluye
 
@@ -14,7 +14,28 @@ Este PR corresponde a **Conectar login real con `core_users`**.
 - Sesión PHP segura con nombre configurable (`SESSION_NAME`) y `session_regenerate_id(true)`.
 - CSRF básico para formularios `POST /login` y `POST /logout`.
 - Logout real (`POST /logout`) que revoca `core_sessions.revoked_at` y destruye sesión PHP.
-- Protección mínima de `/`: redirige a `/login` si no hay sesión.
+- Dashboard autenticado en `GET /dashboard` con métricas mínimas de solo lectura sobre tablas core reales.
+- Redirecciones base:
+  - `GET /` redirige a `/login` si no hay sesión.
+  - `GET /` redirige a `/dashboard` si hay sesión.
+  - `GET /dashboard` requiere login y redirige a `/login` sin sesión.
+
+## Dashboard (alcance actual)
+
+Métricas mínimas implementadas (sin joins complejos):
+
+- Tenant actual por `auth_tenant_id` desde `core_tenants`.
+- Conteo de usuarios activos por tenant desde `core_users`.
+- Conteo de módulos activos desde `core_modules`.
+- Conteo de sesiones activas del usuario desde `core_sessions`.
+- Lista corta de módulos activos (`LIMIT 8`) desde `core_modules`.
+
+Tablas reales consultadas en este paso:
+
+- `core_users`
+- `core_tenants`
+- `core_modules`
+- `core_sessions`
 
 ## Datos de sesión PHP guardados
 
@@ -35,7 +56,10 @@ No se guarda `password_hash` ni contraseñas en sesión.
 - La contraseña en `core_users.password_hash` debe estar generada con `password_hash()`.
 - Este PR **NO crea usuarios** ni seeds.
 - Este PR **NO implementa** roles/permisos (quedan para PR posterior).
-- Este PR **NO implementa** remember-me persistente.
+- Este PR **NO implementa** CRUD de tenants o usuarios.
+- Este PR **NO implementa** Mail ni Cloud.
+- Este PR **NO implementa** API separada ni workers.
+- Este PR **NO implementa** autorización por permisos.
 
 ## Logout
 
@@ -53,6 +77,7 @@ php -S 127.0.0.1:8000 -t public
 
 Rutas:
 
-- Home protegido: <http://127.0.0.1:8000/>
+- Home con redirect por sesión: <http://127.0.0.1:8000/>
+- Dashboard autenticado: <http://127.0.0.1:8000/dashboard>
 - Login real: <http://127.0.0.1:8000/login>
 - Health PDO técnico: <http://127.0.0.1:8000/health/db>

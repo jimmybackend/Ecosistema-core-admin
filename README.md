@@ -1,6 +1,6 @@
 # Ecosistema Core Admin
 
-Aplicación administrativa operativa del ecosistema para gestión interna (etapa 1).
+Aplicación administrativa operativa del ecosistema para gestión interna (etapa 1 + endurecimiento inicial de autorización).
 
 ## Índice
 - [Resumen](#resumen)
@@ -55,18 +55,24 @@ composer dump-autoload
 - Onboarding base
 
 ## Tablas reales usadas
-- `core_users`, `core_sessions`, `core_tenants`, `core_roles`, `core_permissions`, `core_role_permissions`, `core_modules`
+- `core_users`, `core_sessions`, `core_tenants`, `core_roles`, `core_user_roles`, `core_permissions`, `core_role_permissions`, `core_modules`
 - `system_health_check_definitions`, `system_health_check_results`, `system_logs`, `core_audit`
 - `mail_messages`, `mail_mailboxes`, `mail_folders`
 - `cloud_files`, `cloud_folders`, `cloud_buckets`, `cloud_user_roots`
 - `onboarding_flows`, `onboarding_runs`, `onboarding_run_steps`
 
 ## Limitaciones actuales
-- No hay autorización fina global por permisos todavía.
+- Se agregó autorización fina por permisos en rutas administrativas existentes mediante `requirePermission($config, $code)` con validación por `auth_user_id` y `auth_tenant_id` en sesión.
 - Mail **no** realiza envío real (sin SMTP/IMAP/POP productivo).
 - Cloud **no** integra S3 real ni AWS SDK.
 - Onboarding no ejecuta aprovisionamiento real.
 - No hay workers/cron ni API separada en este repositorio.
+
+## Notas de autorización por permisos
+- La validación consulta únicamente tablas reales: `core_user_roles`, `core_roles`, `core_role_permissions`, `core_permissions`.
+- Los permisos deben existir en `core_permissions` y estar asignados a roles en `core_role_permissions`.
+- Este repositorio **no** crea seeds automáticos, migraciones ni alta automática de permisos/roles/usuarios.
+- Este PR **no** implementa UI de asignación de roles a usuarios.
 
 ## Documentación del proyecto
 - `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`

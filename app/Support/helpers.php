@@ -6,6 +6,7 @@ use App\Core\Auth\AuthSession;
 use App\Core\Auth\AuthorizationRepository;
 use App\Core\Auth\AuthorizationService;
 use App\Core\Database\PdoFactory;
+use App\Http\Response\ErrorResponder;
 
 if (!function_exists('e')) {
     function e(null|bool|int|float|string $value): string
@@ -31,9 +32,28 @@ if (!function_exists('requirePermission')) {
         } catch (\Throwable) {
         }
 
-        http_response_code(403);
-        header('Content-Type: text/html; charset=UTF-8');
-        echo e('Acceso denegado');
+        ErrorResponder::render($config, 403);
+
+        return false;
+    }
+}
+
+
+if (!function_exists('renderError')) {
+    function renderError(array $config, int $statusCode, ?string $message = null): void
+    {
+        ErrorResponder::render($config, $statusCode, $message);
+    }
+}
+
+if (!function_exists('ensureValidCsrfToken')) {
+    function ensureValidCsrfToken(array $config, mixed $csrfToken): bool
+    {
+        if (AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) {
+            return true;
+        }
+
+        renderError($config, 419);
 
         return false;
     }

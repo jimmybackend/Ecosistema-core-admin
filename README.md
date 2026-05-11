@@ -125,3 +125,14 @@ Esperado:
 - `/health/db` puede responder `200` o `500` según la DB local, pero no debe exponer secretos.
 
 > Nota: la validación funcional completa requiere DB real `adbbmis1_eco` con datos y permisos poblados.
+
+## Manejo centralizado de errores seguros (PR #23)
+- Se agregó una capa mínima de respuesta de errores en `App\Http\Response\ErrorResponder` para estandarizar respuestas HTML seguras en códigos `403`, `404`, `419` y `500`.
+- Se agregaron vistas dedicadas en `resources/views/pages/errors/{403,404,419,500}.php`.
+- Las vistas usan layout administrativo con sesión autenticada y layout de auth sin sesión, evitando exponer trazas, SQL, paths internos, credenciales o secretos.
+- Se redujo repetición en rutas con helpers (`renderError`, `ensureValidCsrfToken`) para respuestas seguras de autorización/CSRF.
+
+Limitaciones vigentes:
+- No se agregó monitoreo externo.
+- No se implementó tracking avanzado de excepciones.
+- No se implementó observabilidad completa.

@@ -8,7 +8,7 @@ $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
 ?>
 <section>
   <h1>Usuarios</h1>
-  <p>Gestión básica sobre <code>core_users</code>. La autorización fina queda pendiente para un PR posterior.</p>
+  <p>Gestión básica sobre <code>core_users</code>.</p>
   <?php if ($statusMessage !== null): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
   <?php if ($errorMessage !== null): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
   <article class="eco-card" style="margin-top:1rem;">
@@ -30,6 +30,7 @@ $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
         <td><?= e((string) ($user['created_at'] ?? '')) ?></td>
         <td>
           <a class="eco-button btn" href="/users/<?= e((string) ($user['id'] ?? '0')) ?>/edit">Editar</a>
+          <a class="eco-button btn" href="/users/<?= e((string) ($user['id'] ?? '0')) ?>/roles">Roles</a>
           <form method="post" action="/users/<?= e((string) ($user['id'] ?? '0')) ?>/status" style="display:inline-block;">
             <input type="hidden" name="_csrf" value="<?= e((string) ($csrfToken ?? '')) ?>">
             <select class="eco-form-control" name="status"><?php foreach (['active','inactive','suspended','deleted'] as $status): ?><option value="<?= e($status) ?>" <?= (($user['status'] ?? '') === $status) ? 'selected' : '' ?>><?= e($status) ?></option><?php endforeach; ?></select>

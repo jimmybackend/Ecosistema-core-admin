@@ -18,7 +18,7 @@ $statuses = ['active','inactive','suspended','deleted'];
 <p><label>Phone <input class="eco-form-control" name="phone" value="<?= e((string)($user['phone'] ?? '')) ?>"></label></p>
 <p><label>User type <select class="eco-form-control" name="user_type" required><?php foreach($userTypes as $t): ?><option value="<?= e($t) ?>" <?= (($user['user_type'] ?? '')===$t)?'selected':'' ?>><?= e($t) ?></option><?php endforeach; ?></select></label></p>
 <p><label>Status <select class="eco-form-control" name="status" required><?php foreach($statuses as $s): ?><option value="<?= e($s) ?>" <?= (($user['status'] ?? '')===$s)?'selected':'' ?>><?= e($s) ?></option><?php endforeach; ?></select></label></p>
-<p><button class="eco-button btn" type="submit">Actualizar usuario</button> <a class="eco-button btn" href="/users">Volver</a></p>
+<p><button class="eco-button btn" type="submit">Actualizar usuario</button> <a class="eco-button btn" href="/users/<?= e((string) ($user['id'] ?? '0')) ?>/roles">Roles</a> <a class="eco-button btn" href="/users">Volver</a></p>
 </form></article>
 <article class="eco-card" style="margin-top:1rem;"><h2>Cambiar contraseña</h2>
 <form method="post" action="/users/<?= e((string) ($user['id'] ?? '0')) ?>/password">

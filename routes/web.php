@@ -39,6 +39,34 @@ use App\Core\Onboarding\OnboardingRunRepository;
 use App\Core\Onboarding\OnboardingService;
 
 
+
+function startAuthSession(array $config): void
+{
+    AuthSession::start(
+        (string) $config['app']['session']['name'],
+        (bool) $config['app']['session']['secure'],
+        (string) ($config['app']['session']['samesite'] ?? 'Lax'),
+    );
+
+    if (!AuthSession::enforceIdleTimeout((int) ($config['app']['session']['idle_timeout'] ?? 1800))) {
+        return;
+    }
+
+    if (AuthSession::isAuthenticated()) {
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $authService = new AuthService(new UserRepository($pdo), new SessionRepository($pdo));
+            $auth = AuthSession::getAuth();
+            $authService->logout(isset($auth['auth_core_session_id']) ? (int) $auth['auth_core_session_id'] : null);
+        } catch (\Throwable) {
+        }
+
+        AuthSession::destroy();
+        header('Location: /login');
+        exit;
+    }
+}
+
 function auditLog(PDO $pdo, array $payload): void
 {
     $auth = AuthSession::getAuth();
@@ -55,7 +83,7 @@ function auditLog(PDO $pdo, array $payload): void
 
 return [
     'GET /' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
 
         if (AuthSession::isAuthenticated()) {
             header('Location: /dashboard');
@@ -67,7 +95,7 @@ return [
 
 
     'GET /dashboard' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
 
         if (!AuthSession::isAuthenticated()) {
             header('Location: /login');
@@ -105,7 +133,7 @@ return [
     },
 
     'GET /tenants' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'tenants.view')) { return; }
 
@@ -133,7 +161,7 @@ return [
 
 
     'GET /tenants/create' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'tenants.manage')) { return; }
         header('Content-Type: text/html; charset=UTF-8');
@@ -141,7 +169,7 @@ return [
     },
 
     'POST /tenants' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'tenants.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null;
@@ -151,7 +179,7 @@ return [
     },
 
     'GET /tenants/{id}/edit' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'tenants.manage')) { return; }
         $id = (int) ($params['id'] ?? 0);
@@ -162,7 +190,7 @@ return [
     },
 
     'POST /tenants/{id}' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'tenants.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -172,7 +200,7 @@ return [
     },
 
     'POST /tenants/{id}/status' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'tenants.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -183,7 +211,7 @@ return [
 
 
     'GET /modules' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
@@ -192,20 +220,20 @@ return [
         View::render('layouts.admin', ['title'=>'Módulos | Ecosistema Core Admin','contentView'=>'pages/modules/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('modules','statusMessage','errorMessage')]);
     },
     'GET /modules/create' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear módulo | Ecosistema Core Admin','contentView'=>'pages/modules/create','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('errorMessage')]);
     },
     'POST /modules' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $message=$service->createModule($_POST); if($message==='Módulo creado correctamente.'){ auditLog($pdo,['action'=>'module.created','entity_type'=>'core_modules','new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>(string)($_POST['status']??'')]]);}  } catch (\Throwable $e) { $message = str_contains(strtolower($e->getMessage()), 'duplicate') || str_contains(strtolower($e->getMessage()), 'unique') ? 'Ya existe un módulo con ese código.' : 'No se pudo guardar el módulo.'; }
         header('Location: '.($message==='Módulo creado correctamente.'?'/modules?ok='.urlencode($message):'/modules/create?error='.urlencode($message)));
     },
     'GET /modules/{id}/edit' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         $id=(int)($params['id']??0); $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
         try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $module=$service->findModule($id);} catch (\Throwable) { $module=null; }
@@ -213,7 +241,7 @@ return [
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Editar módulo | Ecosistema Core Admin','contentView'=>'pages/modules/edit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('module','errorMessage')]);
     },
     'POST /modules/{id}' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id=(int)($params['id']??0);
@@ -221,7 +249,7 @@ return [
         header('Location: '.($message==='Módulo actualizado correctamente.'?'/modules?ok='.urlencode($message):($message==='Módulo no encontrado.'?'/modules?error='.urlencode($message):'/modules/'.$id.'/edit?error='.urlencode($message))));
     },
     'POST /modules/{id}/status' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id=(int)($params['id']??0);
@@ -231,7 +259,7 @@ return [
 
 
     'GET /roles' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.view')) { return; }
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null;
@@ -241,7 +269,7 @@ return [
         View::render('layouts.admin', ['title'=>'Roles | Ecosistema Core Admin','contentView'=>'pages/roles/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('roles','statusMessage','errorMessage')]);
     },
     'GET /roles/create' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $tenants = $service->listTenants(); } catch (\Throwable) { $tenants = []; }
@@ -249,7 +277,7 @@ return [
         View::render('layouts.admin', ['title'=>'Crear rol | Ecosistema Core Admin','contentView'=>'pages/roles/create','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('tenants')]);
     },
     'POST /roles' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -257,7 +285,7 @@ return [
         header('Location: '.($message==='Rol creado correctamente.' ? '/roles?ok='.urlencode($message) : '/roles/create?error='.urlencode($message)));
     },
     'GET /roles/{id}/edit' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $id = (int) ($params['id'] ?? 0);
@@ -267,7 +295,7 @@ return [
         View::render('layouts.admin', ['title'=>'Editar rol | Ecosistema Core Admin','contentView'=>'pages/roles/edit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('role','tenants')]);
     },
     'POST /roles/{id}' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -276,7 +304,7 @@ return [
         header('Location: '.($message==='Rol actualizado correctamente.' ? '/roles?ok='.urlencode($message) : ($message==='Rol no encontrado.' ? '/roles?error='.urlencode($message) : '/roles/'.$id.'/edit?error='.urlencode($message))));
     },
     'POST /roles/{id}/status' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -287,7 +315,7 @@ return [
 
 
     'GET /permissions' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.view')) { return; }
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
@@ -296,48 +324,48 @@ return [
         View::render('layouts.admin', ['title'=>'Permisos | Ecosistema Core Admin','contentView'=>'pages/permissions/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('permissions','statusMessage','errorMessage')]);
     },
     'GET /permissions/create' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $modules=$service->listModules(); } catch (\Throwable) { $modules=[]; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear permiso | Ecosistema Core Admin','contentView'=>'pages/permissions/create','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('modules')]);
     },
     'POST /permissions' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->createPermission($_POST); if($message==='Permiso creado correctamente.'){ auditLog($pdo,['action'=>'permission.created','entity_type'=>'core_permissions','new_values'=>['module_id'=>(int)($_POST['module_id']??0),'code'=>(string)($_POST['code']??''),'status'=>(string)($_POST['status']??'')]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
         header('Location: '.($message==='Permiso creado correctamente.'?'/permissions?ok='.urlencode($message):'/permissions/create?error='.urlencode($message)));
     },
     'GET /permissions/{id}/edit' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $permission=$service->findPermission($id); $modules=$service->listModules(); } catch (\Throwable) { $permission=null; $modules=[]; }
         if($permission===null){ renderError($config, 404); return; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Editar permiso | Ecosistema Core Admin','contentView'=>'pages/permissions/edit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('permission','modules')]);
     },
     'POST /permissions/{id}' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $before=$service->findPermission($id); $message=$service->updatePermission($id,$_POST); if($message==='Permiso actualizado correctamente.'){ auditLog($pdo,['action'=>'permission.updated','entity_type'=>'core_permissions','entity_id'=>$id,'old_values'=>$before,'new_values'=>['module_id'=>(int)($_POST['module_id']??0),'code'=>(string)($_POST['code']??''),'status'=>(string)($_POST['status']??'')]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
         header('Location: '.($message==='Permiso actualizado correctamente.'?'/permissions?ok='.urlencode($message):($message==='Permiso no encontrado.'?'/permissions?error='.urlencode($message):'/permissions/'.$id.'/edit?error='.urlencode($message))));
     },
     'POST /permissions/{id}/status' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $before=$service->findModule($id); $next=(string)($_POST['status']??''); $message=$service->changeStatus($id,$next); if($message==='Estado actualizado correctamente.'){ auditLog($pdo,['action'=>'permission.status_changed','entity_type'=>'core_permissions','entity_id'=>$id,'old_values'=>$before!==null?['status'=>$before['status']??null]:null,'new_values'=>['status'=>$next]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
         header('Location: '.($message==='Estado actualizado correctamente.'?'/permissions?ok='.urlencode($message):'/permissions?error='.urlencode($message)));
     },
     'GET /roles/{id}/permissions' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $id=(int)($params['id']??0); try{ $pdo=PdoFactory::make($config['database']); $service=new RolePermissionService(new PermissionRepository($pdo)); $data=$service->getRolePermissionsScreen($id);} catch (\Throwable) { $data=['role'=>null,'permissions'=>[],'assigned'=>[]]; }
         if($data['role']===null){ renderError($config, 404); return; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Permisos de rol | Ecosistema Core Admin','contentView'=>'pages/roles/permissions','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>$data]);
     },
     'POST /roles/{id}/permissions' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id=(int)($params['id']??0); try{ $pdo=PdoFactory::make($config['database']); $service=new RolePermissionService(new PermissionRepository($pdo)); $beforePermissionIds = $service->getRolePermissionsScreen($id)['assigned'] ?? []; $permissionIds=(array)($_POST['permission_ids']??[]); $message=$service->replaceRolePermissions($id,$permissionIds); if($message==='Permisos del rol actualizados correctamente.'){ auditLog($pdo,['action'=>'role.permissions_replaced','entity_type'=>'core_role_permissions','entity_id'=>$id,'old_values'=>['permission_ids'=>$beforePermissionIds],'new_values'=>['permission_ids'=>$permissionIds]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
@@ -345,7 +373,7 @@ return [
     },
 
     'GET /users' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.view')) { return; }
 
@@ -372,7 +400,7 @@ return [
     },
 
     'GET /users/create' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         try {
@@ -387,7 +415,7 @@ return [
     },
 
     'POST /users' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -396,7 +424,7 @@ return [
     },
 
     'GET /users/{id}/edit' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $id = (int) ($params['id'] ?? 0);
@@ -407,7 +435,7 @@ return [
     },
 
     'POST /users/{id}' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -417,7 +445,7 @@ return [
     },
 
     'POST /users/{id}/status' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -427,7 +455,7 @@ return [
     },
 
     'POST /users/{id}/password' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -437,7 +465,7 @@ return [
     },
 
     'GET /users/{id}/roles' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
 
@@ -467,7 +495,7 @@ return [
     },
 
     'POST /users/{id}/roles' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -494,7 +522,7 @@ return [
 
 
     'GET /mail' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.view')) { return; }
         $auth = AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
@@ -502,7 +530,7 @@ return [
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage')]);
     },
     'GET /mail/messages/{id}' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.view')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->findMessage($tenantId,$userId,$id);} catch (\Throwable) { $message=null; }
@@ -510,14 +538,14 @@ return [
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail detalle | Ecosistema Core Admin','contentView'=>'pages/mail/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message')]);
     },
     'GET /mail/compose' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $mailboxes=$service->listActiveMailboxes($tenantId,$userId);} catch (\Throwable) { $mailboxes=[]; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Compose | Ecosistema Core Admin','contentView'=>'pages/mail/compose','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('mailboxes','statusMessage','errorMessage')]);
     },
     'POST /mail/drafts' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
@@ -525,7 +553,7 @@ return [
         header('Location: '.($message==='Borrador creado correctamente.'?'/mail?ok='.urlencode($message):'/mail/compose?error='.urlencode($message)));
     },
     'POST /mail/messages/{id}/read' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
@@ -533,7 +561,7 @@ return [
         header('Location: /mail?'.(($message==='Mensaje actualizado correctamente.')?'ok=':'error=').urlencode($message));
     },
     'POST /mail/messages/{id}/star' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
@@ -541,7 +569,7 @@ return [
         header('Location: /mail?'.(($message==='Mensaje actualizado correctamente.')?'ok=':'error=').urlencode($message));
     },
     'POST /mail/messages/{id}/trash' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
@@ -551,21 +579,21 @@ return [
 
 
     'GET /cloud' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage')]);
     },
     'GET /cloud/files/{id}' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $file=$service->findFile($tenantId,$userId,$id);}catch(\Throwable){$file=null;}
         if($file===null){http_response_code(404);} header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud detalle | Ecosistema Core Admin','contentView'=>'pages/cloud/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('file')]);
     },
     'POST /cloud/files/{id}/archive' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
@@ -573,7 +601,7 @@ return [
         header('Location: /cloud?'.(($message==='Archivo actualizado correctamente.')?'ok=':'error=').urlencode($message));
     },
     'POST /cloud/files/{id}/trash' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
@@ -581,14 +609,14 @@ return [
         header('Location: /cloud?'.(($message==='Archivo enviado a papelera.')?'ok=':'error=').urlencode($message));
     },
     'GET /cloud/folders' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $folders=$service->listFolders($tenantId,$userId);}catch(\Throwable){$folders=[];$errorMessage='Carpeta no encontrada.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud carpetas | Ecosistema Core Admin','contentView'=>'pages/cloud/folders','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('folders','statusMessage','errorMessage')]);
     },
     'GET /cloud/folders/create' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $roots=$service->listRoots($tenantId,$userId); $folders=$service->listFolders($tenantId,$userId);}catch(\Throwable){$roots=[];$folders=[];}
@@ -596,7 +624,7 @@ return [
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear carpeta Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/create-folder','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('roots','folders','errorMessage')]);
     },
     'POST /cloud/folders' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
@@ -604,7 +632,7 @@ return [
         header('Location: '.($message==='Carpeta creada correctamente.'?'/cloud/folders?ok='.urlencode($message):'/cloud/folders/create?error='.urlencode($message)));
     },
     'POST /cloud/folders/{id}/trash' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
@@ -614,14 +642,14 @@ return [
 
 
     'GET /system/health' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'system.view')) { return; }
         $statusMessage = isset($_GET['ok']) ? (string)$_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string)$_GET['error'] : null;
         try { $pdo=PdoFactory::make($config['database']); $service=new HealthService(new HealthRepository($pdo), new LogRepository($pdo), $pdo); $healthChecks=$service->listHealthChecks(); } catch (\Throwable) { $healthChecks=[]; $errorMessage='No se pudo ejecutar el health check.'; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Health | Ecosistema Core Admin','contentView'=>'pages/system/health','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('healthChecks','statusMessage','errorMessage')]);
     },
     'POST /system/health/{id}/run' => static function (array $config, array $params): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'system.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id=(int)($params['id']??0); $message='No se pudo ejecutar el health check.';
@@ -629,13 +657,13 @@ return [
         header('Location: /system/health?'.($message==='Health check ejecutado correctamente.'?'ok=':'error=').urlencode($message));
     },
     'GET /system/logs' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'system.view')) { return; }
         $errorMessage=null; try{$pdo=PdoFactory::make($config['database']); $logs=(new LogRepository($pdo))->listRecent(100);}catch(\Throwable){$logs=[]; $errorMessage='No se pudieron cargar los logs.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Logs | Ecosistema Core Admin','contentView'=>'pages/system/logs','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('logs','errorMessage')]);
     },
     'GET /system/audit' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'system.view')) { return; }
         $errorMessage=null; try{$pdo=PdoFactory::make($config['database']); $audits=(new AuditRepository($pdo))->listRecent(100);}catch(\Throwable){$audits=[]; $errorMessage='No se pudo cargar auditoría.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Auditoría | Ecosistema Core Admin','contentView'=>'pages/system/audit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('audits','errorMessage')]);
@@ -643,29 +671,29 @@ return [
 
 
     'GET /onboarding' => static function (array $config): void {
-        AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'onboarding.view')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['auth_tenant_id']??0); $errorMessage=null; $stats=['pending'=>0,'running'=>0,'completed'=>0,'failed'=>0,'canceled'=>0]; $runs=[];
         try { $pdo=PdoFactory::make($config['database']); $service=new OnboardingService($pdo,new OnboardingFlowRepository($pdo),new OnboardingRunRepository($pdo)); $data=$service->dashboard($tenantId); $stats=$data['stats']; $runs=$data['runs']; } catch (\Throwable) { $errorMessage='No se pudo guardar el onboarding run.'; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Onboarding | Ecosistema Core Admin','contentView'=>'pages/onboarding/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('stats','runs','errorMessage')]);
     },
-    'GET /onboarding/flows' => static function (array $config): void { AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+    'GET /onboarding/flows' => static function (array $config): void { startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'onboarding.view')) { return; } try { $pdo=PdoFactory::make($config['database']); $service=new OnboardingService($pdo,new OnboardingFlowRepository($pdo),new OnboardingRunRepository($pdo)); $flows=$service->listFlows(); } catch (\Throwable) { $flows=[]; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Onboarding Flows | Ecosistema Core Admin','contentView'=>'pages/onboarding/flows','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('flows')]); },
-    'GET /onboarding/runs/create' => static function (array $config): void { AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+    'GET /onboarding/runs/create' => static function (array $config): void { startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'onboarding.manage')) { return; } try { $pdo=PdoFactory::make($config['database']); $flows=(new OnboardingFlowRepository($pdo))->listActive(); } catch (\Throwable) { $flows=[]; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear Onboarding Run | Ecosistema Core Admin','contentView'=>'pages/onboarding/create-run','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('flows')]); },
-    'POST /onboarding/runs' => static function (array $config): void { AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+    'POST /onboarding/runs' => static function (array $config): void { startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'onboarding.manage')) { return; } $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $auth=AuthSession::getAuth(); try { $pdo=PdoFactory::make($config['database']); $service=new OnboardingService($pdo,new OnboardingFlowRepository($pdo),new OnboardingRunRepository($pdo)); $message=$service->createRun((int)$auth['auth_tenant_id'],(int)$auth['auth_user_id'],$_POST); } catch (\Throwable) { $message='No se pudo guardar el onboarding run.'; } header('Location: '.($message==='Onboarding run creado correctamente.'?'/onboarding?ok=1':'/onboarding/runs/create?error='.urlencode($message))); },
-    'GET /onboarding/runs/{id}' => static function (array $config,array $params): void { AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+    'GET /onboarding/runs/{id}' => static function (array $config,array $params): void { startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'onboarding.view')) { return; } $id=(int)($params['id']??0); $auth=AuthSession::getAuth(); try { $pdo=PdoFactory::make($config['database']); $tenantId=(int)$auth['auth_tenant_id']; $stmt=$pdo->prepare('SELECT r.*, f.name AS flow_name, f.flow_key, u.display_name AS user_display_name, u.email AS user_email FROM onboarding_runs r INNER JOIN onboarding_flows f ON f.id = r.flow_id LEFT JOIN core_users u ON u.id = r.user_id WHERE r.id = :id AND r.tenant_id = :tenant_id LIMIT 1'); $stmt->execute([':id'=>$id,':tenant_id'=>$tenantId]); $run=$stmt->fetch(PDO::FETCH_ASSOC); if(!is_array($run)){ echo 'Onboarding run no encontrado.'; return;} $s=$pdo->prepare('SELECT rs.id, rs.run_id, rs.step_id, rs.status, rs.started_at, rs.completed_at, rs.error_message, rs.output_json, st.name, st.action_type, st.is_required FROM onboarding_run_steps rs INNER JOIN onboarding_steps st ON st.id = rs.step_id WHERE rs.run_id = :run_id ORDER BY st.sort_order ASC, rs.id ASC');$s->execute([':run_id'=>$id]); $steps=$s->fetchAll(PDO::FETCH_ASSOC)?:[]; $l=$pdo->prepare('SELECT id, run_id, run_step_id, level, message, context_json, created_at FROM onboarding_run_logs WHERE run_id = :run_id ORDER BY id DESC LIMIT 200');$l->execute([':run_id'=>$id]); $logs=$l->fetchAll(PDO::FETCH_ASSOC)?:[]; } catch (\Throwable) { echo 'Onboarding run no encontrado.'; return; } header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Onboarding Run | Ecosistema Core Admin','contentView'=>'pages/onboarding/show-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('run','steps','logs')]); },
-    'POST /onboarding/runs/{id}/start' => static function (array $config,array $params): void { AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if(!AuthSession::isAuthenticated()){header('Location: /login');return;} $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $id=(int)($params['id']??0); $t=(int)(AuthSession::getAuth()['auth_tenant_id']??0); try{$pdo=PdoFactory::make($config['database']);$u=$pdo->prepare('UPDATE onboarding_runs SET status = :running, started_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND status = :pending');$u->execute([':running'=>'running',':id'=>$id,':tenant_id'=>$t,':pending'=>'pending']);$log=$pdo->prepare('INSERT INTO onboarding_run_logs (run_id, run_step_id, level, message, context_json) VALUES (:run_id, NULL, :level, :message, :context_json)');$log->execute([':run_id'=>$id,':level'=>'info',':message'=>'Onboarding run iniciado.',':context_json'=>json_encode(['source'=>'manual'])]);}catch(\Throwable){} header('Location: /onboarding/runs/'.$id); },
-    'POST /onboarding/runs/{id}/cancel' => static function (array $config,array $params): void { AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if(!AuthSession::isAuthenticated()){header('Location: /login');return;} $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $id=(int)($params['id']??0); $t=(int)(AuthSession::getAuth()['auth_tenant_id']??0); try{$pdo=PdoFactory::make($config['database']);$u=$pdo->prepare("UPDATE onboarding_runs SET status = :canceled WHERE id = :id AND tenant_id = :tenant_id AND status IN ('pending','running','partial')");$u->execute([':canceled'=>'canceled',':id'=>$id,':tenant_id'=>$t]);$log=$pdo->prepare('INSERT INTO onboarding_run_logs (run_id, run_step_id, level, message, context_json) VALUES (:run_id, NULL, :level, :message, :context_json)');$log->execute([':run_id'=>$id,':level'=>'warning',':message'=>'Onboarding run cancelado.',':context_json'=>json_encode(['source'=>'manual'])]);}catch(\Throwable){} header('Location: /onboarding/runs/'.$id); },
+    'POST /onboarding/runs/{id}/start' => static function (array $config,array $params): void { startAuthSession($config); if(!AuthSession::isAuthenticated()){header('Location: /login');return;} $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $id=(int)($params['id']??0); $t=(int)(AuthSession::getAuth()['auth_tenant_id']??0); try{$pdo=PdoFactory::make($config['database']);$u=$pdo->prepare('UPDATE onboarding_runs SET status = :running, started_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND status = :pending');$u->execute([':running'=>'running',':id'=>$id,':tenant_id'=>$t,':pending'=>'pending']);$log=$pdo->prepare('INSERT INTO onboarding_run_logs (run_id, run_step_id, level, message, context_json) VALUES (:run_id, NULL, :level, :message, :context_json)');$log->execute([':run_id'=>$id,':level'=>'info',':message'=>'Onboarding run iniciado.',':context_json'=>json_encode(['source'=>'manual'])]);}catch(\Throwable){} header('Location: /onboarding/runs/'.$id); },
+    'POST /onboarding/runs/{id}/cancel' => static function (array $config,array $params): void { startAuthSession($config); if(!AuthSession::isAuthenticated()){header('Location: /login');return;} $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $id=(int)($params['id']??0); $t=(int)(AuthSession::getAuth()['auth_tenant_id']??0); try{$pdo=PdoFactory::make($config['database']);$u=$pdo->prepare("UPDATE onboarding_runs SET status = :canceled WHERE id = :id AND tenant_id = :tenant_id AND status IN ('pending','running','partial')");$u->execute([':canceled'=>'canceled',':id'=>$id,':tenant_id'=>$t]);$log=$pdo->prepare('INSERT INTO onboarding_run_logs (run_id, run_step_id, level, message, context_json) VALUES (:run_id, NULL, :level, :message, :context_json)');$log->execute([':run_id'=>$id,':level'=>'warning',':message'=>'Onboarding run cancelado.',':context_json'=>json_encode(['source'=>'manual'])]);}catch(\Throwable){} header('Location: /onboarding/runs/'.$id); },
 
-    'POST /onboarding/run-steps/{id}/status' => static function (array $config,array $params): void { AuthSession::start((string)$config['app']['session']['name'], (bool)$config['app']['session']['secure']); if(!AuthSession::isAuthenticated()){header('Location: /login');return;} $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $id=(int)($params['id']??0); $status=(string)($_POST['status']??''); $allowed=['pending','running','completed','failed','skipped']; if(!in_array($status,$allowed,true)){ header('Location: /onboarding?error=1'); return; } $tenantId=(int)(AuthSession::getAuth()['auth_tenant_id']??0); try{$pdo=PdoFactory::make($config['database']); $q=$pdo->prepare('SELECT rs.id, rs.run_id, st.is_required FROM onboarding_run_steps rs INNER JOIN onboarding_runs r ON r.id = rs.run_id INNER JOIN onboarding_steps st ON st.id = rs.step_id WHERE rs.id = :id AND r.tenant_id = :tenant_id LIMIT 1'); $q->execute([':id'=>$id,':tenant_id'=>$tenantId]); $row=$q->fetch(PDO::FETCH_ASSOC); if(!is_array($row)){echo 'Onboarding run no encontrado.'; return;} $sql='UPDATE onboarding_run_steps SET status = :status'; $params2=[':status'=>$status,':id'=>$id]; if($status==='running'){$sql.=', started_at = COALESCE(started_at, NOW())';} if($status==='completed'){$sql.=', completed_at = NOW(), error_message = NULL';} if($status==='failed'){$sql.=', completed_at = NOW(), error_message = :error_message'; $params2[':error_message']=(string)($_POST['error_message']??'');} if($status==='skipped'){$sql.=', completed_at = NOW()';} $sql.=' WHERE id = :id'; $u=$pdo->prepare($sql); $u->execute($params2); $runId=(int)$row['run_id']; $pdo->prepare('INSERT INTO onboarding_run_logs (run_id, run_step_id, level, message, context_json) VALUES (:run_id,:run_step_id,:level,:message,:context_json)')->execute([':run_id'=>$runId,':run_step_id'=>$id,':level'=>$status==='failed'?'error':'info',':message'=>'Paso actualizado correctamente.',':context_json'=>json_encode(['status'=>$status])]); }catch(\Throwable){ renderError($config, 500); return;} header('Location: /onboarding/runs/'.(int)$row['run_id']); },
+    'POST /onboarding/run-steps/{id}/status' => static function (array $config,array $params): void { startAuthSession($config); if(!AuthSession::isAuthenticated()){header('Location: /login');return;} $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $id=(int)($params['id']??0); $status=(string)($_POST['status']??''); $allowed=['pending','running','completed','failed','skipped']; if(!in_array($status,$allowed,true)){ header('Location: /onboarding?error=1'); return; } $tenantId=(int)(AuthSession::getAuth()['auth_tenant_id']??0); try{$pdo=PdoFactory::make($config['database']); $q=$pdo->prepare('SELECT rs.id, rs.run_id, st.is_required FROM onboarding_run_steps rs INNER JOIN onboarding_runs r ON r.id = rs.run_id INNER JOIN onboarding_steps st ON st.id = rs.step_id WHERE rs.id = :id AND r.tenant_id = :tenant_id LIMIT 1'); $q->execute([':id'=>$id,':tenant_id'=>$tenantId]); $row=$q->fetch(PDO::FETCH_ASSOC); if(!is_array($row)){echo 'Onboarding run no encontrado.'; return;} $sql='UPDATE onboarding_run_steps SET status = :status'; $params2=[':status'=>$status,':id'=>$id]; if($status==='running'){$sql.=', started_at = COALESCE(started_at, NOW())';} if($status==='completed'){$sql.=', completed_at = NOW(), error_message = NULL';} if($status==='failed'){$sql.=', completed_at = NOW(), error_message = :error_message'; $params2[':error_message']=(string)($_POST['error_message']??'');} if($status==='skipped'){$sql.=', completed_at = NOW()';} $sql.=' WHERE id = :id'; $u=$pdo->prepare($sql); $u->execute($params2); $runId=(int)$row['run_id']; $pdo->prepare('INSERT INTO onboarding_run_logs (run_id, run_step_id, level, message, context_json) VALUES (:run_id,:run_step_id,:level,:message,:context_json)')->execute([':run_id'=>$runId,':run_step_id'=>$id,':level'=>$status==='failed'?'error':'info',':message'=>'Paso actualizado correctamente.',':context_json'=>json_encode(['status'=>$status])]); }catch(\Throwable){ renderError($config, 500); return;} header('Location: /onboarding/runs/'.(int)$row['run_id']); },
 
     'GET /login' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
 
         if (AuthSession::isAuthenticated()) {
             header('Location: /dashboard');
@@ -684,7 +712,7 @@ return [
     },
 
     'POST /login' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
 
         $csrfToken = $_POST['_csrf'] ?? null;
         if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
@@ -735,7 +763,7 @@ return [
     },
 
     'POST /logout' => static function (array $config): void {
-        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        startAuthSession($config);
 
         $csrfToken = $_POST['_csrf'] ?? null;
         if (!ensureValidCsrfToken($config, $csrfToken)) { return; }

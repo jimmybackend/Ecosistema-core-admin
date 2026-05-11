@@ -2,16 +2,28 @@
 
 declare(strict_types=1);
 
-$config = require __DIR__ . '/../config/app.php';
+use App\Core\Database\PdoFactory;
+use App\Support\Env;
+
+require_once __DIR__ . '/../app/Support/Env.php';
+
+Env::load(__DIR__ . '/../.env');
+
+$config = [
+    'app' => require __DIR__ . '/../config/app.php',
+    'database' => require __DIR__ . '/../config/database.php',
+];
+
 $routes = require __DIR__ . '/../routes/web.php';
 
 return [
     'config' => $config,
-    'router' => static function (string $uri) use ($routes): void {
+    'db' => static fn () => PdoFactory::make($config['database']),
+    'router' => static function (string $uri) use ($routes, $config): void {
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
 
         if (isset($routes[$path]) && is_callable($routes[$path])) {
-            $routes[$path]();
+            $routes[$path]($config);
             return;
         }
 

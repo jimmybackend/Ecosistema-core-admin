@@ -1,6 +1,6 @@
 <aside class="eco-sidebar">
   <nav class="eco-nav">
-    <a href="#">Dashboard</a>
+    <a href="/dashboard">Dashboard</a>
     <a href="#">Tenants</a>
     <a href="#">Usuarios</a>
     <a href="#">Roles</a>

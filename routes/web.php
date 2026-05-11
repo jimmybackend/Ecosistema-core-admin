@@ -6,6 +6,7 @@ use App\Core\Auth\AuthService;
 use App\Core\Auth\AuthSession;
 use App\Core\Auth\SessionRepository;
 use App\Core\Auth\UserRepository;
+use App\Core\Dashboard\DashboardService;
 use App\Core\Database\PdoFactory;
 use App\Http\View\View;
 
@@ -13,19 +14,50 @@ return [
     'GET /' => static function (array $config): void {
         AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
 
+        if (AuthSession::isAuthenticated()) {
+            header('Location: /dashboard');
+            return;
+        }
+
+        header('Location: /login');
+    },
+
+
+    'GET /dashboard' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+
         if (!AuthSession::isAuthenticated()) {
             header('Location: /login');
             return;
         }
 
+        $auth = AuthSession::getAuth();
+        $dashboardData = [
+            'hasError' => true,
+            'tenant' => null,
+            'activeUsersByTenant' => 0,
+            'activeModules' => 0,
+            'activeSessionsByUser' => 0,
+            'modules' => [],
+        ];
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $dashboardService = new DashboardService($pdo);
+            $dashboardData = $dashboardService->build($auth);
+        } catch (\Throwable) {
+        }
+
         header('Content-Type: text/html; charset=UTF-8');
 
         View::render('layouts.admin', [
-            'title' => (string) ($config['app']['name'] ?? 'Ecosistema Core Admin'),
-            'contentView' => 'pages/home',
-            'auth' => AuthSession::getAuth(),
+            'title' => 'Dashboard | Ecosistema Core Admin',
+            'contentView' => 'pages/dashboard',
+            'auth' => $auth,
             'csrfToken' => AuthSession::getCsrfToken(),
-            'contentData' => [],
+            'contentData' => [
+                'dashboard' => $dashboardData,
+            ],
         ]);
     },
 
@@ -33,7 +65,7 @@ return [
         AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
 
         if (AuthSession::isAuthenticated()) {
-            header('Location: /');
+            header('Location: /dashboard');
             return;
         }
 
@@ -100,7 +132,7 @@ return [
         }
 
         AuthSession::setAuth($result);
-        header('Location: /');
+        header('Location: /dashboard');
     },
 
     'POST /logout' => static function (array $config): void {

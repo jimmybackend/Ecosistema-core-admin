@@ -192,6 +192,28 @@ Limitaciones vigentes de esta integración:
 - No hay adjuntos salientes en compose/send.
 - La validación funcional completa requiere datos reales de `mail_messages` y `cloud_files` en DB `adbbmis1_eco`.
 
+## Configuración segura Cloud/S3 (PR #28)
+Variables disponibles en `.env`/`.env.example`:
+- `CLOUD_DISK`
+- `CLOUD_S3_ENABLED`
+- `CLOUD_ALLOW_DOWNLOADS`
+- `CLOUD_ALLOW_UPLOADS`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_DEFAULT_REGION`
+- `AWS_BUCKET`
+- `AWS_ENDPOINT`
+- `AWS_USE_PATH_STYLE_ENDPOINT`
+
+Notas clave:
+- `CLOUD_S3_ENABLED=false` por defecto.
+- Este PR **no conecta a AWS**.
+- Este PR **no sube archivos reales**.
+- Este PR **no descarga archivos reales**.
+- S3 real se habilitará en un PR posterior.
+- No commitear secretos ni llaves reales de AWS.
+- Cuando se habilite S3 real, usar IAM dedicado con permisos mínimos (no root).
+
 ## Checklist de despliegue EC2/producción
 - Ver guía: `docs/deploy/EC2_PRODUCTION_CHECKLIST.md`.
 

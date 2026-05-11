@@ -36,6 +36,7 @@ use App\Core\Cloud\CloudFileRepository;
 use App\Core\Cloud\CloudFolderRepository;
 use App\Core\Cloud\CloudRootRepository;
 use App\Core\Cloud\CloudService;
+use App\Core\Cloud\CloudStorageConfig;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -614,6 +615,15 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage')]);
+    },
+    'GET /cloud/settings' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $auth=AuthSession::getAuth();
+        $cloudConfig = new CloudStorageConfig((array)($config['cloud'] ?? []));
+        $storage = $cloudConfig->toSafeArray();
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Configuración S3 | Ecosistema Core Admin','contentView'=>'pages/cloud/settings','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('storage')]);
     },
     'GET /cloud/files/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

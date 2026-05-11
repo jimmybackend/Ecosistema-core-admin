@@ -19,6 +19,10 @@ use App\Core\Permissions\RolePermissionService;
 use App\Core\Modules\ModuleRepository;
 use App\Core\Modules\ModuleService;
 use App\Core\Database\PdoFactory;
+use App\Core\System\HealthRepository;
+use App\Core\System\HealthService;
+use App\Core\System\LogRepository;
+use App\Core\System\AuditRepository;
 use App\Http\View\View;
 
 return [
@@ -369,6 +373,31 @@ return [
         $id = (int) ($params['id'] ?? 0);
         try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->updatePassword($id, (string) ($_POST['password'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.($message === 'Contraseña actualizada correctamente.' ? '/users?ok='.urlencode($message) : '/users/'.$id.'/edit?error='.urlencode($message)));
+    },
+
+
+    'GET /system/health' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $statusMessage = isset($_GET['ok']) ? (string)$_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string)$_GET['error'] : null;
+        try { $pdo=PdoFactory::make($config['database']); $service=new HealthService(new HealthRepository($pdo), new LogRepository($pdo), $pdo); $healthChecks=$service->listHealthChecks(); } catch (\Throwable) { $healthChecks=[]; $errorMessage='No se pudo ejecutar el health check.'; }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Health | Ecosistema Core Admin','contentView'=>'pages/system/health','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('healthChecks','statusMessage','errorMessage')]);
+    },
+    'POST /system/health/{id}/run' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken=$_POST['_csrf']??null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id=(int)($params['id']??0); $message='No se pudo ejecutar el health check.';
+        try { $pdo=PdoFactory::make($config['database']); $service=new HealthService(new HealthRepository($pdo), new LogRepository($pdo), $pdo); $auth=AuthSession::getAuth(); $message=$service->runHealthCheck($id, isset($auth['tenant_id'])?(int)$auth['tenant_id']:null, isset($auth['user_id'])?(int)$auth['user_id']:null, $_SERVER['REMOTE_ADDR']??null, $_SERVER['HTTP_USER_AGENT']??null);} catch (\Throwable) {}
+        header('Location: /system/health?'.($message==='Health check ejecutado correctamente.'?'ok=':'error=').urlencode($message));
+    },
+    'GET /system/logs' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $errorMessage=null; try{$pdo=PdoFactory::make($config['database']); $logs=(new LogRepository($pdo))->listRecent(100);}catch(\Throwable){$logs=[]; $errorMessage='No se pudieron cargar los logs.';}
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Logs | Ecosistema Core Admin','contentView'=>'pages/system/logs','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('logs','errorMessage')]);
+    },
+    'GET /system/audit' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $errorMessage=null; try{$pdo=PdoFactory::make($config['database']); $audits=(new AuditRepository($pdo))->listRecent(100);}catch(\Throwable){$audits=[]; $errorMessage='No se pudo cargar auditoría.';}
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Auditoría | Ecosistema Core Admin','contentView'=>'pages/system/audit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('audits','errorMessage')]);
     },
 
     'GET /login' => static function (array $config): void {

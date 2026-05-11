@@ -27,6 +27,21 @@ Comando recomendado tras cambios estructurales de clases:
 composer dump-autoload
 ```
 
+
+## Variables de sesión (PR #24)
+- `SESSION_NAME`: nombre de cookie de sesión PHP.
+- `SESSION_SECURE`: usar `true` en producción/HTTPS para enviar cookie sólo por canal seguro.
+- `SESSION_SAMESITE`: política SameSite de cookie (`Lax` por defecto).
+- `SESSION_IDLE_TIMEOUT`: expiración por inactividad en segundos (por defecto `1800`).
+
+Comportamiento de expiración por inactividad:
+- Si una sesión autenticada supera `SESSION_IDLE_TIMEOUT`, se intenta revocar el registro en `core_sessions`, se destruye la sesión PHP y se redirige a `/login` sin exponer detalles internos.
+
+Limitaciones vigentes de autenticación:
+- No hay remember-me persistente.
+- No hay MFA todavía.
+- No hay rotación avanzada por dispositivo todavía.
+
 ## Rutas principales
 - Auth: `/login`, `POST /logout`
 - Dashboard: `/dashboard`

@@ -7,12 +7,15 @@ namespace App\Core\Auth;
 final class AuthSession
 {
     private const CSRF_KEY = 'csrf_token';
+    private const LAST_ACTIVITY_KEY = 'auth_last_activity_at';
 
-    public static function start(string $sessionName, bool $secure): void
+    public static function start(string $sessionName, bool $secure, string $sameSite = 'Lax'): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             return;
         }
+
+        ini_set('session.use_strict_mode', '1');
 
         session_name($sessionName);
         session_set_cookie_params([
@@ -21,10 +24,27 @@ final class AuthSession
             'domain' => '',
             'secure' => $secure,
             'httponly' => true,
-            'samesite' => 'Lax',
+            'samesite' => $sameSite,
         ]);
 
         session_start();
+    }
+
+    public static function enforceIdleTimeout(int $idleTimeout): bool
+    {
+        if ($idleTimeout <= 0 || !self::isAuthenticated()) {
+            return true;
+        }
+
+        $lastActivity = $_SESSION[self::LAST_ACTIVITY_KEY] ?? null;
+        $now = time();
+
+        if (is_int($lastActivity) && ($now - $lastActivity) > $idleTimeout) {
+            return false;
+        }
+
+        $_SESSION[self::LAST_ACTIVITY_KEY] = $now;
+        return true;
     }
 
     public static function isAuthenticated(): bool
@@ -40,6 +60,7 @@ final class AuthSession
         $_SESSION['auth_email'] = (string) $data['auth_email'];
         $_SESSION['auth_display_name'] = (string) $data['auth_display_name'];
         $_SESSION['auth_core_session_id'] = (int) $data['auth_core_session_id'];
+        $_SESSION[self::LAST_ACTIVITY_KEY] = time();
     }
 
     public static function getAuth(): array

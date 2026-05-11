@@ -88,6 +88,17 @@ if (is_file($root . '/bootstrap/app.php')) {
     }
 }
 
+
+$envExample = $root . '/.env.example';
+if (is_file($envExample)) {
+    $envContent = file_get_contents($envExample);
+    if ($envContent !== false && str_contains($envContent, 'SESSION_IDLE_TIMEOUT=')) {
+        ok('.env.example contiene SESSION_IDLE_TIMEOUT.');
+    } else {
+        fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
+    }
+}
+
 $requiredClasses = [
     'App\\Core\\Auth\\AuthorizationRepository',
     'App\\Core\\Auth\\AuthorizationService',
@@ -95,6 +106,7 @@ $requiredClasses = [
     'App\\Core\\Users\\UserRoleRepository',
     'App\\Core\\Users\\UserRoleService',
     'App\\Http\\Response\\ErrorResponder',
+    'App\\Core\\Auth\\AuthSession',
 ];
 
 foreach ($requiredClasses as $className) {

@@ -13,5 +13,7 @@ return [
     'session' => [
         'name' => Env::get('SESSION_NAME', 'ecosistema_core_admin'),
         'secure' => filter_var(Env::get('SESSION_SECURE', false), FILTER_VALIDATE_BOOL),
+        'samesite' => Env::get('SESSION_SAMESITE', 'Lax'),
+        'idle_timeout' => (int) Env::get('SESSION_IDLE_TIMEOUT', 1800),
     ],
 ];

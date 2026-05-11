@@ -198,3 +198,24 @@ No implementado todavía:
 - Enforcement global de autorización fina por permisos (pendiente para PR posterior).
 - Creación automática de permisos por módulo.
 - Creación de tablas internas del módulo o funcionalidades internas de Mail/Cloud/Health.
+
+
+## Módulo System (health/logs/auditoría)
+
+Rutas protegidas por sesión:
+- `GET /system/health`
+- `POST /system/health/{id}/run`
+- `GET /system/logs`
+- `GET /system/audit`
+
+Tablas usadas (solo lectura excepto inserciones de resultados/log de ejecución manual):
+- `system_health_check_definitions`
+- `system_health_check_results`
+- `system_logs`
+- `core_audit`
+
+Notas:
+- Sin workers ni jobs programados por ahora.
+- Sin checks HTTP externos (fuera de alcance de este PR).
+- Logs y auditoría son de solo lectura en UI; solo se inserta log mínimo al ejecutar manualmente un health check.
+- El enforcement real de permisos finos queda para un PR posterior.

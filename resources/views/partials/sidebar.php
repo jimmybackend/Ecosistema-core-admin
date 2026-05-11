@@ -3,7 +3,7 @@
     <a href="/dashboard">Dashboard</a>
     <a href="/tenants">Tenants</a>
     <a href="/users">Usuarios</a>
-    <a href="#">Roles</a>
+    <a href="/roles">Roles</a>
     <a href="#">Permisos</a>
     <a href="#">Módulos</a>
     <a href="#">Health</a>

@@ -228,3 +228,15 @@ composer smoke
 - No commitear `.env` ni secretos reales.
 - No publicar contraseñas, tokens o credenciales en README/documentación.
 - Configurar el `DocumentRoot`/`root` del servidor web hacia `public/` (no a la raíz del repositorio).
+
+## Subida controlada Cloud (PR #29)
+- Rutas: `GET /cloud/files/upload` y `POST /cloud/files/upload`.
+- Protecciones: sesión activa, permiso `cloud.manage`, CSRF en POST.
+- Variables nuevas: `CLOUD_MAX_UPLOAD_MB`, `CLOUD_ALLOWED_EXTENSIONS`, `CLOUD_UPLOAD_PREFIX`, `CLOUD_LOCAL_STORAGE_PATH`.
+- Si `CLOUD_ALLOW_UPLOADS=false`, la subida se bloquea.
+- Si `CLOUD_S3_ENABLED=false`, se usa almacenamiento local controlado en `storage/app/cloud` (nunca en `public/`).
+- Si `CLOUD_S3_ENABLED=true` sin AWS SDK, se muestra limitación segura y no se sube.
+- Se registran metadatos en `cloud_files` con columnas reales usadas por el repositorio actual.
+- No hay descarga pública ni signed URLs en este PR.
+- No guardar secretos en código/documentación.
+- Verificar permisos de escritura del directorio `storage/app/cloud` antes de habilitar uploads.

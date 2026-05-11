@@ -37,6 +37,8 @@ use App\Core\Cloud\CloudFolderRepository;
 use App\Core\Cloud\CloudRootRepository;
 use App\Core\Cloud\CloudService;
 use App\Core\Cloud\CloudStorageConfig;
+use App\Core\Cloud\CloudStorageService;
+use App\Core\Cloud\CloudUploadService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -625,6 +627,25 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Configuración S3 | Ecosistema Core Admin','contentView'=>'pages/cloud/settings','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('storage')]);
     },
+
+    'GET /cloud/files/upload' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $auth=AuthSession::getAuth();
+        $service = new CloudUploadService(new CloudFileRepository(PdoFactory::make($config['database'])), new CloudStorageService($config, class_exists('Aws\S3\S3Client')), $config);
+        $options = $service->options();
+        $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Subir archivo | Ecosistema Core Admin','contentView'=>'pages/cloud/upload','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('options','statusMessage','errorMessage')]);
+    },
+    'POST /cloud/files/upload' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $service = new CloudUploadService(new CloudFileRepository($pdo), new CloudStorageService($config, class_exists('Aws\S3\S3Client')), $config); $result=$service->upload($tenantId,$userId,$_FILES['file']??[]); if(($result['ok']??false)===true){ auditLog($pdo,['action'=>'cloud.file_uploaded','entity_type'=>'cloud_files','entity_id'=>(int)($result['id']??0),'new_values'=>['status'=>'active']]); }}catch(\Throwable){$result=['ok'=>false,'message'=>'No se pudo guardar el archivo.'];}
+        header('Location: /cloud/files/upload?'.((($result['ok']??false)===true)?'ok=':'error=').urlencode((string)($result['message']??'')));
+    },
+
     'GET /cloud/files/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }

@@ -99,3 +99,10 @@ Validaciones y seguridad:
 - No usar credenciales root de MySQL para la app.
 - No guardar secretos en README ni documentación pública.
 - No ejecutar seeds de prueba en producción.
+
+## 13) Cloud uploads controlados (PR #29)
+- Crear/verificar directorio `storage/app/cloud` cuando se use modo local.
+- Confirmar que `storage/` no esté bajo DocumentRoot público.
+- Aplicar permisos mínimos de escritura para usuario web (sin `777`).
+- Mantener `CLOUD_ALLOW_UPLOADS=false` por defecto en producción hasta validar operación.
+- Al habilitar S3 real, usar IAM de mínimo privilegio (sin usuario root).

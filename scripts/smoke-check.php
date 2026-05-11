@@ -64,6 +64,11 @@ $requiredFiles = [
     'resources/views/pages/permissions/index.php',
     'resources/views/pages/modules/index.php',
     'resources/views/pages/system/audit.php',
+    'app/Http/Response/ErrorResponder.php',
+    'resources/views/pages/errors/403.php',
+    'resources/views/pages/errors/404.php',
+    'resources/views/pages/errors/419.php',
+    'resources/views/pages/errors/500.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -89,6 +94,7 @@ $requiredClasses = [
     'App\\Core\\System\\AuditLogger',
     'App\\Core\\Users\\UserRoleRepository',
     'App\\Core\\Users\\UserRoleService',
+    'App\\Http\\Response\\ErrorResponder',
 ];
 
 foreach ($requiredClasses as $className) {

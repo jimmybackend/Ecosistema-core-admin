@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Core\Database\PdoFactory;
 use App\Support\Env;
+use App\Http\Response\ErrorResponder;
 
 require_once __DIR__ . '/../app/Support/Env.php';
 require_once __DIR__ . '/../app/Support/helpers.php';
@@ -51,8 +52,6 @@ return [
             }
         }
 
-        http_response_code(404);
-        header('Content-Type: text/html; charset=UTF-8');
-        echo '<h1>404</h1><p>Ruta no encontrada.</p>';
+        ErrorResponder::render($config, 404);
     },
 ];

@@ -6,6 +6,7 @@ use App\Core\Database\PdoFactory;
 use App\Support\Env;
 
 require_once __DIR__ . '/../app/Support/Env.php';
+require_once __DIR__ . '/../app/Support/helpers.php';
 
 Env::load(__DIR__ . '/../.env');
 

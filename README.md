@@ -172,3 +172,29 @@ Notas:
 - Todas las rutas del módulo requieren sesión autenticada.
 - Aún **no** se implementa enforcement global de autorización fina por permiso.
 - Aún **no** se asignan roles a usuarios desde este módulo.
+
+
+## Módulo Módulos (básico)
+
+Rutas protegidas por sesión (si no hay sesión redirige a `/login`):
+- `GET /modules`
+- `GET /modules/create`
+- `POST /modules`
+- `GET /modules/{id}/edit`
+- `POST /modules/{id}`
+- `POST /modules/{id}/status`
+
+Este módulo usa exclusivamente `core_modules` y solo los campos reales:
+- `id`, `code`, `name`, `description`, `table_prefix`, `is_billable`, `is_core`, `status`, `created_at`, `updated_at`
+
+Consultas SQL usadas:
+- `SELECT ... FROM core_modules ORDER BY id ASC LIMIT 100`
+- `SELECT ... FROM core_modules WHERE id = :id LIMIT 1`
+- `INSERT INTO core_modules (code, name, description, table_prefix, is_billable, is_core, status) VALUES (...)`
+- `UPDATE core_modules SET code = :code, name = :name, description = :description, table_prefix = :table_prefix, is_billable = :is_billable, is_core = :is_core, status = :status, updated_at = NOW() WHERE id = :id`
+- `UPDATE core_modules SET status = :status, updated_at = NOW() WHERE id = :id`
+
+No implementado todavía:
+- Enforcement global de autorización fina por permisos (pendiente para PR posterior).
+- Creación automática de permisos por módulo.
+- Creación de tablas internas del módulo o funcionalidades internas de Mail/Cloud/Health.

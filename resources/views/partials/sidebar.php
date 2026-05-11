@@ -5,7 +5,7 @@
     <a href="/users">Usuarios</a>
     <a href="/roles">Roles</a>
     <a href="/permissions">Permisos</a>
-    <a href="#">Módulos</a>
+    <a href="/modules">Módulos</a>
     <a href="#">Health</a>
     <a href="#">Mail</a>
     <a href="#">Cloud</a>

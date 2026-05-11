@@ -9,6 +9,8 @@ use App\Core\Auth\UserRepository;
 use App\Core\Dashboard\DashboardService;
 use App\Core\Tenants\TenantRepository;
 use App\Core\Tenants\TenantService;
+use App\Core\Roles\RoleRepository;
+use App\Core\Roles\RoleService;
 use App\Core\Users\UserRepository as CoreUserRepository;
 use App\Core\Users\UserService;
 use App\Core\Database\PdoFactory;
@@ -134,6 +136,57 @@ return [
         $id=(int) ($params['id'] ?? 0);
         try { $pdo=PdoFactory::make($config['database']); $service=new TenantService(new TenantRepository($pdo)); $ok=$service->changeStatus($id,(string)($_POST['status'] ?? '')); } catch (\Throwable) { $ok=false; }
         header('Location: '.($ok ? '/tenants?ok=2' : '/tenants?error=1'));
+    },
+
+
+
+    'GET /roles' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null;
+        $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $roles = $service->listRoles(); } catch (\Throwable) { $roles = []; $errorMessage = 'No se pudo guardar el rol.'; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Roles | Ecosistema Core Admin','contentView'=>'pages/roles/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('roles','statusMessage','errorMessage')]);
+    },
+    'GET /roles/create' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $tenants = $service->listTenants(); } catch (\Throwable) { $tenants = []; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Crear rol | Ecosistema Core Admin','contentView'=>'pages/roles/create','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('tenants')]);
+    },
+    'POST /roles' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->createRole($_POST); } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        header('Location: '.($message==='Rol creado correctamente.' ? '/roles?ok='.urlencode($message) : '/roles/create?error='.urlencode($message)));
+    },
+    'GET /roles/{id}/edit' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $id = (int) ($params['id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $role = $service->findRole($id); $tenants = $service->listTenants(); } catch (\Throwable) { $role = null; $tenants = []; }
+        if ($role === null) { http_response_code(404); echo 'Rol no encontrado.'; return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Editar rol | Ecosistema Core Admin','contentView'=>'pages/roles/edit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('role','tenants')]);
+    },
+    'POST /roles/{id}' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id = (int) ($params['id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->updateRole($id, $_POST); } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        header('Location: '.($message==='Rol actualizado correctamente.' ? '/roles?ok='.urlencode($message) : ($message==='Rol no encontrado.' ? '/roles?error='.urlencode($message) : '/roles/'.$id.'/edit?error='.urlencode($message))));
+    },
+    'POST /roles/{id}/status' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id = (int) ($params['id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->changeStatus($id, (string) ($_POST['status'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        header('Location: '.($message==='Estado actualizado correctamente.' ? '/roles?ok='.urlencode($message) : '/roles?error='.urlencode($message)));
     },
 
     'GET /users' => static function (array $config): void {

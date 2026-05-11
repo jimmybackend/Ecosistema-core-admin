@@ -128,3 +128,22 @@ No implementado todavía:
 - Roles/permisos y autorización fina.
 - Integraciones de correo (Mail), Cloud, invitaciones o recuperación de contraseña.
 - API JSON o workers.
+
+## Módulo Roles (básico)
+
+Rutas protegidas por sesión (si no hay sesión redirige a `/login`):
+- `GET /roles`
+- `GET /roles/create`
+- `POST /roles`
+- `GET /roles/{id}/edit`
+- `POST /roles/{id}`
+- `POST /roles/{id}/status`
+
+Este módulo usa únicamente la tabla real `core_roles` para CRUD básico y cambio lógico de estado.
+
+Uso de `core_tenants`: sólo para selección y visualización del tenant en listado/formularios.
+
+Pendiente para PR posterior:
+- Permisos y autorización fina por rol.
+- Asignación de permisos a roles.
+- Asignación de usuarios a roles.

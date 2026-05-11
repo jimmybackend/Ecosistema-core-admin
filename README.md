@@ -89,3 +89,39 @@ composer dump-autoload
 - `docs/project/ECOSISTEMA_CORE_ADMIN_QA_CHECKLIST.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_RUTAS.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_PENDIENTES.md`
+
+## Smoke checks básicos (PR #22)
+Ejecutar:
+```bash
+composer install
+composer dump-autoload
+composer smoke
+```
+
+### Qué valida
+- Presencia de archivos críticos de Core Admin (autoload, bootstrap, rutas, index público, assets, vistas clave y README).
+- Carga de `bootstrap/app.php` y `routes/web.php` sin error fatal.
+- Carga de clases críticas de autorización, auditoría y roles de usuario.
+- Sintaxis PHP (`php -l`) sobre `app`, `bootstrap`, `config`, `public`, `routes` y `resources/views` (ignorando `vendor`).
+- Búsqueda de cadenas sensibles en `resources/views` y `routes/web.php` (`password_hash`, `session_token_hash`, `refresh_token_hash`, `DB_PASSWORD`, `AWS_SECRET`, `SECRET`).
+
+### Qué no valida
+- No reemplaza pruebas funcionales end-to-end.
+- No valida reglas de negocio profundas ni cobertura completa de permisos.
+- No crea migraciones, seeds ni datos de prueba.
+- No requiere conexión obligatoria a DB para ejecutarse.
+
+### Validación HTTP manual (opcional)
+```bash
+php -S 127.0.0.1:8000 -t public
+curl -I http://127.0.0.1:8000/login
+curl -I http://127.0.0.1:8000/dashboard
+curl -I http://127.0.0.1:8000/health/db
+```
+
+Esperado:
+- `/login` responde `200`.
+- `/dashboard` sin sesión redirige a `/login`.
+- `/health/db` puede responder `200` o `500` según la DB local, pero no debe exponer secretos.
+
+> Nota: la validación funcional completa requiere DB real `adbbmis1_eco` con datos y permisos poblados.

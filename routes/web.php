@@ -25,6 +25,7 @@ use App\Core\System\HealthRepository;
 use App\Core\System\HealthService;
 use App\Core\System\LogRepository;
 use App\Core\System\AuditRepository;
+use App\Core\System\AuditLogger;
 use App\Core\Mail\MailService;
 use App\Core\Mail\MailMessageRepository;
 use App\Core\Mail\MailboxRepository;
@@ -36,6 +37,21 @@ use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
 use App\Core\Onboarding\OnboardingService;
+
+
+function auditLog(PDO $pdo, array $payload): void
+{
+    $auth = AuthSession::getAuth();
+    (new AuditLogger($pdo))->log([
+        'tenant_id' => $payload['tenant_id'] ?? (int) ($auth['auth_tenant_id'] ?? 0),
+        'user_id' => (int) ($auth['auth_user_id'] ?? 0),
+        'entity_type' => $payload['entity_type'] ?? null,
+        'entity_id' => $payload['entity_id'] ?? null,
+        'action' => $payload['action'] ?? null,
+        'old_values' => $payload['old_values'] ?? null,
+        'new_values' => $payload['new_values'] ?? null,
+    ]);
+}
 
 return [
     'GET /' => static function (array $config): void {
@@ -161,7 +177,7 @@ return [
         if (!requirePermission($config, 'tenants.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id=(int) ($params['id'] ?? 0);
-        try { $pdo=PdoFactory::make($config['database']); $service=new TenantService(new TenantRepository($pdo)); $ok=$service->changeStatus($id,(string)($_POST['status'] ?? '')); } catch (\Throwable) { $ok=false; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new TenantService(new TenantRepository($pdo)); $before=$service->findTenant($id); $next=(string)($_POST['status'] ?? ''); $ok=$service->changeStatus($id,$next); if($ok){ auditLog($pdo,['action'=>'tenant.status_changed','entity_type'=>'core_tenants','entity_id'=>$id,'old_values'=>$before!==null?['status'=>$before['status']??null]:null,'new_values'=>['status'=>$next]]);} } catch (\Throwable) { $ok=false; }
         header('Location: '.($ok ? '/tenants?ok=2' : '/tenants?error=1'));
     },
 
@@ -185,7 +201,7 @@ return [
         AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
-        try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $message=$service->createModule($_POST); } catch (\Throwable $e) { $message = str_contains(strtolower($e->getMessage()), 'duplicate') || str_contains(strtolower($e->getMessage()), 'unique') ? 'Ya existe un módulo con ese código.' : 'No se pudo guardar el módulo.'; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $message=$service->createModule($_POST); if($message==='Módulo creado correctamente.'){ auditLog($pdo,['action'=>'module.created','entity_type'=>'core_modules','new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>(string)($_POST['status']??'')]]);}  } catch (\Throwable $e) { $message = str_contains(strtolower($e->getMessage()), 'duplicate') || str_contains(strtolower($e->getMessage()), 'unique') ? 'Ya existe un módulo con ese código.' : 'No se pudo guardar el módulo.'; }
         header('Location: '.($message==='Módulo creado correctamente.'?'/modules?ok='.urlencode($message):'/modules/create?error='.urlencode($message)));
     },
     'GET /modules/{id}/edit' => static function (array $config, array $params): void {
@@ -201,7 +217,7 @@ return [
         if (!requirePermission($config, 'modules.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id=(int)($params['id']??0);
-        try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $message=$service->updateModule($id,$_POST);} catch (\Throwable $e) { $message = str_contains(strtolower($e->getMessage()), 'duplicate') || str_contains(strtolower($e->getMessage()), 'unique') ? 'Ya existe un módulo con ese código.' : 'No se pudo guardar el módulo.'; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $before=$service->findModule($id); $message=$service->updateModule($id,$_POST); if($message==='Módulo actualizado correctamente.'){ auditLog($pdo,['action'=>'module.updated','entity_type'=>'core_modules','entity_id'=>$id,'old_values'=>$before,'new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>(string)($_POST['status']??'')]]);} } catch (\Throwable $e) { $message = str_contains(strtolower($e->getMessage()), 'duplicate') || str_contains(strtolower($e->getMessage()), 'unique') ? 'Ya existe un módulo con ese código.' : 'No se pudo guardar el módulo.'; }
         header('Location: '.($message==='Módulo actualizado correctamente.'?'/modules?ok='.urlencode($message):($message==='Módulo no encontrado.'?'/modules?error='.urlencode($message):'/modules/'.$id.'/edit?error='.urlencode($message))));
     },
     'POST /modules/{id}/status' => static function (array $config, array $params): void {
@@ -209,7 +225,7 @@ return [
         if (!requirePermission($config, 'modules.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id=(int)($params['id']??0);
-        try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $message=$service->changeStatus($id,(string)($_POST['status']??'')); } catch (\Throwable) { $message='No se pudo guardar el módulo.'; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $before=$service->findModule($id); $next=(string)($_POST['status']??''); $message=$service->changeStatus($id,$next); if($message==='Estado actualizado correctamente.'){ auditLog($pdo,['action'=>'module.status_changed','entity_type'=>'core_modules','entity_id'=>$id,'old_values'=>$before!==null?['status'=>$before['status']??null]:null,'new_values'=>['status'=>$next]]);} } catch (\Throwable) { $message='No se pudo guardar el módulo.'; }
         header('Location: '.($message==='Estado actualizado correctamente.'?'/modules?ok='.urlencode($message):'/modules?error='.urlencode($message)));
     },
 
@@ -237,7 +253,7 @@ return [
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
-        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->createRole($_POST); } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->createRole($_POST); if($message==='Rol creado correctamente.'){ auditLog($pdo,['action'=>'role.created','entity_type'=>'core_roles','tenant_id'=>(int)($_POST['tenant_id']??0),'new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>(string)($_POST['status']??'')]]);}  } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
         header('Location: '.($message==='Rol creado correctamente.' ? '/roles?ok='.urlencode($message) : '/roles/create?error='.urlencode($message)));
     },
     'GET /roles/{id}/edit' => static function (array $config, array $params): void {
@@ -256,7 +272,7 @@ return [
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id = (int) ($params['id'] ?? 0);
-        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->updateRole($id, $_POST); } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $before=$service->findRole($id); $message = $service->updateRole($id, $_POST); if($message==='Rol actualizado correctamente.'){ auditLog($pdo,['action'=>'role.updated','entity_type'=>'core_roles','entity_id'=>$id,'old_values'=>$before,'new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>(string)($_POST['status']??'')]]);}  } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
         header('Location: '.($message==='Rol actualizado correctamente.' ? '/roles?ok='.urlencode($message) : ($message==='Rol no encontrado.' ? '/roles?error='.urlencode($message) : '/roles/'.$id.'/edit?error='.urlencode($message))));
     },
     'POST /roles/{id}/status' => static function (array $config, array $params): void {
@@ -265,7 +281,7 @@ return [
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id = (int) ($params['id'] ?? 0);
-        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->changeStatus($id, (string) ($_POST['status'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $before=$service->findRole($id); $next=(string) ($_POST['status'] ?? ''); $message = $service->changeStatus($id, $next); if($message==='Estado actualizado correctamente.'){ auditLog($pdo,['action'=>'role.status_changed','entity_type'=>'core_roles','entity_id'=>$id,'old_values'=>$before!==null?['status'=>$before['status']??null]:null,'new_values'=>['status'=>$next]]);} } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
         header('Location: '.($message==='Estado actualizado correctamente.' ? '/roles?ok='.urlencode($message) : '/roles?error='.urlencode($message)));
     },
 
@@ -289,7 +305,7 @@ return [
         AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
-        try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->createPermission($_POST);} catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->createPermission($_POST); if($message==='Permiso creado correctamente.'){ auditLog($pdo,['action'=>'permission.created','entity_type'=>'core_permissions','new_values'=>['module_id'=>(int)($_POST['module_id']??0),'code'=>(string)($_POST['code']??''),'status'=>(string)($_POST['status']??'')]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
         header('Location: '.($message==='Permiso creado correctamente.'?'/permissions?ok='.urlencode($message):'/permissions/create?error='.urlencode($message)));
     },
     'GET /permissions/{id}/edit' => static function (array $config, array $params): void {
@@ -303,14 +319,14 @@ return [
         AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
-        $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->updatePermission($id,$_POST);} catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $before=$service->findPermission($id); $message=$service->updatePermission($id,$_POST); if($message==='Permiso actualizado correctamente.'){ auditLog($pdo,['action'=>'permission.updated','entity_type'=>'core_permissions','entity_id'=>$id,'old_values'=>$before,'new_values'=>['module_id'=>(int)($_POST['module_id']??0),'code'=>(string)($_POST['code']??''),'status'=>(string)($_POST['status']??'')]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
         header('Location: '.($message==='Permiso actualizado correctamente.'?'/permissions?ok='.urlencode($message):($message==='Permiso no encontrado.'?'/permissions?error='.urlencode($message):'/permissions/'.$id.'/edit?error='.urlencode($message))));
     },
     'POST /permissions/{id}/status' => static function (array $config, array $params): void {
         AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
-        $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->changeStatus($id,(string)($_POST['status']??''));} catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $before=$service->findModule($id); $next=(string)($_POST['status']??''); $message=$service->changeStatus($id,$next); if($message==='Estado actualizado correctamente.'){ auditLog($pdo,['action'=>'permission.status_changed','entity_type'=>'core_permissions','entity_id'=>$id,'old_values'=>$before!==null?['status'=>$before['status']??null]:null,'new_values'=>['status'=>$next]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
         header('Location: '.($message==='Estado actualizado correctamente.'?'/permissions?ok='.urlencode($message):'/permissions?error='.urlencode($message)));
     },
     'GET /roles/{id}/permissions' => static function (array $config, array $params): void {
@@ -324,7 +340,7 @@ return [
         AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
-        $id=(int)($params['id']??0); try{ $pdo=PdoFactory::make($config['database']); $service=new RolePermissionService(new PermissionRepository($pdo)); $message=$service->replaceRolePermissions($id,(array)($_POST['permission_ids']??[])); } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        $id=(int)($params['id']??0); try{ $pdo=PdoFactory::make($config['database']); $service=new RolePermissionService(new PermissionRepository($pdo)); $beforePermissionIds = $service->getRolePermissionsScreen($id)['assigned'] ?? []; $permissionIds=(array)($_POST['permission_ids']??[]); $message=$service->replaceRolePermissions($id,$permissionIds); if($message==='Permisos del rol actualizados correctamente.'){ auditLog($pdo,['action'=>'role.permissions_replaced','entity_type'=>'core_role_permissions','entity_id'=>$id,'old_values'=>['permission_ids'=>$beforePermissionIds],'new_values'=>['permission_ids'=>$permissionIds]]);} } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
         header('Location: '.($message==='Permisos del rol actualizados correctamente.'?'/roles/'.$id.'/permissions?ok='.urlencode($message):'/roles/'.$id.'/permissions?error='.urlencode($message)));
     },
 
@@ -375,7 +391,7 @@ return [
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
-        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->createUser($_POST);} catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->createUser($_POST); if($message === 'Usuario creado correctamente.'){ auditLog($pdo,['action'=>'user.created','entity_type'=>'core_users','tenant_id'=>(int)($_POST['tenant_id']??0),'new_values'=>['email'=>(string)($_POST['email']??''),'username'=>(string)($_POST['username']??''),'status'=>(string)($_POST['status']??'')]]);} } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.($message === 'Usuario creado correctamente.' ? '/users?ok='.urlencode($message) : '/users/create?error='.urlencode($message)));
     },
 
@@ -396,7 +412,7 @@ return [
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id = (int) ($params['id'] ?? 0);
-        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->updateUser($id, $_POST);} catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $before = $service->findUser($id); $message = $service->updateUser($id, $_POST); if($message === 'Usuario actualizado correctamente.'){ auditLog($pdo,['action'=>'user.updated','entity_type'=>'core_users','entity_id'=>$id,'old_values'=>$before,'new_values'=>['tenant_id'=>(int)($_POST['tenant_id']??0),'email'=>(string)($_POST['email']??''),'username'=>(string)($_POST['username']??''),'status'=>(string)($_POST['status']??'')]]);} } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.(($message === 'Usuario actualizado correctamente.') ? '/users?ok='.urlencode($message) : ($message === 'Usuario no encontrado.' ? '/users?error='.urlencode($message) : '/users/'.$id.'/edit?error='.urlencode($message))));
     },
 
@@ -406,7 +422,7 @@ return [
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id = (int) ($params['id'] ?? 0);
-        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->changeStatus($id, (string) ($_POST['status'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $before=$service->findUser($id); $next=(string) ($_POST['status'] ?? ''); $message = $service->changeStatus($id, $next); if($message === 'Estado actualizado correctamente.'){ auditLog($pdo,['action'=>'user.status_changed','entity_type'=>'core_users','entity_id'=>$id,'old_values'=>$before!==null?['status'=>$before['status']??null]:null,'new_values'=>['status'=>$next]]);} } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.($message === 'Estado actualizado correctamente.' ? '/users?ok='.urlencode($message) : '/users?error='.urlencode($message)));
     },
 
@@ -416,7 +432,7 @@ return [
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
         $id = (int) ($params['id'] ?? 0);
-        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->updatePassword($id, (string) ($_POST['password'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->updatePassword($id, (string) ($_POST['password'] ?? '')); if($message === 'Contraseña actualizada correctamente.'){ auditLog($pdo,['action'=>'user.password_changed','entity_type'=>'core_users','entity_id'=>$id]); } } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.($message === 'Contraseña actualizada correctamente.' ? '/users?ok='.urlencode($message) : '/users/'.$id.'/edit?error='.urlencode($message)));
     },
 
@@ -466,7 +482,7 @@ return [
             $tenantId = (int) ($user['tenant_id'] ?? 0);
             $auth = AuthSession::getAuth();
             $assignedByUserId = isset($auth['user_id']) ? (int) $auth['user_id'] : null;
-            $message = $service->replaceUserRoles($tenantId, $id, $_POST['role_ids'] ?? [], $assignedByUserId);
+            $newRoleIds = (array) ($_POST['role_ids'] ?? []); $beforeRoleIds = $service->listAssignedRoleIds($tenantId, $id); $message = $service->replaceUserRoles($tenantId, $id, $newRoleIds, $assignedByUserId); if($message === 'Roles de usuario actualizados correctamente.'){ auditLog($pdo,['action'=>'user.roles_replaced','entity_type'=>'core_user_roles','entity_id'=>$id,'tenant_id'=>$tenantId,'old_values'=>['role_ids'=>$beforeRoleIds],'new_values'=>['role_ids'=>$newRoleIds]]);} 
             header('Location: '.('/users/'.$id.'/roles?ok='.urlencode($message)));
             return;
         } catch (\Throwable) {

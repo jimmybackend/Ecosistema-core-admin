@@ -219,3 +219,28 @@ Notas:
 - Sin checks HTTP externos (fuera de alcance de este PR).
 - Logs y auditoría son de solo lectura en UI; solo se inserta log mínimo al ejecutar manualmente un health check.
 - El enforcement real de permisos finos queda para un PR posterior.
+
+
+## Mail mínimo (administrativo)
+
+Rutas protegidas por sesión:
+- `/mail`
+- `/mail/messages/{id}`
+- `/mail/compose`
+
+Tablas usadas:
+- `mail_messages`
+- `mail_mailboxes`
+- `mail_folders`
+
+Este alcance mínimo solo permite listar mensajes, ver detalle y crear borradores.
+
+**No implementado todavía:**
+- envío real de correos
+- SMTP
+- IMAP/POP
+- workers/cron
+- attachments
+- integración Cloud
+
+Los adjuntos quedan para un PR posterior de Cloud/Mail.

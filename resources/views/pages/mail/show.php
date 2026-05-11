@@ -12,3 +12,12 @@
 <p><strong>Body html (escapado):</strong><br><pre><?= e((string)($message['body_html'] ?? '')) ?></pre></p>
 <p><strong>created_at:</strong> <?= e((string)($message['created_at'] ?? '')) ?> | <strong>received_at:</strong> <?= e((string)($message['received_at'] ?? '')) ?> | <strong>sent_at:</strong> <?= e((string)($message['sent_at'] ?? '')) ?></p>
 </article><?php endif; ?></section>
+
+<?php $attachments = is_array($attachments ?? null) ? $attachments : []; ?>
+<section class="eco-card" style="margin-top:16px;">
+<h2>Adjuntos</h2>
+<?php if ($attachments === []): ?><div class="eco-alert" role="alert">Adjuntos: no disponibles todavía en esta instalación.</div><?php else: ?>
+<table class="eco-table"><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño (bytes)</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>
+<?php foreach ($attachments as $attachment): ?><tr><td><?= e((string)($attachment['original_name'] ?? '')) ?></td><td><span class="eco-badge"><?= e((string)($attachment['mime_type'] ?? '')) ?></span></td><td><?= e((string)($attachment['size_bytes'] ?? '')) ?></td><td><span class="eco-badge"><?= e((string)($attachment['status'] ?? '')) ?></span></td><td><?= e((string)($attachment['uploaded_at'] ?? '')) ?></td></tr><?php endforeach; ?>
+</tbody></table><?php endif; ?>
+</section>

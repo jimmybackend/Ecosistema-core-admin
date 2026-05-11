@@ -30,6 +30,8 @@ use App\Core\Mail\MailService;
 use App\Core\Mail\MailMessageRepository;
 use App\Core\Mail\MailboxRepository;
 use App\Core\Mail\MailConfig;
+use App\Core\Mail\MailAttachmentRepository;
+use App\Core\Mail\MailAttachmentService;
 use App\Core\Cloud\CloudFileRepository;
 use App\Core\Cloud\CloudFolderRepository;
 use App\Core\Cloud\CloudRootRepository;
@@ -534,9 +536,21 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.view')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
-        try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->findMessage($tenantId,$userId,$id);} catch (\Throwable) { $message=null; }
+        $attachments = [];
+        try {
+            $pdo=PdoFactory::make($config['database']);
+            $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
+            $message=$service->findMessage($tenantId,$userId,$id);
+            if ($message !== null) {
+                $attachmentService = new MailAttachmentService(new MailAttachmentRepository($pdo));
+                $attachments = $attachmentService->listMessageAttachments($tenantId, $userId, $id);
+            }
+        } catch (\Throwable) {
+            $message=null;
+            $attachments = [];
+        }
         if ($message===null) { http_response_code(404); }
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail detalle | Ecosistema Core Admin','contentView'=>'pages/mail/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message')]);
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail detalle | Ecosistema Core Admin','contentView'=>'pages/mail/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message','attachments')]);
     },
     'GET /mail/settings' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

@@ -177,6 +177,21 @@ Notas clave:
 - No commitear secretos ni contraseñas SMTP reales.
 - Usar credenciales SMTP dedicadas y de bajo privilegio (no personales).
 
+
+## Mail adjuntos lógicos (PR #27)
+- Se agregó integración lógica de solo lectura en detalle de Mail (`GET /mail/messages/{id}`) para listar adjuntos cuando existen registros en tabla real `cloud_files` asociados por `origin_table = 'mail_messages'` y `origin_id = mail_messages.id`.
+- Se mantiene aislamiento por `tenant_id` y `user_id`, con consultas PDO preparadas y límite de 100 resultados.
+- Se muestran únicamente campos seguros: `original_name`, `mime_type`, `size_bytes`, `status`, `uploaded_at`.
+- Si no hay adjuntos vinculados en datos reales, la vista muestra: `Adjuntos: no disponibles todavía en esta instalación.`
+
+Limitaciones vigentes de esta integración:
+- No hay subida de archivos.
+- No hay descarga de archivos.
+- No hay integración S3 real.
+- No hay envío real de correos.
+- No hay adjuntos salientes en compose/send.
+- La validación funcional completa requiere datos reales de `mail_messages` y `cloud_files` en DB `adbbmis1_eco`.
+
 ## Checklist de despliegue EC2/producción
 - Ver guía: `docs/deploy/EC2_PRODUCTION_CHECKLIST.md`.
 

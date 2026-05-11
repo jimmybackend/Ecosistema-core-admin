@@ -11,5 +11,6 @@
     <a href="/system/audit">Auditoría</a>
     <a href="/mail">Mail</a>
     <a href="/cloud">Cloud</a>
+    <a href="/onboarding">Onboarding</a>
   </nav>
 </aside>

@@ -271,3 +271,14 @@ Pendiente (no implementado en este PR):
 - No integra AWS SDK/S3 real.
 - No crea archivos físicos en servidor (`public/` o `storage/`).
 - Enforcement fino de permisos queda para un PR posterior.
+
+## Onboarding base administrativo
+- Rutas: `/onboarding`, `/onboarding/flows`, `/onboarding/runs/create`, `/onboarding/runs/{id}`.
+- Tablas usadas: `onboarding_flows`, `onboarding_steps`, `onboarding_runs`, `onboarding_run_steps`, `onboarding_run_logs`.
+- Esta base solo crea corridas, pasos y seguimiento.
+- NO ejecuta aprovisionamiento real.
+- NO crea mailboxes.
+- NO crea cloud roots ni carpetas cloud.
+- NO crea agenda ni browser profile.
+- NO envía correos de bienvenida.
+- Workers/cron/jobs quedan para PR futuro.

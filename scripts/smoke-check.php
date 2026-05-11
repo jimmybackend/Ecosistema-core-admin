@@ -60,6 +60,9 @@ $requiredFiles = [
     'config/cloud.php',
     'resources/views/pages/mail/settings.php',
     'resources/views/pages/cloud/settings.php',
+    'app/Core/Cloud/CloudStorageService.php',
+    'app/Core/Cloud/CloudUploadService.php',
+    'resources/views/pages/cloud/upload.php',
     'app/Core/Cloud/CloudStorageConfig.php',
     'resources/views/pages/mail/show.php',
     'app/Core/Mail/MailAttachmentRepository.php',
@@ -106,7 +109,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));

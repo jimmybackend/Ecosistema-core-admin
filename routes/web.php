@@ -9,6 +9,8 @@ use App\Core\Auth\UserRepository;
 use App\Core\Dashboard\DashboardService;
 use App\Core\Tenants\TenantRepository;
 use App\Core\Tenants\TenantService;
+use App\Core\Users\UserRepository as CoreUserRepository;
+use App\Core\Users\UserService;
 use App\Core\Database\PdoFactory;
 use App\Http\View\View;
 
@@ -132,6 +134,91 @@ return [
         $id=(int) ($params['id'] ?? 0);
         try { $pdo=PdoFactory::make($config['database']); $service=new TenantService(new TenantRepository($pdo)); $ok=$service->changeStatus($id,(string)($_POST['status'] ?? '')); } catch (\Throwable) { $ok=false; }
         header('Location: '.($ok ? '/tenants?ok=2' : '/tenants?error=1'));
+    },
+
+    'GET /users' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null;
+        $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new UserService(new CoreUserRepository($pdo));
+            $users = $service->listUsers();
+        } catch (\Throwable) {
+            $users = [];
+            $errorMessage = 'No se pudo guardar el usuario.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', [
+            'title' => 'Usuarios | Ecosistema Core Admin',
+            'contentView' => 'pages/users/index',
+            'auth' => AuthSession::getAuth(),
+            'csrfToken' => AuthSession::getCsrfToken(),
+            'contentData' => compact('users', 'statusMessage', 'errorMessage'),
+        ]);
+    },
+
+    'GET /users/create' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new UserService(new CoreUserRepository($pdo));
+            $tenants = $service->listTenants();
+        } catch (\Throwable) {
+            $tenants = [];
+        }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Crear usuario | Ecosistema Core Admin', 'contentView' => 'pages/users/create', 'auth' => AuthSession::getAuth(), 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('tenants')]);
+    },
+
+    'POST /users' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->createUser($_POST);} catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        header('Location: '.($message === 'Usuario creado correctamente.' ? '/users?ok='.urlencode($message) : '/users/create?error='.urlencode($message)));
+    },
+
+    'GET /users/{id}/edit' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $id = (int) ($params['id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $user = $service->findUser($id); $tenants = $service->listTenants(); } catch (\Throwable) { $user = null; $tenants = []; }
+        if ($user === null) { http_response_code(404); echo 'Usuario no encontrado.'; return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Editar usuario | Ecosistema Core Admin', 'contentView' => 'pages/users/edit', 'auth' => AuthSession::getAuth(), 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('user','tenants')]);
+    },
+
+    'POST /users/{id}' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id = (int) ($params['id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->updateUser($id, $_POST);} catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        header('Location: '.(($message === 'Usuario actualizado correctamente.') ? '/users?ok='.urlencode($message) : ($message === 'Usuario no encontrado.' ? '/users?error='.urlencode($message) : '/users/'.$id.'/edit?error='.urlencode($message))));
+    },
+
+    'POST /users/{id}/status' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id = (int) ($params['id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->changeStatus($id, (string) ($_POST['status'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        header('Location: '.($message === 'Estado actualizado correctamente.' ? '/users?ok='.urlencode($message) : '/users?error='.urlencode($message)));
+    },
+
+    'POST /users/{id}/password' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id = (int) ($params['id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->updatePassword($id, (string) ($_POST['password'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        header('Location: '.($message === 'Contraseña actualizada correctamente.' ? '/users?ok='.urlencode($message) : '/users/'.$id.'/edit?error='.urlencode($message)));
     },
 
     'GET /login' => static function (array $config): void {

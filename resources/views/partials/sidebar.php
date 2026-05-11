@@ -2,7 +2,7 @@
   <nav class="eco-nav">
     <a href="/dashboard">Dashboard</a>
     <a href="/tenants">Tenants</a>
-    <a href="#">Usuarios</a>
+    <a href="/users">Usuarios</a>
     <a href="#">Roles</a>
     <a href="#">Permisos</a>
     <a href="#">Módulos</a>

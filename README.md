@@ -244,3 +244,30 @@ Este alcance mínimo solo permite listar mensajes, ver detalle y crear borradore
 - integración Cloud
 
 Los adjuntos quedan para un PR posterior de Cloud/Mail.
+
+## Cloud mínimo administrativo
+
+Rutas:
+- `/cloud`
+- `/cloud/files/{id}`
+- `/cloud/folders`
+- `/cloud/folders/create`
+
+Tablas usadas:
+- `cloud_files`
+- `cloud_folders`
+- `cloud_buckets` (relación por `bucket_id`)
+- `cloud_user_roots`
+
+Alcance actual:
+- Lista archivos existentes del usuario autenticado.
+- Muestra detalle administrativo del archivo.
+- Permite archivar y enviar a papelera (lógico) registros de `cloud_files`.
+- Lista carpetas y crea carpetas lógicas en `cloud_folders`.
+
+Pendiente (no implementado en este PR):
+- No sube archivos reales.
+- No descarga archivos desde S3.
+- No integra AWS SDK/S3 real.
+- No crea archivos físicos en servidor (`public/` o `storage/`).
+- Enforcement fino de permisos queda para un PR posterior.

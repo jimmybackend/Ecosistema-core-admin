@@ -26,6 +26,10 @@ use App\Core\System\AuditRepository;
 use App\Core\Mail\MailService;
 use App\Core\Mail\MailMessageRepository;
 use App\Core\Mail\MailboxRepository;
+use App\Core\Cloud\CloudFileRepository;
+use App\Core\Cloud\CloudFolderRepository;
+use App\Core\Cloud\CloudRootRepository;
+use App\Core\Cloud\CloudService;
 use App\Http\View\View;
 
 return [
@@ -426,6 +430,61 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->trash($tenantId,$userId,$id);} catch (\Throwable) { $message='Mensaje no encontrado.'; }
         header('Location: /mail?'.(($message==='Mensaje enviado a papelera.')?'ok=':'error=').urlencode($message));
+    },
+
+
+    'GET /cloud' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage')]);
+    },
+    'GET /cloud/files/{id}' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $file=$service->findFile($tenantId,$userId,$id);}catch(\Throwable){$file=null;}
+        if($file===null){http_response_code(404);} header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud detalle | Ecosistema Core Admin','contentView'=>'pages/cloud/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('file')]);
+    },
+    'POST /cloud/files/{id}/archive' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken=$_POST['_csrf']??null; if(!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)){http_response_code(419); echo 'CSRF token inválido.'; return;}
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->archiveFile($tenantId,$userId,$id);}catch(\Throwable){$message='Archivo no encontrado.';}
+        header('Location: /cloud?'.(($message==='Archivo actualizado correctamente.')?'ok=':'error=').urlencode($message));
+    },
+    'POST /cloud/files/{id}/trash' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken=$_POST['_csrf']??null; if(!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)){http_response_code(419); echo 'CSRF token inválido.'; return;}
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->trashFile($tenantId,$userId,$id);}catch(\Throwable){$message='Archivo no encontrado.';}
+        header('Location: /cloud?'.(($message==='Archivo enviado a papelera.')?'ok=':'error=').urlencode($message));
+    },
+    'GET /cloud/folders' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $folders=$service->listFolders($tenantId,$userId);}catch(\Throwable){$folders=[];$errorMessage='Carpeta no encontrada.';}
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud carpetas | Ecosistema Core Admin','contentView'=>'pages/cloud/folders','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('folders','statusMessage','errorMessage')]);
+    },
+    'GET /cloud/folders/create' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $roots=$service->listRoots($tenantId,$userId); $folders=$service->listFolders($tenantId,$userId);}catch(\Throwable){$roots=[];$folders=[];}
+        $errorMessage=$roots===[]?'No hay raíz Cloud activa para este usuario.':null;
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear carpeta Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/create-folder','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('roots','folders','errorMessage')]);
+    },
+    'POST /cloud/folders' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken=$_POST['_csrf']??null; if(!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)){http_response_code(419); echo 'CSRF token inválido.'; return;}
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->createFolder($tenantId,$userId,$_POST);}catch(\Throwable){$message='No se pudo guardar la carpeta.';}
+        header('Location: '.($message==='Carpeta creada correctamente.'?'/cloud/folders?ok='.urlencode($message):'/cloud/folders/create?error='.urlencode($message)));
+    },
+    'POST /cloud/folders/{id}/trash' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken=$_POST['_csrf']??null; if(!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)){http_response_code(419); echo 'CSRF token inválido.'; return;}
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->trashFolder($tenantId,$userId,$id);}catch(\Throwable){$message='Carpeta no encontrada.';}
+        header('Location: /cloud/folders?'.(($message==='Carpeta enviada a papelera.')?'ok=':'error=').urlencode($message));
     },
 
 

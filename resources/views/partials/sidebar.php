@@ -10,6 +10,6 @@
     <a href="/system/logs">Logs</a>
     <a href="/system/audit">Auditoría</a>
     <a href="/mail">Mail</a>
-    <a href="#">Cloud</a>
+    <a href="/cloud">Cloud</a>
   </nav>
 </aside>

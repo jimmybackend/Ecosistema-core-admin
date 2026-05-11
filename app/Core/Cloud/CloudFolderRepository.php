@@ -1,0 +1,9 @@
+<?php
+declare(strict_types=1);
+namespace App\Core\Cloud;
+use PDO;
+final readonly class CloudFolderRepository{public function __construct(private PDO $pdo){}
+public function listByUser(int $tenantId,int $userId): array{$stmt=$this->pdo->prepare('SELECT id, name, prefix, folder_type, access_type, found_in_s3, is_system, created_at FROM cloud_folders WHERE tenant_id = :tenant_id AND user_id = :user_id AND is_deleted = 0 ORDER BY created_at DESC, id DESC LIMIT 100');$stmt->execute([':tenant_id'=>$tenantId,':user_id'=>$userId]);return $stmt->fetchAll(PDO::FETCH_ASSOC)?:[];}
+public function findActiveByIdForUser(int $tenantId,int $userId,int $id): ?array{$stmt=$this->pdo->prepare('SELECT id, tenant_id, user_id, bucket_id, root_id, parent_folder_id, name, prefix, folder_type, access_type, found_in_s3, is_system, is_deleted, created_at FROM cloud_folders WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id AND is_deleted = 0 LIMIT 1');$stmt->execute([':id'=>$id,':tenant_id'=>$tenantId,':user_id'=>$userId]);$row=$stmt->fetch(PDO::FETCH_ASSOC);return is_array($row)?$row:null;}
+public function create(array $data): bool{$stmt=$this->pdo->prepare('INSERT INTO cloud_folders (tenant_id, user_id, bucket_id, root_id, parent_folder_id, name, prefix, folder_type, access_type, found_in_s3, is_system, is_deleted) VALUES (:tenant_id, :user_id, :bucket_id, :root_id, :parent_folder_id, :name, :prefix, :folder_type, :access_type, :found_in_s3, :is_system, :is_deleted)');return $stmt->execute($data);}
+public function trashByIdForUser(int $tenantId,int $userId,int $id): bool{$stmt=$this->pdo->prepare('UPDATE cloud_folders SET is_deleted = 1, deleted_at = NOW(), updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id AND is_system = 0 AND is_deleted = 0');return $stmt->execute([':id'=>$id,':tenant_id'=>$tenantId,':user_id'=>$userId])&&$stmt->rowCount()>0;}}

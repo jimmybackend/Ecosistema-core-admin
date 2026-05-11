@@ -56,11 +56,25 @@ composer smoke
 - 22 (SSH) restringido a IP administrativa.
 - MySQL/MariaDB no público salvo diseño explícito y seguro.
 
-## 9) Respaldo y operación
+
+## 9) SMTP (preparación segura)
+Configurar en `.env`:
+- `MAIL_HOST`
+- `MAIL_PORT`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+
+Validaciones y seguridad:
+- Confirmar `MAIL_SEND_ENABLED=false` hasta validar toda la configuración.
+- No usar credenciales personales de correo.
+- No poner secretos SMTP en README ni documentación pública.
+- Si más adelante se habilita SMTP real, validar firewall/reglas de salida del servidor hacia el proveedor SMTP.
+
+## 10) Respaldo y operación
 - Realizar backup antes de cambios relevantes.
 - Usar usuario de DB con privilegios mínimos para la aplicación.
 
-## No hacer en producción
+## 11) No hacer en producción
 - No commitear `.env`.
 - No usar `APP_DEBUG=true`.
 - No dejar `DB_PASSWORD=change-me`.

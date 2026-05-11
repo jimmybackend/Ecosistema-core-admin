@@ -56,6 +56,8 @@ $requiredFiles = [
     '.env.example',
     'public/assets/css/ecosistema-ui.css',
     'README.md',
+    'config/mail.php',
+    'resources/views/pages/mail/settings.php',
     'resources/views/pages/auth/login.php',
     'resources/views/pages/dashboard.php',
     'resources/views/pages/users/index.php',
@@ -98,7 +100,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
@@ -133,6 +135,7 @@ $requiredClasses = [
     'App\\Core\\Users\\UserRoleService',
     'App\\Http\\Response\\ErrorResponder',
     'App\\Core\\Auth\\AuthSession',
+    'App\\Core\\Mail\\MailConfig',
 ];
 
 foreach ($requiredClasses as $className) {

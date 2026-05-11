@@ -9,7 +9,7 @@ $summary = static function (mixed $json): string { $arr = json_decode((string)$j
   <p>Listado mínimo de mensajes por tenant/usuario autenticado. La autorización fina queda para PR posterior.</p>
   <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
   <?php if ($errorMessage): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
-  <article class="eco-card"><div style="margin-bottom:.75rem;"><a class="eco-button btn" href="/mail/compose">Nuevo borrador</a></div>
+  <article class="eco-card"><div style="margin-bottom:.75rem;"><a class="eco-button btn" href="/mail/compose">Nuevo borrador</a> <a class="eco-button btn" href="/mail/settings">Configuración SMTP</a></div>
   <table class="eco-table" style="width:100%"><thead><tr><th>ID</th><th>Dir</th><th>From</th><th>To</th><th>Subject</th><th>Flags</th><th>Fechas</th><th>Acciones</th></tr></thead><tbody>
   <?php if ($messages===[]): ?><tr><td colspan="8">No hay mensajes para mostrar.</td></tr><?php else: foreach($messages as $m): ?><tr>
     <td><?= e((string)$m['id']) ?></td><td><span class="eco-badge"><?= e((string)$m['direction']) ?></span></td><td><?= e((string)$m['from_address']) ?></td><td><?= e($summary($m['to_addresses'] ?? '')) ?></td><td><?= e((string)($m['subject'] ?? '')) ?></td>

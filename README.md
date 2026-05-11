@@ -31,7 +31,7 @@ composer dump-autoload
 - Auth: `/login`, `POST /logout`
 - Dashboard: `/dashboard`
 - Tenants: `/tenants`
-- Usuarios: `/users`
+- Usuarios: `/users`, `/users/{id}/roles`
 - Roles: `/roles`
 - Permisos: `/permissions`
 - Módulos: `/modules`
@@ -63,6 +63,7 @@ composer dump-autoload
 
 ## Limitaciones actuales
 - Se agregó autorización fina por permisos en rutas administrativas existentes mediante `requirePermission($config, $code)` con validación por `auth_user_id` y `auth_tenant_id` en sesión.
+- La asignación de roles de usuario usa la tabla real `core_user_roles` y reemplaza asignaciones dentro de transacción (DELETE + INSERT).
 - Mail **no** realiza envío real (sin SMTP/IMAP/POP productivo).
 - Cloud **no** integra S3 real ni AWS SDK.
 - Onboarding no ejecuta aprovisionamiento real.
@@ -72,7 +73,10 @@ composer dump-autoload
 - La validación consulta únicamente tablas reales: `core_user_roles`, `core_roles`, `core_role_permissions`, `core_permissions`.
 - Los permisos deben existir en `core_permissions` y estar asignados a roles en `core_role_permissions`.
 - Este repositorio **no** crea seeds automáticos, migraciones ni alta automática de permisos/roles/usuarios.
-- Este PR **no** implementa UI de asignación de roles a usuarios.
+- No se crean roles nuevos desde la pantalla de asignación.
+- No se crean permisos automáticamente ni seeds.
+- No hay auditoría automática específica para la asignación de roles todavía.
+- No hay UI avanzada de perfiles, grupos o jerarquías.
 
 ## Documentación del proyecto
 - `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`

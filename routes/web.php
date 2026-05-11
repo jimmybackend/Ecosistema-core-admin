@@ -13,6 +13,8 @@ use App\Core\Roles\RoleRepository;
 use App\Core\Roles\RoleService;
 use App\Core\Users\UserRepository as CoreUserRepository;
 use App\Core\Users\UserService;
+use App\Core\Users\UserRoleRepository;
+use App\Core\Users\UserRoleService;
 use App\Core\Permissions\PermissionRepository;
 use App\Core\Permissions\PermissionService;
 use App\Core\Permissions\RolePermissionService;
@@ -417,6 +419,62 @@ return [
         try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->updatePassword($id, (string) ($_POST['password'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.($message === 'Contraseña actualizada correctamente.' ? '/users?ok='.urlencode($message) : '/users/'.$id.'/edit?error='.urlencode($message)));
     },
+
+    'GET /users/{id}/roles' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'users.manage')) { return; }
+
+        $id = (int) ($params['id'] ?? 0);
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null;
+        $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new UserRoleService(new UserRoleRepository($pdo));
+            $user = $service->findUser($id);
+            if ($user === null) { http_response_code(404); echo 'Usuario no encontrado.'; return; }
+            $tenantId = (int) ($user['tenant_id'] ?? 0);
+            $roles = $service->listRolesForTenant($tenantId);
+            $assignedRoleIds = $service->listAssignedRoleIds($tenantId, $id);
+        } catch (\Throwable) {
+            $user = null;
+            $roles = [];
+            $assignedRoleIds = [];
+            $errorMessage = 'No se pudieron cargar los roles del usuario.';
+        }
+
+        if ($user === null) { http_response_code(404); echo 'Usuario no encontrado.'; return; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Roles de usuario | Ecosistema Core Admin', 'contentView' => 'pages/users/roles', 'auth' => AuthSession::getAuth(), 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('user', 'roles', 'assignedRoleIds', 'statusMessage', 'errorMessage')]);
+    },
+
+    'POST /users/{id}/roles' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'users.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken) ? $csrfToken : null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+
+        $id = (int) ($params['id'] ?? 0);
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new UserRoleService(new UserRoleRepository($pdo));
+            $user = $service->findUser($id);
+            if ($user === null) { header('Location: /users?error='.urlencode('Usuario no encontrado.')); return; }
+            $tenantId = (int) ($user['tenant_id'] ?? 0);
+            $auth = AuthSession::getAuth();
+            $assignedByUserId = isset($auth['user_id']) ? (int) $auth['user_id'] : null;
+            $message = $service->replaceUserRoles($tenantId, $id, $_POST['role_ids'] ?? [], $assignedByUserId);
+            header('Location: '.('/users/'.$id.'/roles?ok='.urlencode($message)));
+            return;
+        } catch (\Throwable) {
+            header('Location: '.('/users/'.$id.'/roles?error='.urlencode('No se pudieron guardar los roles del usuario.')));
+            return;
+        }
+    },
+
 
 
     'GET /mail' => static function (array $config): void {

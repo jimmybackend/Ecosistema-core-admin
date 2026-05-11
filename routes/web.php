@@ -13,6 +13,9 @@ use App\Core\Roles\RoleRepository;
 use App\Core\Roles\RoleService;
 use App\Core\Users\UserRepository as CoreUserRepository;
 use App\Core\Users\UserService;
+use App\Core\Permissions\PermissionRepository;
+use App\Core\Permissions\PermissionService;
+use App\Core\Permissions\RolePermissionService;
 use App\Core\Database\PdoFactory;
 use App\Http\View\View;
 
@@ -187,6 +190,57 @@ return [
         $id = (int) ($params['id'] ?? 0);
         try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->changeStatus($id, (string) ($_POST['status'] ?? '')); } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
         header('Location: '.($message==='Estado actualizado correctamente.' ? '/roles?ok='.urlencode($message) : '/roles?error='.urlencode($message)));
+    },
+
+
+    'GET /permissions' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        try { $pdo = PdoFactory::make($config['database']); $service = new PermissionService(new PermissionRepository($pdo)); $permissions = $service->listPermissions(); } catch (\Throwable) { $permissions=[]; $errorMessage='No se pudo guardar el permiso.'; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Permisos | Ecosistema Core Admin','contentView'=>'pages/permissions/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('permissions','statusMessage','errorMessage')]);
+    },
+    'GET /permissions/create' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $modules=$service->listModules(); } catch (\Throwable) { $modules=[]; }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear permiso | Ecosistema Core Admin','contentView'=>'pages/permissions/create','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('modules')]);
+    },
+    'POST /permissions' => static function (array $config): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->createPermission($_POST);} catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        header('Location: '.($message==='Permiso creado correctamente.'?'/permissions?ok='.urlencode($message):'/permissions/create?error='.urlencode($message)));
+    },
+    'GET /permissions/{id}/edit' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $permission=$service->findPermission($id); $modules=$service->listModules(); } catch (\Throwable) { $permission=null; $modules=[]; }
+        if($permission===null){ http_response_code(404); echo 'Permiso no encontrado.'; return; }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Editar permiso | Ecosistema Core Admin','contentView'=>'pages/permissions/edit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('permission','modules')]);
+    },
+    'POST /permissions/{id}' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->updatePermission($id,$_POST);} catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        header('Location: '.($message==='Permiso actualizado correctamente.'?'/permissions?ok='.urlencode($message):($message==='Permiso no encontrado.'?'/permissions?error='.urlencode($message):'/permissions/'.$id.'/edit?error='.urlencode($message))));
+    },
+    'POST /permissions/{id}/status' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id=(int)($params['id']??0); try { $pdo=PdoFactory::make($config['database']); $service=new PermissionService(new PermissionRepository($pdo)); $message=$service->changeStatus($id,(string)($_POST['status']??''));} catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        header('Location: '.($message==='Estado actualizado correctamente.'?'/permissions?ok='.urlencode($message):'/permissions?error='.urlencode($message)));
+    },
+    'GET /roles/{id}/permissions' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $id=(int)($params['id']??0); try{ $pdo=PdoFactory::make($config['database']); $service=new RolePermissionService(new PermissionRepository($pdo)); $data=$service->getRolePermissionsScreen($id);} catch (\Throwable) { $data=['role'=>null,'permissions'=>[],'assigned'=>[]]; }
+        if($data['role']===null){ http_response_code(404); echo 'Rol no encontrado.'; return; }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Permisos de rol | Ecosistema Core Admin','contentView'=>'pages/roles/permissions','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>$data]);
+    },
+    'POST /roles/{id}/permissions' => static function (array $config, array $params): void {
+        AuthSession::start((string) $config['app']['session']['name'], (bool) $config['app']['session']['secure']); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!AuthSession::validateCsrfToken(is_string($csrfToken)?$csrfToken:null)) { http_response_code(419); echo 'CSRF token inválido.'; return; }
+        $id=(int)($params['id']??0); try{ $pdo=PdoFactory::make($config['database']); $service=new RolePermissionService(new PermissionRepository($pdo)); $message=$service->replaceRolePermissions($id,(array)($_POST['permission_ids']??[])); } catch (\Throwable) { $message='No se pudo guardar el permiso.'; }
+        header('Location: '.($message==='Permisos del rol actualizados correctamente.'?'/roles/'.$id.'/permissions?ok='.urlencode($message):'/roles/'.$id.'/permissions?error='.urlencode($message)));
     },
 
     'GET /users' => static function (array $config): void {

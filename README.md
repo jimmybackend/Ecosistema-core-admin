@@ -69,6 +69,11 @@ composer dump-autoload
 - Onboarding no ejecuta aprovisionamiento real.
 - No hay workers/cron ni API separada en este repositorio.
 
+- Auditoría automática mínima en acciones críticas de core administrativo (tenants/users/roles/permissions/modules) usando la tabla real `core_audit`.
+- Seguridad de auditoría: no se registran contraseñas, `password_hash`, `session_token_hash`, `refresh_token_hash` ni secretos de entorno.
+- Limitación vigente: Mail, Cloud y Onboarding quedan fuera de esta ampliación de auditoría; tampoco se agregan exportaciones ni filtros avanzados nuevos.
+
+
 ## Notas de autorización por permisos
 - La validación consulta únicamente tablas reales: `core_user_roles`, `core_roles`, `core_role_permissions`, `core_permissions`.
 - Los permisos deben existir en `core_permissions` y estar asignados a roles en `core_role_permissions`.

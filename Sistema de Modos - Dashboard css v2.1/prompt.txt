@@ -1,0 +1,345 @@
+Crear un sistema CSS completo para una aplicación web con las siguientes características:
+
+MODOS DE VISUALIZACIÓN:
+- Modo Claro (default)
+- Modo Oscuro
+- Modos de Accesibilidad para problemas visuales:
+  * Alto contraste
+  * Protanopia (daltonismo rojo-verde)
+  * Deuteranopia (daltonismo rojo-verde)
+  * Tritanopia (daltonismo azul-amarillo)
+  * Modo lectura (tipografía optimizada)
+  * Modo bajo brillo (para sensibilidad a la luz)
+  * Modo dislexia (tipografía especial)
+
+COMPONENTES HTML A ESTILIZAR - FORMULARIOS:
+- Inputs (text, email, password, number, date, time, datetime-local, month, week, tel, url, search, color, range, file, hidden)
+- Textarea (multiline)
+- Select (dropdown) y Select múltiple
+- Checkboxes y Radio buttons
+- Switches/Toggles
+- Labels con diferentes estados
+- Fieldset y Legend
+- Form validation (success, error, warning states)
+- Placeholder styles
+- Disabled y Readonly states
+- Required fields indicators
+- Input groups (con iconos o texto adicional)
+- Autocomplete suggestions
+
+COMPONENTES HTML - BOTONES Y ACCIONES:
+- Botones (button, submit, reset, link)
+- Botones con tamaños (small, medium, large, xlarge)
+- Botones con variantes (primary, secondary, success, warning, danger, info, light, dark, outline)
+- Botones con iconos
+- Botones grupales (button groups)
+- Dropdown buttons
+- Split buttons
+- Floating action buttons
+- Back to top button
+
+COMPONENTES HTML - NAVEGACIÓN:
+- Navigation bars (navbar)
+- Breadcrumbs
+- Pagination
+- Tabs y Tab panels
+- Accordions (collapsible sections)
+- Tooltips
+- Popovers
+- Modals/Dialogs (con overlay)
+- Offcanvas/Side panels
+- Scrollspy navigation
+- Anchor links
+- Skip to content link
+
+COMPONENTES HTML - CONTENEDORES Y LAYOUT:
+- Cards con header, body, footer
+- Panels/Boxes
+- Wells
+- Jumbotron/Hero sections
+- Grid system (container, row, col)
+- Flexbox utilities
+- Masonry layout
+- Carousel/Sliders
+- Collapse/Expand sections
+- Progress bars
+- Spinners/Loaders
+- Skeleton screens
+- Badges y Pills
+- Chips/Tags
+- Avatars y User photos
+- Thumbnails
+
+COMPONENTES HTML - TABLAS:
+- Tables básicas
+- Tables striped
+- Tables bordered
+- Tables hover
+- Tables condensed/compact
+- Tables responsive (scroll horizontal)
+- Table headers (thead)
+- Table body (tbody)
+- Table footer (tfoot)
+- Table captions
+- Table sorting indicators
+- Table empty states
+- Table loading states
+- Table action buttons
+
+COMPONENTES HTML - LISTAS:
+- Unordered lists (ul)
+- Ordered lists (ol)
+- Definition lists (dl, dt, dd)
+- List groups
+- List with icons
+- List with avatars
+- List with badges
+- Nested lists
+- Inline lists
+- Description lists
+
+COMPONENTES HTML - ALERTAS Y NOTIFICACIONES:
+- Alertas básicas (success, info, warning, danger)
+- Alertas con iconos
+- Alertas dismissible (con botón de cerrar)
+- Alertas con links
+- Toast notifications (toasts posicionables)
+- Snackbar notifications
+- Growl notifications
+- Banner alerts (top/bottom)
+- Inline alerts
+- Page-level alerts
+- Empty states messages
+- Error pages (404, 500, etc.)
+- Maintenance mode page
+- Loading states
+- Skeleton placeholders
+
+COMPONENTES HTML - FEEDBACK Y ESTADOS:
+- Loading spinners (varios tamaños)
+- Progress bars (determinate e indeterminate)
+- Skeleton screens
+- Empty states illustrations
+- Error states
+- Success states
+- Confirmation dialogs
+- Status indicators (online/offline)
+- Connection status
+
+COMPONENTES HTML - MEDIA:
+- Images (responsive, rounded, circle, thumbnail)
+- Image galleries
+- Lightbox/Modal image viewer
+- Videos (responsive embed)
+- Audio players
+- Icons (SVG, Font icons)
+- Icon buttons
+- Avatar stacks
+- File upload previews
+
+COMPONENTES HTML - TEXTO Y TYPOGRAFÍA:
+- Headings (h1-h6)
+- Display headings
+- Lead paragraphs
+- Small text
+- Marked/highlighted text
+- Deleted text
+- Inserted text
+- Cited text
+- Blockquotes
+- Code blocks
+- Preformatted text
+- Keyboard input
+- Variables
+- Sample output
+- Abbreviations
+- Initialism
+- Address
+- Text alignment utilities
+- Text transformation utilities
+- Text decoration utilities
+- Font weight utilities
+- Line height utilities
+- Letter spacing
+- Word break
+- Text overflow (ellipsis)
+
+COMPONENTES HTML - UTILITIES Y CLASES:
+- Spacing (margin, padding)
+- Display utilities (block, inline, flex, grid, none)
+- Position utilities (static, relative, absolute, fixed, sticky)
+- Float utilities
+- Clearfix
+- Sizing utilities (width, height)
+- Overflow utilities
+- Shadow utilities
+- Border utilities
+- Border radius utilities
+- Opacity utilities
+- Z-index utilities
+- Visibility utilities
+- Screen reader only classes
+- Print utilities
+- Responsive utilities (d-none, d-sm-block, etc.)
+
+ESTRUCTURA DE PÁGINA COMPLETA:
+1. HEADER (parte superior):
+   - Logo/branding
+   - Search bar
+   - Información de usuario (nombre + foto de perfil)
+   - Dropdown de usuario (perfil, settings, logout)
+   - Menú de notificaciones (con contador)
+   - Menú de mensajes (con contador)
+   - Botón de configuración de modos
+   - Botón de ayuda/support
+   - Language selector
+   - Fullscreen toggle
+
+2. SIDEBAR (izquierda, desplegable):
+   - Logo/brand compacto (en versión colapsada)
+   - Título principal del menú
+   - Secciones con subtítulos/dividers
+   - Items de menú con iconos y texto
+   - Items de menú con badges/contadores
+   - Submenús anidados (collapsible)
+   - Estados activos/hover/focus
+   - Animación de despliegue suave
+   - Toggle button para colapsar/expandir
+   - Footer del sidebar (versión, shortcuts)
+
+3. MAIN CONTENT AREA (derecha del sidebar):
+   - Breadcrumb navigation
+   - Page title y actions
+   - Dashboard widgets/cards
+   - Charts y gráficos
+   - Statistics counters
+   - Recent activity feed
+   - Data tables
+   - Forms y form wizards
+   - Tab content
+   - Accordions
+   - Modals triggers
+   - Empty states
+   - Loading states
+
+4. FOOTER (parte inferior):
+   - Logo/company name
+   - Descripción breve
+   - Enlaces rápidos (About, Contact, FAQ, Help)
+   - Enlaces legales (Privacy Policy, Terms, Cookies)
+   - Copyright notice
+   - Social media links/icons
+   - Language selector
+   - Theme mode toggle
+   - Scroll to top button
+   - Version number
+   - Support contact info
+
+COMPONENTES ADICIONALES:
+- Login/Register pages
+- Forgot password page
+- Profile page
+- Settings page
+- 404 Error page
+- 500 Error page
+- Maintenance page
+- Coming soon page
+- Landing page hero section
+- Pricing tables
+- Feature lists
+- Testimonials
+- Team members section
+- FAQ accordion
+- Contact form
+- Map embed
+- Cookie consent banner
+
+RESPONSIVE DESIGN - BREAKPOINTS:
+- Extra small (xs): < 576px (Mobile portrait)
+- Small (sm): ≥ 576px (Mobile landscape)
+- Medium (md): ≥ 768px (Tablet portrait)
+- Large (lg): ≥ 992px (Tablet landscape/Desktop small)
+- Extra large (xl): ≥ 1200px (Desktop)
+- Extra extra large (xxl): ≥ 1400px (Large desktop)
+
+COMPORTAMIENTOS RESPONSIVE:
+- Mobile First approach
+- Sidebar se convierte en offcanvas/drawer en mobile
+- Header se simplifica en mobile
+- Tables se vuelven scrollable horizontal en mobile
+- Cards stack en columnas en mobile
+- Navigation se convierte en hamburger menu
+- Forms se adaptan a pantallas pequeñas
+- Images son responsive por defecto
+- Touch targets mínimos de 44x44px
+- Gestures support (swipe, tap, long press)
+
+ESTILOS ADICIONALES:
+- Smooth transitions entre modos (fade, slide)
+- CSS Variables para colores, espaciados, tipografía
+- Dark mode variables separadas
+- Accessibility variables (focus rings, contrast ratios)
+- Sistema de grid CSS Grid + Flexbox
+- Tipografía escalable (rem units)
+- Line heights óptimos para lectura
+- Hover effects suaves (transition: all 0.3s ease)
+- Focus states visibles y accesibles
+- Active states para feedback
+- Disabled states grises y no interactivos
+- Print styles optimizados
+- Animaciones CSS keyframes (loading, fade, slide)
+- Custom scrollbars
+- Selection colors personalizados
+- Placeholder styles
+- File upload drag & drop styles
+
+REQUISITOS TÉCNICOS:
+- CSS Custom Properties (Variables) para fácil mantenimiento
+- CSS Grid y Flexbox modernos
+- Prefijos vendor (-webkit-, -moz-, -ms-) donde necesarios
+- Fallback para navegadores antiguos
+- Progressive enhancement
+- Optimización de performance (will-change, transform)
+- Critical CSS inline para first paint rápido
+- Lazy loading styles
+- Print media queries
+- Dark mode con prefers-color-scheme
+- Reduced motion support (@media (prefers-reduced-motion))
+- High contrast mode support
+- Forced colors mode support (Windows HC)
+- Accesibilidad WCAG 2.1 AA compliance
+- Semantic HTML compatible
+- ARIA attributes support
+- Keyboard navigation friendly
+- Screen reader friendly
+- Color contrast mínimo 4.5:1 para texto normal
+- Focus indicators visibles
+- Skip navigation links
+- Landmark roles styling
+
+ORGANIZACIÓN DEL CSS:
+- Archivo de variables (colors, spacing, typography, etc.)
+- Archivo de mixins/utilities
+- Archivo de resets/normalizes
+- Archivo de base (body, headings, paragraphs)
+- Archivo de componentes (buttons, cards, forms, etc.)
+- Archivo de layout (header, sidebar, footer)
+- Archivo de utilities (spacing, display, etc.)
+- Archivo de themes (light, dark, accessibility modes)
+- Archivo de responsive (breakpoints)
+- Archivo de animations
+- Archivo de print styles
+
+NOTAS ADICIONALES:
+- Todos los colores deben estar en variables CSS
+- Todos los tamaños deben usar rem o em units
+- Transiciones de 0.3s con ease-in-out
+- Box-sizing: border-box global
+- Reset CSS moderno (normalize.css o similar)
+- Font smoothing optimizado
+- Subpixel rendering
+- Text rendering optimizado
+- Image rendering optimizado
+- Backface visibility hidden para animaciones
+- Will-change para elementos animados
+- Hardware acceleration donde sea necesario

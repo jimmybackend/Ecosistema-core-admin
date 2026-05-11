@@ -11,5 +11,8 @@
     }
   },
   "minimum-stability": "stable",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "scripts": {
+    "smoke": "php scripts/smoke-check.php"
+  }
 }

@@ -4,7 +4,7 @@ Este repositorio contiene la aplicación operativa/admin **Ecosistema Core Admin
 
 ## Estado actual
 
-Este PR corresponde a **Crear dashboard**.
+Este PR corresponde a **Crear tenants**.
 
 ## Incluye
 
@@ -81,3 +81,24 @@ Rutas:
 - Dashboard autenticado: <http://127.0.0.1:8000/dashboard>
 - Login real: <http://127.0.0.1:8000/login>
 - Health PDO técnico: <http://127.0.0.1:8000/health/db>
+
+
+## Tenants (alcance actual)
+
+Rutas protegidas por sesión autenticada (sin roles/permisos aún):
+
+- `GET /tenants`
+- `GET /tenants/create`
+- `POST /tenants`
+- `GET /tenants/{id}/edit`
+- `POST /tenants/{id}`
+- `POST /tenants/{id}/status`
+
+Este módulo usa exclusivamente la tabla real `core_tenants` y estos campos:
+
+- `id`, `name`, `slug`, `legal_name`, `domain`, `plan_code`, `status`, `timezone`, `locale`, `created_at`, `updated_at`
+
+Pendiente para PR posterior:
+
+- Autorización fina por roles/permisos.
+- Creación automática de usuarios, roles o módulos al crear tenant (no implementado).

@@ -25,8 +25,30 @@ return [
         $routeKey = strtoupper($method) . ' ' . $path;
 
         if (isset($routes[$routeKey]) && is_callable($routes[$routeKey])) {
-            $routes[$routeKey]($config);
+            $routes[$routeKey]($config, []);
             return;
+        }
+
+        foreach ($routes as $key => $handler) {
+            if (!is_callable($handler)) {
+                continue;
+            }
+
+            [$routeMethod, $routePath] = explode(' ', $key, 2);
+            if ($routeMethod !== strtoupper($method)) {
+                continue;
+            }
+
+            $pattern = preg_replace('#\{([a-zA-Z_][a-zA-Z0-9_]*)\}#', '(?P<$1>[^/]+)', $routePath);
+            if (!is_string($pattern)) {
+                continue;
+            }
+
+            if (preg_match('#^' . $pattern . '$#', $path, $matches) === 1) {
+                $params = array_filter($matches, static fn ($k): bool => is_string($k), ARRAY_FILTER_USE_KEY);
+                $handler($config, $params);
+                return;
+            }
         }
 
         http_response_code(404);

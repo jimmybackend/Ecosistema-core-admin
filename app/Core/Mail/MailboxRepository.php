@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\Mail;
+
+use PDO;
+
+final readonly class MailboxRepository
+{
+    public function __construct(private PDO $pdo)
+    {
+    }
+
+    public function listActiveByUser(int $tenantId, int $userId): array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, tenant_id, user_id, full_address, display_name, status FROM mail_mailboxes WHERE tenant_id = :tenant_id AND user_id = :user_id AND status = :status ORDER BY id DESC LIMIT 100');
+        $stmt->execute([':tenant_id' => $tenantId, ':user_id' => $userId, ':status' => 'active']);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function findActiveById(int $tenantId, int $userId, int $mailboxId): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT id, tenant_id, user_id, full_address, status FROM mail_mailboxes WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id AND status = :status LIMIT 1');
+        $stmt->execute([':id' => $mailboxId, ':tenant_id' => $tenantId, ':user_id' => $userId, ':status' => 'active']);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
+    public function findDraftFolderId(int $tenantId, int $mailboxId): ?int
+    {
+        $stmt = $this->pdo->prepare('SELECT id FROM mail_folders WHERE tenant_id = :tenant_id AND mailbox_id = :mailbox_id AND system_name = :system_name ORDER BY id ASC LIMIT 1');
+        $stmt->execute([':tenant_id' => $tenantId, ':mailbox_id' => $mailboxId, ':system_name' => 'drafts']);
+        $id = $stmt->fetchColumn();
+        return $id === false ? null : (int) $id;
+    }
+}

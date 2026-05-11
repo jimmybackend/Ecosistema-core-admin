@@ -9,7 +9,7 @@
     <a href="/system/health">Health</a>
     <a href="/system/logs">Logs</a>
     <a href="/system/audit">Auditoría</a>
-    <a href="#">Mail</a>
+    <a href="/mail">Mail</a>
     <a href="#">Cloud</a>
   </nav>
 </aside>

@@ -1,0 +1,72 @@
+# EC2 Production Deployment Checklist (Core Admin)
+
+> Objetivo: preparar y validar despliegue seguro de **Ecosistema Core Admin** en entorno EC2/producción.
+> Alcance: guía operativa y de verificación. **No reemplaza** hardening completo, monitoreo continuo ni pruebas integrales de negocio.
+
+## 1) Requisitos mínimos
+- PHP **8.3+** (compatible con `composer.json`).
+- Composer instalado en servidor.
+- Servidor web: Nginx o Apache.
+- Extensiones PHP necesarias: al menos `pdo_mysql`.
+- MySQL/MariaDB accesible para la app.
+
+## 2) Preparar código
+```bash
+git clone <repo-url>
+cd Ecosistema-core-admin
+cp .env.example .env
+```
+
+## 3) Configurar variables de entorno (`.env`)
+Revisar y ajustar como mínimo:
+- `APP_ENV=production`
+- `APP_DEBUG=false`
+- `APP_URL=https://tu-dominio.example`
+- `TIMEZONE=America/Mexico_City` (si aplica a tu operación)
+- `DB_HOST`, `DB_PORT`, `DB_DATABASE=adbbmis1_eco`, `DB_USERNAME`, `DB_PASSWORD`
+- `SESSION_NAME=ecosistema_core_admin`
+- `SESSION_SECURE=true` (requiere HTTPS activo)
+- `SESSION_SAMESITE=Lax`
+- `SESSION_IDLE_TIMEOUT=1800`
+
+## 4) Instalar dependencias y validar autoload
+```bash
+composer install --no-dev --optimize-autoloader
+composer dump-autoload
+composer smoke
+```
+
+## 5) Configuración web server
+- Apuntar `DocumentRoot` (Apache) o `root` (Nginx) a `public/`.
+- No exponer la raíz del repositorio.
+- Confirmar HTTPS operativo **antes** de usar `SESSION_SECURE=true`.
+
+## 6) Permisos mínimos de carpetas
+- Aplicar permisos mínimos requeridos por tu distro/stack para lectura de código y ejecución del runtime PHP.
+- Evitar permisos globales (ej. `777`) en producción.
+
+## 7) Verificaciones funcionales mínimas post-deploy
+- Validar `/login`.
+- Validar que `/dashboard` sin sesión redirige a `/login`.
+- Validar `/health/db`.
+- Revisar logs del servidor web y logs de PHP ante cualquier error.
+
+## 8) Seguridad de red (Security Group / firewall)
+- 80/443 públicos solo según necesidad de exposición.
+- 22 (SSH) restringido a IP administrativa.
+- MySQL/MariaDB no público salvo diseño explícito y seguro.
+
+## 9) Respaldo y operación
+- Realizar backup antes de cambios relevantes.
+- Usar usuario de DB con privilegios mínimos para la aplicación.
+
+## No hacer en producción
+- No commitear `.env`.
+- No usar `APP_DEBUG=true`.
+- No dejar `DB_PASSWORD=change-me`.
+- No exponer `/vendor` públicamente.
+- No apuntar servidor web a la raíz del repo.
+- No abrir MySQL al mundo.
+- No usar credenciales root de MySQL para la app.
+- No guardar secretos en README ni documentación pública.
+- No ejecutar seeds de prueba en producción.

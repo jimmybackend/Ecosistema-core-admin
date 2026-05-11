@@ -97,6 +97,32 @@ if (is_file($envExample)) {
     } else {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
+
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE='];
+    foreach ($requiredEnvKeys as $requiredEnvKey) {
+        if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
+            ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
+        } else {
+            fail('.env.example no contiene variable clave: ' . rtrim($requiredEnvKey, '='), $criticalFailures);
+        }
+    }
+}
+
+$deployChecklistPaths = [
+    'docs/deploy/EC2_PRODUCTION_CHECKLIST.md',
+    'docs/project/ECOSISTEMA_CORE_ADMIN_DEPLOY_EC2.md',
+];
+$deployChecklistFound = false;
+foreach ($deployChecklistPaths as $deployChecklistPath) {
+    if (is_file($root . '/' . $deployChecklistPath)) {
+        $deployChecklistFound = true;
+        ok('Existe checklist de despliegue: ' . $deployChecklistPath);
+        break;
+    }
+}
+
+if (!$deployChecklistFound) {
+    fail('No se encontró checklist de despliegue EC2/producción en docs/deploy o docs/project.', $criticalFailures);
 }
 
 $requiredClasses = [

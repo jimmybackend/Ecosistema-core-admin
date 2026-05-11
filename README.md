@@ -10,6 +10,9 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Tablas reales usadas](#tablas-reales-usadas)
 - [Limitaciones actuales](#limitaciones-actuales)
 - [Documentación del proyecto](#documentación-del-proyecto)
+- [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
+- [Comandos rápidos](#comandos-rápidos)
+- [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
 
 ## Resumen
 Incluye autenticación real, sesión persistida, dashboard, gestión base de tenants/usuarios/roles/permisos/módulos y módulos mínimos de system, mail, cloud y onboarding.
@@ -151,3 +154,19 @@ Limitaciones vigentes:
 - No se agregó monitoreo externo.
 - No se implementó tracking avanzado de excepciones.
 - No se implementó observabilidad completa.
+
+
+## Checklist de despliegue EC2/producción
+- Ver guía: `docs/deploy/EC2_PRODUCTION_CHECKLIST.md`.
+
+## Comandos rápidos
+```bash
+composer install
+composer dump-autoload
+composer smoke
+```
+
+## Notas de seguridad para producción
+- No commitear `.env` ni secretos reales.
+- No publicar contraseñas, tokens o credenciales en README/documentación.
+- Configurar el `DocumentRoot`/`root` del servidor web hacia `public/` (no a la raíz del repositorio).

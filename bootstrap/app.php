@@ -20,11 +20,12 @@ $routes = require __DIR__ . '/../routes/web.php';
 return [
     'config' => $config,
     'db' => static fn () => PdoFactory::make($config['database']),
-    'router' => static function (string $uri) use ($routes, $config): void {
+    'router' => static function (string $uri, string $method) use ($routes, $config): void {
         $path = parse_url($uri, PHP_URL_PATH) ?: '/';
+        $routeKey = strtoupper($method) . ' ' . $path;
 
-        if (isset($routes[$path]) && is_callable($routes[$path])) {
-            $routes[$path]($config);
+        if (isset($routes[$routeKey]) && is_callable($routes[$routeKey])) {
+            $routes[$routeKey]($config);
             return;
         }
 

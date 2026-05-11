@@ -14,4 +14,4 @@ $app = require __DIR__ . '/../bootstrap/app.php';
 /** @var callable $router */
 $router = $app['router'];
 
-$router($_SERVER['REQUEST_URI'] ?? '/');
+$router($_SERVER['REQUEST_URI'] ?? '/', $_SERVER['REQUEST_METHOD'] ?? 'GET');

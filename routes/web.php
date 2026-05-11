@@ -6,7 +6,7 @@ use App\Core\Database\PdoFactory;
 use App\Http\View\View;
 
 return [
-    '/' => static function (array $config): void {
+    'GET /' => static function (array $config): void {
         header('Content-Type: text/html; charset=UTF-8');
 
         View::render('layouts.admin', [
@@ -16,7 +16,30 @@ return [
         ]);
     },
 
-    '/health/db' => static function (array $config): void {
+    'GET /login' => static function (): void {
+        header('Content-Type: text/html; charset=UTF-8');
+
+        View::render('layouts.auth', [
+            'title' => 'Login visual | Ecosistema Core Admin',
+            'contentView' => 'pages/auth/login',
+            'contentData' => [],
+        ]);
+    },
+
+    'POST /login' => static function (): void {
+        header('Content-Type: text/html; charset=UTF-8');
+        http_response_code(501);
+
+        View::render('layouts.auth', [
+            'title' => 'Login visual | Ecosistema Core Admin',
+            'contentView' => 'pages/auth/login',
+            'contentData' => [
+                'statusMessage' => 'Autenticación no implementada aún. Este formulario es visual y se conectará con core_users en el siguiente PR.',
+            ],
+        ]);
+    },
+
+    'GET /health/db' => static function (array $config): void {
         header('Content-Type: text/html; charset=UTF-8');
 
         try {

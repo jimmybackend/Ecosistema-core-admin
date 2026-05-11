@@ -74,7 +74,22 @@ Validaciones y seguridad:
 - Realizar backup antes de cambios relevantes.
 - Usar usuario de DB con privilegios mínimos para la aplicación.
 
-## 11) No hacer en producción
+## 11) Cloud/S3 (preparación segura)
+Configurar en `.env`:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_DEFAULT_REGION`
+- `AWS_BUCKET`
+
+Validaciones y seguridad:
+- Confirmar `CLOUD_S3_ENABLED=false` hasta validar toda la implementación real.
+- Confirmar `CLOUD_ALLOW_DOWNLOADS=false` y `CLOUD_ALLOW_UPLOADS=false` hasta implementación real.
+- No usar usuario root de AWS.
+- Usar IAM dedicado con permisos mínimos.
+- No poner secretos en README ni documentación pública.
+- Revisar políticas de bucket antes de habilitar producción.
+
+## 12) No hacer en producción
 - No commitear `.env`.
 - No usar `APP_DEBUG=true`.
 - No dejar `DB_PASSWORD=change-me`.

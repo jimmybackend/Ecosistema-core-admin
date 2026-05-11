@@ -15,6 +15,7 @@ $config = [
     'app' => require __DIR__ . '/../config/app.php',
     'database' => require __DIR__ . '/../config/database.php',
     'mail' => require __DIR__ . '/../config/mail.php',
+    'cloud' => require __DIR__ . '/../config/cloud.php',
 ];
 
 $routes = require __DIR__ . '/../routes/web.php';

@@ -57,7 +57,10 @@ $requiredFiles = [
     'public/assets/css/ecosistema-ui.css',
     'README.md',
     'config/mail.php',
+    'config/cloud.php',
     'resources/views/pages/mail/settings.php',
+    'resources/views/pages/cloud/settings.php',
+    'app/Core/Cloud/CloudStorageConfig.php',
     'resources/views/pages/mail/show.php',
     'app/Core/Mail/MailAttachmentRepository.php',
     'app/Core/Mail/MailAttachmentService.php',
@@ -103,7 +106,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
@@ -139,6 +142,7 @@ $requiredClasses = [
     'App\\Http\\Response\\ErrorResponder',
     'App\\Core\\Auth\\AuthSession',
     'App\\Core\\Mail\\MailConfig',
+    'App\\Core\\Cloud\\CloudStorageConfig',
 ];
 
 foreach ($requiredClasses as $className) {

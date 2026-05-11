@@ -156,6 +156,27 @@ Limitaciones vigentes:
 - No se implementó observabilidad completa.
 
 
+
+## Configuración SMTP segura (PR #26)
+Variables disponibles en `.env`/`.env.example`:
+- `MAIL_MAILER`
+- `MAIL_HOST`
+- `MAIL_PORT`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+- `MAIL_ENCRYPTION`
+- `MAIL_FROM_ADDRESS`
+- `MAIL_FROM_NAME`
+- `MAIL_SEND_ENABLED`
+- `MAIL_ALLOW_TEST_SEND`
+
+Notas clave:
+- `MAIL_SEND_ENABLED=false` por defecto para mantener deshabilitado el envío real.
+- Este PR **no envía correos reales** y **no implementa envío masivo**.
+- SMTP real (conexión/envío de pruebas) se habilitará en un PR posterior.
+- No commitear secretos ni contraseñas SMTP reales.
+- Usar credenciales SMTP dedicadas y de bajo privilegio (no personales).
+
 ## Checklist de despliegue EC2/producción
 - Ver guía: `docs/deploy/EC2_PRODUCTION_CHECKLIST.md`.
 

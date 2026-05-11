@@ -29,6 +29,7 @@ use App\Core\System\AuditLogger;
 use App\Core\Mail\MailService;
 use App\Core\Mail\MailMessageRepository;
 use App\Core\Mail\MailboxRepository;
+use App\Core\Mail\MailConfig;
 use App\Core\Cloud\CloudFileRepository;
 use App\Core\Cloud\CloudFolderRepository;
 use App\Core\Cloud\CloudRootRepository;
@@ -536,6 +537,21 @@ return [
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->findMessage($tenantId,$userId,$id);} catch (\Throwable) { $message=null; }
         if ($message===null) { http_response_code(404); }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail detalle | Ecosistema Core Admin','contentView'=>'pages/mail/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message')]);
+    },
+    'GET /mail/settings' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $auth = AuthSession::getAuth();
+        $mailConfig = new MailConfig($config['mail'] ?? []);
+        $smtp = $mailConfig->toSafeArray();
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',[
+            'title'=>'Configuración SMTP | Ecosistema Core Admin',
+            'contentView'=>'pages/mail/settings',
+            'auth'=>$auth,
+            'csrfToken'=>AuthSession::getCsrfToken(),
+            'contentData'=>compact('smtp'),
+        ]);
     },
     'GET /mail/compose' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

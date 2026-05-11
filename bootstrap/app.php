@@ -14,6 +14,7 @@ Env::load(__DIR__ . '/../.env');
 $config = [
     'app' => require __DIR__ . '/../config/app.php',
     'database' => require __DIR__ . '/../config/database.php',
+    'mail' => require __DIR__ . '/../config/mail.php',
 ];
 
 $routes = require __DIR__ . '/../routes/web.php';

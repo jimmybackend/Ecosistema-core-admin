@@ -5,6 +5,8 @@ declare(strict_types=1);
 $title = $title ?? 'Ecosistema Core Admin';
 $contentView = $contentView ?? 'pages/home';
 $contentData = $contentData ?? [];
+$auth = $auth ?? [];
+$csrfToken = $csrfToken ?? '';
 ?>
 <!doctype html>
 <html lang="es">

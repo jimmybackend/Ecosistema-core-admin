@@ -1,0 +1,5 @@
+<?php $role=$contentData['role']??null; $permissions=$contentData['permissions']??[]; $assigned=$contentData['assigned']??[]; $assignedMap=array_flip($assigned); ?>
+<section class="eco-card"><h1>Permisos del rol</h1><p>Rol: <strong><?= e((string)$role['name']) ?></strong> (<?= e((string)$role['code']) ?>)</p>
+<form method="post" action="/roles/<?= e((string)$role['id']) ?>/permissions"><input type="hidden" name="_csrf" value="<?= e((string)$csrfToken) ?>"><table class="eco-table"><thead><tr><th>Módulo</th><th>Code</th><th>Nombre</th><th>Action</th><th>Resource</th><th>Asignado</th></tr></thead><tbody>
+<?php foreach($permissions as $p): ?><tr><td><?= e((string)($p['module_name']??$p['module_code']??'')) ?></td><td><?= e((string)$p['code']) ?></td><td><?= e((string)$p['name']) ?></td><td><?= e((string)$p['action']) ?></td><td><?= e((string)$p['resource']) ?></td><td><input type="checkbox" name="permission_ids[]" value="<?= e((string)$p['id']) ?>" <?= isset($assignedMap[(int)$p['id']])?'checked':'' ?>></td></tr><?php endforeach; ?>
+</tbody></table><p><button class="eco-button btn" type="submit">Guardar permisos</button></p></form></section>

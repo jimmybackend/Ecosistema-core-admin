@@ -147,3 +147,28 @@ Pendiente para PR posterior:
 - Permisos y autorización fina por rol.
 - Asignación de permisos a roles.
 - Asignación de usuarios a roles.
+
+## Módulo Permisos (básico)
+
+Este módulo agrega gestión básica de permisos y asignación de permisos a roles.
+
+Rutas:
+- `GET /permissions`
+- `GET /permissions/create`
+- `POST /permissions`
+- `GET /permissions/{id}/edit`
+- `POST /permissions/{id}`
+- `POST /permissions/{id}/status`
+- `GET /roles/{id}/permissions`
+- `POST /roles/{id}/permissions`
+
+Tablas usadas:
+- `core_permissions` (CRUD lógico)
+- `core_role_permissions` (asignación por rol)
+- `core_modules` (sólo selección/visualización de módulo)
+- `core_roles` (validación/lectura básica de rol)
+
+Notas:
+- Todas las rutas del módulo requieren sesión autenticada.
+- Aún **no** se implementa enforcement global de autorización fina por permiso.
+- Aún **no** se asignan roles a usuarios desde este módulo.

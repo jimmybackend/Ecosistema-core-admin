@@ -66,6 +66,9 @@ $requiredFiles = [
     'app/Core/Cloud/EcosistemaDriveFolderRepository.php',
     'app/Core/Cloud/EcosistemaDriveRootRepository.php',
     'app/Core/Cloud/EcosistemaDriveRootService.php',
+    'resources/views/pages/cloud/drive-buckets.php',
+    'app/Core/Cloud/EcosistemaDriveBucketService.php',
+    'app/Core/Cloud/EcosistemaDriveBucketRepository.php',
     'resources/views/pages/cloud/drive-root.php',
     'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
     'docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md',
@@ -217,6 +220,13 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/drive/root en routes/web.php.', $criticalFailures);
     }
 
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/buckets")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/buckets para metadata read-only de buckets.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/buckets en routes/web.php.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/browse")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/browse para navegación read-only de carpetas/archivos.');
     } else {
@@ -255,6 +265,14 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta POST /mail/messages/{id}/prepare-send en routes/web.php.', $criticalFailures);
     }
 
+
+
+$adapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($adapterFile) && str_contains((string) file_get_contents($adapterFile), 'read_buckets_metadata')) {
+    ok('EcosistemaDriveAdapter declara capability read_buckets_metadata.');
+} else {
+    fail('EcosistemaDriveAdapter no declara capability read_buckets_metadata.', $criticalFailures);
+}
 
 $folderRepositoryFile = $root . '/app/Core/Cloud/EcosistemaDriveFolderRepository.php';
 if (is_file($folderRepositoryFile) && str_contains((string)file_get_contents($folderRepositoryFile), 'function listChildren(')) {
@@ -335,6 +353,14 @@ if (is_file($driveServiceFile)) {
     } else {
         fail('EcosistemaDriveFileService no contiene getFileDetail.', $criticalFailures);
     }
+}
+
+
+$adapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($adapterFile) && str_contains((string) file_get_contents($adapterFile), 'read_buckets_metadata')) {
+    ok('EcosistemaDriveAdapter declara capability read_buckets_metadata.');
+} else {
+    fail('EcosistemaDriveAdapter no declara capability read_buckets_metadata.', $criticalFailures);
 }
 
 $folderRepositoryFile = $root . '/app/Core/Cloud/EcosistemaDriveFolderRepository.php';

@@ -142,3 +142,18 @@ Ejemplo de cron (activar solo después de validar manualmente):
 ```cron
 * * * * * cd /var/www/ecosistema-core-admin && php scripts/cron-runner.php --run=health-checks >> storage/logs/cron-health.log 2>&1
 ```
+
+
+## 17) Cron limpieza de sesiones controlado (PR #34)
+- Probar primero en forma manual:
+  - `composer cron:check`
+  - `composer cron:sessions`
+- `cron:sessions` requiere DB real configurada en `.env` (`DB_DATABASE=adbbmis1_eco`).
+- Ejecutar cron con usuario Linux dedicado (**no root**).
+- Verificar permisos de escritura en `storage/logs` antes de redirigir salida.
+- No activar cron sin validar backup/configuración revisada y salida del comando manual.
+
+Ejemplo de cron (activar solo después de validar manualmente):
+```cron
+*/15 * * * * cd /var/www/ecosistema-core-admin && php scripts/cron-runner.php --run=session-cleanup >> storage/logs/cron-sessions.log 2>&1
+```

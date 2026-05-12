@@ -19,7 +19,9 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
    - Comando manual: `php scripts/cron-runner.php --run=health-checks`.
    - Alcance: solo checks seguros existentes con `check_type` `db/database`.
 2. **Limpieza de sesiones expiradas**
-   - Estado: pendiente/no implementado.
+   - Estado: **disponible (job controlado)**.
+   - Comando manual: `php scripts/cron-runner.php --run=session-cleanup`.
+   - Alcance: revoca sesiones de `core_sessions` vencidas por `expires_at` usando `SESSION_IDLE_TIMEOUT` (sin borrar usuarios/roles/permisos).
 3. **Limpieza/revisión de archivos temporales/locales**
    - Estado: pendiente/no implementado.
 4. **Procesamiento de mail saliente**
@@ -36,7 +38,8 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 ## 4. Estructura operativa mínima (actual)
 - `scripts/cron-runner.php`
   - `--check`: validación segura de estructura (sin DB).
-  - `--run=health-checks`: ejecuta primer job controlado.
+  - `--run=health-checks`: ejecuta job controlado de health checks.
+  - `--run=session-cleanup`: ejecuta job controlado de limpieza de sesiones expiradas.
   - Job desconocido => error controlado y `exit 1`.
 - `app/Core/System/CronHealthCheckRunner.php`
   - Runner acotado para ejecutar health checks seguros del módulo System.
@@ -54,6 +57,7 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 1. Ejecutar `composer cron:check`.
 2. Validar `.env` y conectividad DB real (`adbbmis1_eco`).
 3. Ejecutar `composer cron:health` manualmente.
-4. Revisar salida CLI y logs.
+4. Ejecutar `composer cron:sessions` manualmente.
+5. Revisar salida CLI y logs.
 
 > La activación de cron real en servidor queda para una fase posterior, después de validar manualmente en entorno objetivo.

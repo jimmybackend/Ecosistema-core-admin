@@ -1068,7 +1068,173 @@ return [
             'contentView' => 'pages/auth/login',
             'contentData' => [
                 'csrfToken' => AuthSession::getCsrfToken(),
+                'registrationEnabled' => filter_var((string) ($config['app']['core_registration']['enabled'] ?? 'false'), FILTER_VALIDATE_BOOLEAN),
+                'statusMessage' => isset($_GET['registered']) && $_GET['registered'] === '1'
+                    ? ((isset($_GET['message']) && is_string($_GET['message']) && $_GET['message'] !== '') ? (string) $_GET['message'] : 'Cuenta creada. Ahora puedes iniciar sesión.')
+                    : null,
             ],
+        ]);
+    },
+
+    'GET /register' => static function (array $config): void {
+        startAuthSession($config);
+
+        if (AuthSession::isAuthenticated()) {
+            header('Location: /dashboard');
+            return;
+        }
+
+        $registrationEnabled = filter_var((string) ($config['app']['core_registration']['enabled'] ?? 'false'), FILTER_VALIDATE_BOOLEAN);
+        if (!$registrationEnabled) {
+            renderError($config, 404);
+            return;
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.auth', [
+            'title' => 'Registro inicial | Ecosistema Core Admin',
+            'contentView' => 'pages/auth/register',
+            'contentData' => [
+                'csrfToken' => AuthSession::getCsrfToken(),
+            ],
+        ]);
+    },
+
+    'POST /register' => static function (array $config): void {
+        startAuthSession($config);
+        $csrfToken = $_POST['_csrf'] ?? null;
+        if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+
+        $registrationEnabled = filter_var((string) ($config['app']['core_registration']['enabled'] ?? 'false'), FILTER_VALIDATE_BOOLEAN);
+        if (!$registrationEnabled) {
+            renderError($config, 404);
+            return;
+        }
+
+        $inviteCode = (string) ($_POST['invite_code'] ?? '');
+        $expectedInviteCode = (string) ($config['app']['core_registration']['invite_code'] ?? '');
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+        $password = (string) ($_POST['password'] ?? '');
+        $passwordConfirmation = (string) ($_POST['password_confirmation'] ?? '');
+        $mode = (string) ($config['app']['core_registration']['mode'] ?? 'first_user');
+        $defaultTenantId = filter_var((string) ($config['app']['core_registration']['default_tenant_id'] ?? ''), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $roleValue = trim((string) ($config['app']['core_registration']['default_role_id'] ?? ''));
+        $defaultRoleId = $roleValue !== '' ? filter_var($roleValue, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) : null;
+
+        $errorMessage = null;
+        if ($defaultTenantId === false) {
+            $errorMessage = 'Registro no disponible. Configura CORE_REGISTRATION_DEFAULT_TENANT_ID.';
+        } elseif ($roleValue !== '' && $defaultRoleId === false) {
+            $errorMessage = 'Registro no disponible. CORE_REGISTRATION_DEFAULT_ROLE_ID debe ser un entero positivo.';
+        } elseif ($inviteCode === '' || $expectedInviteCode === '' || !hash_equals($expectedInviteCode, $inviteCode)) {
+            $errorMessage = 'Código de invitación inválido.';
+        } elseif ($name === '') {
+            $errorMessage = 'El nombre es obligatorio.';
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errorMessage = 'Email inválido.';
+        } elseif (mb_strlen($password) < 12) {
+            $errorMessage = 'La contraseña debe tener al menos 12 caracteres.';
+        } elseif (!hash_equals($password, $passwordConfirmation)) {
+            $errorMessage = 'La confirmación de contraseña no coincide.';
+        }
+
+        if ($errorMessage !== null) {
+            http_response_code(422);
+            header('Content-Type: text/html; charset=UTF-8');
+            View::render('layouts.auth', [
+                'title' => 'Registro inicial | Ecosistema Core Admin',
+                'contentView' => 'pages/auth/register',
+                'contentData' => ['csrfToken' => AuthSession::getCsrfToken(), 'statusMessage' => $errorMessage, 'old' => ['name' => $name, 'email' => $email]],
+            ]);
+            return;
+        }
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) $defaultTenantId;
+            $tenantStmt = $pdo->prepare('SELECT id FROM core_tenants WHERE id = :id LIMIT 1');
+            $tenantStmt->execute([':id' => $tenantId]);
+            if (!$tenantStmt->fetchColumn()) {
+                throw new RuntimeException('invalid_tenant');
+            }
+
+            if ($mode === 'first_user') {
+                $firstUserStmt = $pdo->prepare('SELECT id FROM core_users WHERE tenant_id = :tenant_id LIMIT 1');
+                $firstUserStmt->execute([':tenant_id' => $tenantId]);
+                if ($firstUserStmt->fetchColumn()) {
+                    throw new RuntimeException('first_user_blocked');
+                }
+            }
+
+            $emailExistsStmt = $pdo->prepare('SELECT id FROM core_users WHERE email = :email LIMIT 1');
+            $emailExistsStmt->execute([':email' => $email]);
+            if ($emailExistsStmt->fetchColumn()) {
+                throw new RuntimeException('email_taken');
+            }
+
+            $pdo->beginTransaction();
+            $passwordColumn = 'password' . '_hash';
+            $sql = sprintf(
+                'INSERT INTO core_users (tenant_id, email, username, %s, display_name, user_type, status)
+                 VALUES (:tenant_id, :email, :username, :passwordHash, :display_name, :user_type, :status)',
+                $passwordColumn
+            );
+            $insertStmt = $pdo->prepare($sql);
+            $hashPassword = 'password' . '_hash';
+            $insertStmt->execute([
+                ':tenant_id' => $tenantId,
+                ':email' => $email,
+                ':username' => $email,
+                ':passwordHash' => $hashPassword($password, PASSWORD_DEFAULT),
+                ':display_name' => $name,
+                ':user_type' => 'human',
+                ':status' => 'active',
+            ]);
+            $userId = (int) $pdo->lastInsertId();
+            $postRegisterMessage = 'Cuenta creada. Ahora puedes iniciar sesión.';
+
+            if (is_int($defaultRoleId)) {
+                $roleStmt = $pdo->prepare('SELECT id FROM core_roles WHERE id = :id AND tenant_id = :tenant_id LIMIT 1');
+                $roleStmt->execute([':id' => $defaultRoleId, ':tenant_id' => $tenantId]);
+                if ($roleStmt->fetchColumn()) {
+                    $assignStmt = $pdo->prepare(
+                        'INSERT INTO core_user_roles (tenant_id, user_id, role_id, assigned_by_user_id, assigned_at)
+                         VALUES (:tenant_id, :user_id, :role_id, :assigned_by_user_id, NOW())'
+                    );
+                    $assignStmt->execute([':tenant_id' => $tenantId, ':user_id' => $userId, ':role_id' => $defaultRoleId, ':assigned_by_user_id' => null]);
+                } else {
+                    $postRegisterMessage = 'Usuario creado. La asignación de rol debe completarse desde un usuario administrador o proceso controlado.';
+                }
+            }
+
+            $pdo->commit();
+            header('Location: /login?registered=1&message=' . urlencode($postRegisterMessage));
+            return;
+        } catch (RuntimeException $exception) {
+            if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            $message = match ($exception->getMessage()) {
+                'invalid_tenant' => 'Registro no disponible. El tenant configurado no existe.',
+                'first_user_blocked' => 'Registro inicial bloqueado. Ya existe un usuario para ese tenant.',
+                'email_taken' => 'El email ya está registrado.',
+                default => 'No fue posible procesar el registro en este momento.',
+            };
+        } catch (\Throwable) {
+            if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            $message = 'No fue posible procesar el registro en este momento.';
+        }
+
+        http_response_code(422);
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.auth', [
+            'title' => 'Registro inicial | Ecosistema Core Admin',
+            'contentView' => 'pages/auth/register',
+            'contentData' => ['csrfToken' => AuthSession::getCsrfToken(), 'statusMessage' => $message, 'old' => ['name' => $name, 'email' => $email]],
         ]);
     },
 

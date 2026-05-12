@@ -380,3 +380,5 @@ Estado actual:
 
 ## Nota operativa de seguridad
 - No imprimir ni commitear secretos (`DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_SECRET_ACCESS_KEY`).
+
+- Navegación básica read-only Drive disponible en `/cloud/drive/browse` usando metadata de `cloud_folders` y `cloud_files` (sin listar bucket real, sin exponer `prefix`/`s3_key`, sin AWS/S3).

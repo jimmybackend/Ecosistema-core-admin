@@ -6,6 +6,7 @@ $errorMessage = isset($contentData['errorMessage']) ? (string)$contentData['erro
   <h1>Detalle de carpeta Drive (read-only)</h1>
   <p>
     <a class="eco-button btn" href="/cloud/drive/folders">Volver a carpetas Drive</a>
+    <?php if ($folder !== null): ?><a class="eco-button btn" href="/cloud/drive/browse?folder_id=<?= e((string)$folder['id']) ?>">Abrir en navegador Drive</a><?php endif; ?>
   </p>
 
   <div class="eco-alert eco-alert--warning">

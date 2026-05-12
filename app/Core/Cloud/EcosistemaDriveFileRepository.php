@@ -63,4 +63,37 @@ final readonly class EcosistemaDriveFileRepository
 
         return $result !== false ? $result : null;
     }
+
+    /**
+     * @return array<int,array<string,mixed>>
+     */
+    public function listByFolder(int $tenantId, int $userId, ?int $folderId, int $limit = 100): array
+    {
+        $sql = 'SELECT id, original_name, mime_type, extension, size_bytes, status, virus_scan_status,
+                       access_type, encrypted, found_in_s3, uploaded_at, updated_at
+                FROM cloud_files
+                WHERE tenant_id = :tenant_id
+                  AND user_id = :user_id
+                  AND status <> :deleted_status';
+
+        if ($folderId === null) {
+            $sql .= ' AND folder_id IS NULL';
+        } else {
+            $sql .= ' AND folder_id = :folder_id';
+        }
+
+        $sql .= ' ORDER BY uploaded_at DESC, id DESC LIMIT :limit';
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':deleted_status', 'deleted');
+        if ($folderId !== null) {
+            $stmt->bindValue(':folder_id', $folderId, PDO::PARAM_INT);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
 }

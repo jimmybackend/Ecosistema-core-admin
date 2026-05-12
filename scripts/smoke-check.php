@@ -73,6 +73,7 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-files.php',
     'resources/views/pages/cloud/drive-file-detail.php',
     'resources/views/pages/cloud/drive-folder-detail.php',
+    'resources/views/pages/cloud/drive-browse.php',
     'app/Core/Cloud/CloudStorageService.php',
     'app/Core/Cloud/CloudUploadService.php',
     'resources/views/pages/cloud/upload.php',
@@ -198,6 +199,12 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/drive/folders/{id} en routes/web.php.', $criticalFailures);
     }
 
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/browse")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/browse para navegación read-only de carpetas/archivos.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/browse en routes/web.php.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/files/{id}/download")) {
         ok('routes/web.php contiene ruta de descarga cloud controlada.');
     } else {
@@ -229,6 +236,35 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta POST /mail/messages/{id}/prepare-send en routes/web.php.', $criticalFailures);
     }
+
+
+$folderRepositoryFile = $root . '/app/Core/Cloud/EcosistemaDriveFolderRepository.php';
+if (is_file($folderRepositoryFile) && str_contains((string)file_get_contents($folderRepositoryFile), 'function listChildren(')) {
+    ok('EcosistemaDriveFolderRepository contiene listChildren.');
+} else {
+    fail('EcosistemaDriveFolderRepository no contiene listChildren.', $criticalFailures);
+}
+
+$fileRepositoryFile = $root . '/app/Core/Cloud/EcosistemaDriveFileRepository.php';
+if (is_file($fileRepositoryFile) && str_contains((string)file_get_contents($fileRepositoryFile), 'function listByFolder(')) {
+    ok('EcosistemaDriveFileRepository contiene listByFolder.');
+} else {
+    fail('EcosistemaDriveFileRepository no contiene listByFolder.', $criticalFailures);
+}
+
+$folderServiceFile = $root . '/app/Core/Cloud/EcosistemaDriveFolderService.php';
+if (is_file($folderServiceFile) && str_contains((string)file_get_contents($folderServiceFile), 'function getFolderBrowser(')) {
+    ok('EcosistemaDriveFolderService contiene getFolderBrowser.');
+} else {
+    fail('EcosistemaDriveFolderService no contiene getFolderBrowser.', $criticalFailures);
+}
+
+$adapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($adapterFile) && str_contains((string)file_get_contents($adapterFile), 'read_folder_navigation')) {
+    ok('EcosistemaDriveAdapter contiene capability read_folder_navigation.');
+} else {
+    fail('EcosistemaDriveAdapter no contiene capability read_folder_navigation.', $criticalFailures);
+}
 
 $requiredClasses = [
     'App\\Core\\Auth\\AuthorizationRepository',

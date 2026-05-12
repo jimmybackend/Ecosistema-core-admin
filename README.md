@@ -292,3 +292,15 @@ Estado actual:
 - Este PR **no envía correos reales por defecto** (modo dry-run/preparación).
 - Sin envío masivo, sin campañas, sin workers/colas de mail.
 - Adjuntos salientes: pendientes para PR posterior.
+
+
+## Envío individual controlado de borradores (PR #36)
+- Requiere `MAIL_SEND_ENABLED=true` y `MAIL_ALLOW_TEST_SEND=true`.
+- Requiere SMTP válido (`MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM_ADDRESS` y credenciales si el servidor las solicita).
+- Ruta operativa: `GET /mail/messages/{id}/send-preview` y `POST /mail/messages/{id}/prepare-send`.
+- Protecciones: sesión, permiso `mail.manage`, CSRF, aislamiento por `tenant_id` y `user_id`.
+- Valida máximo 10 destinatarios, formato email válido, borrador no eliminado y contenido mínimo (asunto o cuerpo).
+- Riesgo controlado: si flags están en `false`, el envío se bloquea y no intenta SMTP.
+- Auditoría esperada: `mail.send_attempted`, `mail.sent`, `mail.send_failed`, `mail.send_blocked_by_config`.
+- No incluye envío masivo, campañas, workers, colas, reintentos, tracking ni webhooks.
+- Adjuntos salientes: pendientes para PR posterior.

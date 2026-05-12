@@ -61,11 +61,11 @@ final readonly class MailSendService
         ];
     }
 
-    public function prepareDryRunSend(int $tenantId, int $userId, int $messageId): array
+    public function sendDraft(int $tenantId, int $userId, int $messageId): array
     {
         $preview = $this->previewDraftSend($tenantId, $userId, $messageId);
         if (($preview['ok'] ?? false) !== true) {
-            return ['ok' => false, 'action' => 'mail.send_prepared', 'reason' => (string) ($preview['reason'] ?? 'No se pudo preparar el envío.')];
+            return ['ok' => false, 'action' => 'mail.send_failed', 'reason' => (string) ($preview['reason'] ?? 'No se pudo preparar el envío.')];
         }
 
         $smtp = (array) ($preview['smtp'] ?? []);
@@ -77,13 +77,37 @@ final readonly class MailSendService
             return ['ok' => false, 'action' => 'mail.send_blocked_by_config', 'ready' => false, 'reason' => 'MAIL_ALLOW_TEST_SEND=false. El envío de prueba está bloqueado.'];
         }
 
-        return [
-            'ok' => true,
-            'action' => 'mail.send_prepared',
-            'ready' => true,
-            'dry_run' => true,
-            'reason' => 'Preparación completada en dry-run. No se envió correo real en este PR.',
-        ];
+        if (!(bool) ($smtp['is_valid'] ?? false)) {
+            return ['ok' => false, 'action' => 'mail.send_failed', 'ready' => false, 'reason' => 'La configuración SMTP no es válida.'];
+        }
+
+        $message = (array) ($preview['message'] ?? []);
+        $sendResult = $this->resolveSender()->send([
+            'from' => (string) ($message['from_address'] ?? ''),
+            'to' => (array) ($preview['recipients'] ?? []),
+            'subject' => (string) ($preview['subject'] ?? ''),
+            'body' => (string) ($message['body_text'] ?? ''),
+        ]);
+        if (($sendResult['sent'] ?? false) !== true) {
+            return ['ok' => false, 'action' => 'mail.send_failed', 'ready' => true, 'reason' => (string) ($sendResult['message'] ?? 'Falló el envío SMTP.')];
+        }
+
+        $this->messages->markDraftAsSent($tenantId, $userId, $messageId);
+        return ['ok' => true, 'action' => 'mail.sent', 'ready' => true, 'reason' => 'Envío individual ejecutado correctamente.'];
+    }
+
+    public function canSendReal(array $preview): bool
+    {
+        if (($preview['ok'] ?? false) !== true) {
+            return false;
+        }
+        $smtp = (array) ($preview['smtp'] ?? []);
+        return (bool) ($smtp['send_enabled'] ?? false) && (bool) ($smtp['allow_test_send'] ?? false) && (bool) ($smtp['is_valid'] ?? false);
+    }
+
+    private function resolveSender(): MailSender
+    {
+        return $this->sender ?? new SmtpMailer($this->mailConfig->senderConfig());
     }
 
     private function extractRecipients(array $message): array

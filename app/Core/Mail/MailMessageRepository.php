@@ -66,4 +66,10 @@ final readonly class MailMessageRepository
         $stmt = $this->pdo->prepare('UPDATE mail_messages SET is_deleted = 1, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id');
         return $stmt->execute([':id' => $id, ':tenant_id' => $tenantId, ':user_id' => $userId]) && $stmt->rowCount() > 0;
     }
+
+    public function markDraftAsSent(int $tenantId, int $userId, int $id): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE mail_messages SET is_draft = 0, sent_at = NOW(), updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id AND is_draft = 1 AND is_deleted = 0');
+        return $stmt->execute([':id' => $id, ':tenant_id' => $tenantId, ':user_id' => $userId]) && $stmt->rowCount() > 0;
+    }
 }

@@ -568,6 +568,7 @@ return [
             $pdo=PdoFactory::make($config['database']);
             $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []));
             $preview = $service->previewDraftSend($tenantId, $userId, $id);
+            $preview['can_send_real'] = $service->canSendReal($preview);
         } catch (\Throwable) {
             $preview = ['ok'=>false,'reason'=>'No se pudo preparar el preview de envío.'];
         }
@@ -582,8 +583,8 @@ return [
         try {
             $pdo=PdoFactory::make($config['database']);
             $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []));
-            $result = $service->prepareDryRunSend($tenantId, $userId, $id);
-            auditLog($pdo, ['action'=>(string)($result['action'] ?? 'mail.send_prepared'), 'entity_type'=>'mail_messages', 'entity_id'=>$id, 'tenant_id'=>$tenantId, 'new_values'=>['ok'=>(bool)($result['ok']??false), 'ready'=>(bool)($result['ready']??false), 'dry_run'=>(bool)($result['dry_run']??false), 'reason'=>(string)($result['reason']??'')]]);
+            $result = $service->sendDraft($tenantId, $userId, $id);
+            auditLog($pdo, ['action'=>'mail.send_attempted', 'entity_type'=>'mail_messages', 'entity_id'=>$id, 'tenant_id'=>$tenantId, 'new_values'=>['result_action'=>(string)($result['action']??'mail.send_failed'),'ok'=>(bool)($result['ok']??false),'ready'=>(bool)($result['ready']??false),'reason'=>(string)($result['reason']??'')]]);
             $message = (string) ($result['reason'] ?? 'Preparación ejecutada.');
         } catch (\Throwable) {
             $message = 'No se pudo preparar el envío.';

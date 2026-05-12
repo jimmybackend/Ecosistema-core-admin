@@ -57,6 +57,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => false,
                 'description' => 'Descargas remotas desde S3/AWS no permitidas.',
             ],
+            'read_user_root' => [
+                'enabled' => true,
+                'description' => 'Lectura read-only de raíz de usuario desde cloud_user_roots (sin exponer root_prefix/rutas internas).',
+            ],
             'read_metadata' => [
                 'enabled' => true,
                 'description' => 'Lectura read-only de metadata desde cloud_files (sin llamadas AWS/S3).',

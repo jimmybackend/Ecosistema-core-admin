@@ -79,3 +79,10 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 - Solo lee metadata de `cloud_folders` y `cloud_files`.
 - No expone `prefix`, `prefix_hash`, `s3_key`, `s3_key_hash` ni rutas internas.
 - No permite crear/editar/borrar/subir/descargar ni activa AWS/S3 real.
+
+## Vista read-only de raíz de usuario
+- Ruta: `GET /cloud/drive/root` (sesión autenticada + permiso `cloud.view`).
+- Fuente: metadata de `cloud_user_roots`.
+- Campos visibles: `id`, `bucket_id`, `display_name`, `quota_bytes`, `used_bytes`, `file_count`, `status`, `created_at`, `updated_at`.
+- Seguridad: no expone `root_prefix`, `root_prefix_hash`, rutas internas, secretos ni config cruda.
+- Operación: no crea raíz automática, no edita raíz, no activa AWS/S3 y no modifica DB.

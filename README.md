@@ -12,6 +12,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Documentación del proyecto](#documentación-del-proyecto)
 - [Estado operativo actual](#estado-operativo-actual)
 - [Integración futura con S3 Drive](#integración-futura-con-s3-drive)
+- [Inventario técnico S3 Drive](#inventario-técnico-s3-drive)
 - [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
 - [Comandos rápidos](#comandos-rápidos)
 - [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
@@ -114,6 +115,10 @@ Limitaciones vigentes de autenticación:
 - Core Admin mantiene operación Cloud local/controlada en estado actual.
 - La integración con `jimmybackend/s3` se tratará como componente separado y sólo por contrato explícito en PRs futuros.
 
+## Inventario técnico S3 Drive
+- Inventario documental de preparación: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.
+- Este inventario no activa integración real ni modifica el repositorio `jimmybackend/s3`.
+
 ## Documentación del proyecto
 - `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_ESTADO_ACTUAL.md`
@@ -122,6 +127,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_CORE_ADMIN_PENDIENTES.md`
 - `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`
 - `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`
+- `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`
 - `docs/ops/MONITORING_OPERATIONS_PLAN.md`
 
 ## Smoke checks básicos (PR #22)

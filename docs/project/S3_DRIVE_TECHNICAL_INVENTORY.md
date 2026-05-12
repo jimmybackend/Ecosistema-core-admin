@@ -10,6 +10,12 @@ Objetivos:
 
 Referencia adicional: `docs/project/CLOUD_S3_DATABASE_MAPPING.md` (mapeo documental tabla por tabla para Cloud/S3).
 
+## 1.1) Aclaración canónica de estructura (PR #45)
+- `Ecosistema-bd` contiene la base real de referencia `adbbmis1_eco` y es la fuente canónica de estructura.
+- Las tablas `cloud_*` pertenecen funcionalmente al sistema `s3` / ArcadeCloud Drive.
+- Core Admin se integra por contrato y no debe crear ni redefinir estructura paralela.
+- Los cambios de estructura deben realizarse únicamente en `jimmybackend/Ecosistema-bd` mediante PR explícito y separado.
+
 ## 2) Estado de acceso al repositorio `jimmybackend/s3`
 Estado en este entorno Codex: **NO accesible**.
 
@@ -58,7 +64,7 @@ No detectables en este entorno (sin acceso a rutas/controladores del repo `s3`).
 - **ZIP**: compresión o empaquetado (por confirmar endpoints o jobs asociados).
 
 ## 8) Referencias de tablas Cloud (solo documental, si existen en esquema real)
-Las siguientes tablas pueden ser referenciadas por contrato y documentación previa, **sin crear ni alterar estructura**:
+Las siguientes tablas pueden ser referenciadas por contrato y documentación previa, **sin crear ni alterar estructura** en Core Admin:
 - `cloud_files`
 - `cloud_buckets`
 - `cloud_folders`

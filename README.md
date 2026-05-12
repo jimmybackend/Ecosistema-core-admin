@@ -393,3 +393,6 @@ Estado actual:
 
 - Política interna read-only de acceso Drive: `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md`.
 - Auditoría read-only de visualización Drive en `core_audit` para `/cloud/drive/*` con eventos seguros (sin keys/prefixes/secretos, sin AWS/S3 real).
+
+
+- Referencia de contrato de descarga futura: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.

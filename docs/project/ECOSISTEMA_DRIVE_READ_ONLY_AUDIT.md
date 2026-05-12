@@ -40,3 +40,6 @@ No se registran `s3_key`, `stored_name`, `prefix`, `root_prefix`, hashes sensibl
 - No incluye pantalla nueva de auditoría Drive.
 - No incluye exportación, filtros avanzados, sharing, previews, workers ni cron.
 - No modifica `jimmybackend/Ecosistema-bd`.
+
+
+- Referencia de contrato de descarga futura: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.

@@ -8,6 +8,7 @@ $warnings = isset($summary['warnings']) && is_array($summary['warnings']) ? $sum
   <p>
     <a class="eco-button btn" href="/cloud/drive">Volver a Ecosistema Drive</a>
     <a class="eco-button btn" href="/cloud/drive/files">Ver archivos Drive</a>
+    <a class="eco-button btn" href="/cloud/drive/download-contract">Contrato descarga Drive</a>
     <a class="eco-button btn" href="/cloud/drive/folders">Ver carpetas Drive</a>
     <a class="eco-button btn" href="/cloud/drive/browse">Navegar Drive</a>
     <a class="eco-button btn" href="/cloud/drive/root">Ver raíz Drive</a>

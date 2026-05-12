@@ -264,3 +264,11 @@ Estado actual:
 - No se envían correos desde workers.
 - No se procesan archivos desde workers.
 - No hay sincronización AWS/S3 activa desde cron.
+
+## Onboarding ejecución segura inicial (PR #32)
+- Se agregó una capa de ejecución controlada para avanzar runs existentes paso a paso sin aprovisionamiento externo real.
+- Tipos soportados en esta fase: `action_type` vacío/null, `noop`, `manual`, `checklist`.
+- Tipos no soportados: se marcan como `skipped` con log de advertencia, sin ejecutar acciones externas.
+- Se registra trazabilidad en `onboarding_run_logs` y auditoría administrativa (`onboarding.run_started`, `onboarding.step_completed`, `onboarding.step_skipped`, `onboarding.run_completed`).
+- No hay AWS, SMTP, workers automáticos ni cron activo en esta fase.
+- La automatización completa queda para PR posterior.

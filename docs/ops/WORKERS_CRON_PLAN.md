@@ -61,3 +61,7 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 5. Revisar salida CLI y logs.
 
 > La activación de cron real en servidor queda para una fase posterior, después de validar manualmente en entorno objetivo.
+
+## Estado mail saliente
+- Mail saliente como worker **sigue pendiente**.
+- PR #35 sólo prepara envío individual manual (preview/dry-run).

@@ -284,3 +284,11 @@ Estado actual:
 - Se registra trazabilidad en `onboarding_run_logs` y auditoría administrativa (`onboarding.run_started`, `onboarding.step_completed`, `onboarding.step_skipped`, `onboarding.run_completed`).
 - No hay AWS, SMTP, workers automáticos ni cron activo en esta fase.
 - La automatización completa queda para PR posterior.
+
+## Mail: envío individual (preparación PR #35)
+- Estado: **infraestructura interna lista para preview/preparación**.
+- `MAIL_SEND_ENABLED=false` por defecto.
+- `MAIL_ALLOW_TEST_SEND=false` por defecto.
+- Este PR **no envía correos reales por defecto** (modo dry-run/preparación).
+- Sin envío masivo, sin campañas, sin workers/colas de mail.
+- Adjuntos salientes: pendientes para PR posterior.

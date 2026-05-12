@@ -93,6 +93,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => true,
                 'description' => 'Auditoría read-only de visualización administrativa de Drive en core_audit, sin exponer keys/prefixes/secretos.',
             ],
+            'download_contract' => [
+                'enabled' => true,
+                'description' => 'Contrato técnico/documental para futura descarga controlada de Drive, sin descarga real ni AWS/S3.',
+            ],
             's3_reference_only' => [
                 'enabled' => true,
                 'description' => 'El repositorio s3 se usa solo como referencia técnica/funcional.',

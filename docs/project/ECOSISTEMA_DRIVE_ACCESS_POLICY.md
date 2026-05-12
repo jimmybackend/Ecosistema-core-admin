@@ -13,3 +13,6 @@ Ecosistema Drive mantiene una política interna en modo **read-only / contract /
 - No hay AWS/S3 real ni llamadas remotas.
 - No hay cambios de base de datos, migraciones ni seeds.
 - La política incluye auditoría operativa read-only de visualización (`drive.*.viewed/listed`) sin exposición de metadata sensible.
+
+
+- Referencia de contrato de descarga futura: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.

@@ -55,6 +55,7 @@ use App\Core\Cloud\EcosistemaDriveBucketRepository;
 use App\Core\Cloud\EcosistemaDriveSummaryService;
 use App\Core\Cloud\EcosistemaDriveAccessPolicy;
 use App\Core\Cloud\EcosistemaDriveAuditLogger;
+use App\Core\Cloud\EcosistemaDriveDownloadContract;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -758,6 +759,20 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Política de acceso Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-access','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('policyDescription')]);
+    },
+
+
+    'GET /cloud/drive/download-contract' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $contract = (new EcosistemaDriveDownloadContract())->describe();
+
+        try { $pdo = PdoFactory::make($config['database']); driveAuditLog($pdo, 'drive.download_contract.viewed', 'drive_download_contract', null, '/cloud/drive/download-contract', 'view'); } catch (\Throwable) {}
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Contrato descarga Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-download-contract','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('contract')]);
     },
 
     'GET /cloud/drive/summary' => static function (array $config): void {

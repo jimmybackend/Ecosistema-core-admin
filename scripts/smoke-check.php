@@ -73,6 +73,9 @@ $requiredFiles = [
     'app/Core/Cloud/EcosistemaDriveAuditLogger.php',
     'docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md',
     'docs/project/ECOSISTEMA_DRIVE_READ_ONLY_AUDIT.md',
+    'docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md',
+    'resources/views/pages/cloud/drive-download-contract.php',
+    'app/Core/Cloud/EcosistemaDriveDownloadContract.php',
     'resources/views/pages/cloud/drive-access.php',
     'app/Core/Cloud/EcosistemaDriveAccessPolicy.php',
     'resources/views/pages/cloud/drive-root.php',
@@ -243,6 +246,12 @@ if (is_file($routesFile)) {
     }
 
 
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/download-contract")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/download-contract para contrato informativo de descarga futura.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/download-contract en routes/web.php.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/access")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/access para política read-only de acceso Drive.');
     } else {
@@ -254,6 +263,27 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /cloud/drive/browse en routes/web.php.', $criticalFailures);
     }
+    $adapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+    $adapterContent = is_file($adapterFile) ? file_get_contents($adapterFile) : false;
+    if ($adapterContent !== false && str_contains($adapterContent, "'download_contract'")) {
+        ok('EcosistemaDriveAdapter declara capability download_contract en capacidades read-only.');
+    } else {
+        fail('No se encontró capability download_contract en EcosistemaDriveAdapter.', $criticalFailures);
+    }
+
+    $downloadContractRefOk = true;
+    foreach (['README.md','docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md','docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md','docs/project/ECOSISTEMA_DRIVE_READ_ONLY_AUDIT.md','docs/project/ECOSISTEMA_DRIVE_DRY_RUN_ADAPTER.md'] as $docFile) {
+        $docPath = $root . '/' . $docFile;
+        $docContent = is_file($docPath) ? file_get_contents($docPath) : false;
+        if ($docContent === false || !str_contains($docContent, 'ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md')) {
+            $downloadContractRefOk = false;
+            fail('No se encontró referencia al contrato de descarga en ' . $docFile . '.', $criticalFailures);
+        }
+    }
+    if ($downloadContractRefOk) {
+        ok('README y documentación Drive referencian el contrato de descarga futura.');
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /register")) {
         ok('routes/web.php contiene ruta GET /register para registro inicial controlado.');
     } else {

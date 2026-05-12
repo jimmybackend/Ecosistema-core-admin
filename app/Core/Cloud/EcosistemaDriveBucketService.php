@@ -6,8 +6,10 @@ namespace App\Core\Cloud;
 
 final readonly class EcosistemaDriveBucketService
 {
-    public function __construct(private EcosistemaDriveBucketRepository $repository)
-    {
+    public function __construct(
+        private EcosistemaDriveBucketRepository $repository,
+        private EcosistemaDriveAccessPolicy $policy,
+    ) {
     }
 
     /**
@@ -15,7 +17,10 @@ final readonly class EcosistemaDriveBucketService
      */
     public function listBucketSummaries(int $tenantId): array
     {
-        $rows = $this->repository->listVisible($tenantId, 100);
+        $rows = array_values(array_filter(
+            $this->repository->listVisible($tenantId, 100),
+            fn (array $bucket): bool => $this->policy->canViewBucketMetadata($bucket, $tenantId),
+        ));
 
         return array_map(static function (array $row): array {
             $bucket = [

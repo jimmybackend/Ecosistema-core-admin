@@ -66,3 +66,8 @@ En PRs siguientes se podrá:
 - Usa metadata segura de `cloud_files`, `cloud_folders`, `cloud_user_roots` y `cloud_buckets` para conteos/estado general.
 - No expone `s3_key`, `prefix`, `root_prefix`, rutas internas ni JSON crudo sensible.
 - No activa AWS/S3 real, no hace llamadas remotas y no modifica base de datos.
+
+
+## Capacidad adicional
+
+- `read_access_policy`: habilitada para exponer política interna de acceso read-only sin AWS/S3 real.

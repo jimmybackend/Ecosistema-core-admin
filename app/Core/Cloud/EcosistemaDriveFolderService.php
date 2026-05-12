@@ -9,6 +9,7 @@ final readonly class EcosistemaDriveFolderService
     public function __construct(
         private EcosistemaDriveFolderRepository $repository,
         private EcosistemaDriveFileRepository $fileRepository,
+        private EcosistemaDriveAccessPolicy $policy,
     )
     {
     }
@@ -18,7 +19,10 @@ final readonly class EcosistemaDriveFolderService
      */
     public function listFolders(int $tenantId, int $userId, int $limit = 100): array
     {
-        $folders = $this->repository->listMetadataByUser($tenantId, $userId, $limit);
+        $folders = array_values(array_filter(
+            $this->repository->listMetadataByUser($tenantId, $userId, $limit),
+            fn (array $folder): bool => $this->policy->canViewFolderMetadata($folder, $tenantId, $userId),
+        ));
 
         return array_map(static fn (array $folder): array => [
             'id' => isset($folder['id']) ? (int)$folder['id'] : 0,
@@ -42,7 +46,7 @@ final readonly class EcosistemaDriveFolderService
     public function getFolderDetail(int $tenantId, int $userId, int $id): ?array
     {
         $folder = $this->repository->findVisibleById($tenantId, $userId, $id);
-        if ($folder === null) {
+        if ($folder === null || !$this->policy->canViewFolderMetadata($folder, $tenantId, $userId)) {
             return null;
         }
 

@@ -100,3 +100,8 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 - Usa metadata segura de `cloud_files`, `cloud_folders`, `cloud_user_roots` y `cloud_buckets` para conteos/estado general.
 - No expone `s3_key`, `prefix`, `root_prefix`, rutas internas ni JSON crudo sensible.
 - No activa AWS/S3 real, no hace llamadas remotas y no modifica base de datos.
+
+
+## Política de acceso read-only
+
+Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md` para reglas de tenant/user y operaciones bloqueadas.

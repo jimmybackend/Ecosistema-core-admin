@@ -85,6 +85,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => true,
                 'description' => 'Resumen operativo read-only de Drive con conteos seguros y estado general (sin AWS/S3 real).',
             ],
+            'read_access_policy' => [
+                'enabled' => true,
+                'description' => 'Política interna read-only de acceso Drive para tenant/user y operaciones bloqueadas.',
+            ],
             's3_reference_only' => [
                 'enabled' => true,
                 'description' => 'El repositorio s3 se usa solo como referencia técnica/funcional.',

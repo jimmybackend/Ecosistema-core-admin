@@ -70,6 +70,9 @@ $requiredFiles = [
     'app/Core/Cloud/EcosistemaDriveBucketService.php',
     'app/Core/Cloud/EcosistemaDriveBucketRepository.php',
     'app/Core/Cloud/EcosistemaDriveSummaryService.php',
+    'docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md',
+    'resources/views/pages/cloud/drive-access.php',
+    'app/Core/Cloud/EcosistemaDriveAccessPolicy.php',
     'resources/views/pages/cloud/drive-root.php',
     'resources/views/pages/cloud/drive-summary.php',
     'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
@@ -235,6 +238,13 @@ if (is_file($routesFile)) {
         ok('routes/web.php contiene ruta GET /cloud/drive/summary para resumen operativo read-only.');
     } else {
         fail('No se encontró ruta GET /cloud/drive/summary en routes/web.php.', $criticalFailures);
+    }
+
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/access")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/access para política read-only de acceso Drive.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/access en routes/web.php.', $criticalFailures);
     }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/browse")) {
@@ -522,3 +532,24 @@ echo "- Críticos fallidos: {$criticalFailures}" . PHP_EOL;
 echo "- Warnings: {$warnings}" . PHP_EOL;
 
 exit($criticalFailures === 0 ? 0 : 1);
+
+
+$adapterPath = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($adapterPath)) {
+    $adapterContent = file_get_contents($adapterPath);
+    if ($adapterContent !== false && str_contains($adapterContent, "read_access_policy")) {
+        ok('EcosistemaDriveAdapter expone capability read_access_policy.');
+    } else {
+        fail('EcosistemaDriveAdapter no contiene capability read_access_policy.', $criticalFailures);
+    }
+}
+
+$readmePath = $root . '/README.md';
+if (is_file($readmePath)) {
+    $readmeContent = file_get_contents($readmePath);
+    if ($readmeContent !== false && str_contains($readmeContent, "ECOSISTEMA_DRIVE_ACCESS_POLICY.md")) {
+        ok('README referencia la política de acceso Drive.');
+    } else {
+        fail('README no referencia la política de acceso Drive.', $criticalFailures);
+    }
+}

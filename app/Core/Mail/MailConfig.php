@@ -34,6 +34,17 @@ final readonly class MailConfig
         return $this->validationErrors() === [];
     }
 
+    public function senderConfig(): array
+    {
+        return [
+            'host' => (string) ($this->config['host'] ?? ''),
+            'port' => (int) ($this->config['port'] ?? 0),
+            'encryption' => (string) ($this->config['encryption'] ?? ''),
+            'username' => (string) ($this->config['username'] ?? ''),
+            'password' => (string) ($this->config['password'] ?? ''),
+        ];
+    }
+
     public function validationErrors(): array
     {
         $errors = [];

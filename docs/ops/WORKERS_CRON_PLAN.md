@@ -65,3 +65,8 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 ## Estado mail saliente
 - Mail saliente como worker **sigue pendiente**.
 - PR #35 sólo prepara envío individual manual (preview/dry-run).
+
+
+## Estado adicional Mail (PR #36)
+- Se habilita únicamente envío manual individual desde preview (sin worker).
+- Mail worker/cola/cron para saliente masivo sigue pendiente.

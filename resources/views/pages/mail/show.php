@@ -12,6 +12,7 @@
 <p><strong>Body html (escapado):</strong><br><pre><?= e((string)($message['body_html'] ?? '')) ?></pre></p>
 <p><strong>created_at:</strong> <?= e((string)($message['created_at'] ?? '')) ?> | <strong>received_at:</strong> <?= e((string)($message['received_at'] ?? '')) ?> | <strong>sent_at:</strong> <?= e((string)($message['sent_at'] ?? '')) ?></p>
 <p><a class="eco-button btn" href="/mail/messages/<?= e((string)($message['id'] ?? '0')) ?>/send-preview">Preview envío</a></p>
+<div class="eco-alert" role="status">Los adjuntos salientes se habilitarán en un PR posterior.</div>
 </article><?php endif; ?></section>
 
 <?php $attachments = is_array($attachments ?? null) ? $attachments : []; ?>

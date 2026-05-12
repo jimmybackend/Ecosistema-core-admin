@@ -164,3 +164,11 @@ Ejemplo de cron (activar solo después de validar manualmente):
 - Mantener `MAIL_SEND_ENABLED=false` hasta validación funcional/auditoría.
 - Mantener `MAIL_ALLOW_TEST_SEND=false` en producción inicial.
 - Revisar logs y auditoría al preparar envío individual.
+
+
+## 18) Mail envío individual controlado (PR #36)
+- Verificar SMTP en entorno controlado antes de habilitar producción.
+- No usar credenciales personales; usar cuenta SMTP dedicada.
+- Mantener límites de envío bajos en proveedor SMTP.
+- Revisar auditoría de `mail.send_attempted`, `mail.sent`, `mail.send_failed`, `mail.send_blocked_by_config`.
+- Después de pruebas iniciales, evaluar volver `MAIL_ALLOW_TEST_SEND=false`.

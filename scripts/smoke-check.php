@@ -68,6 +68,7 @@ $requiredFiles = [
     'resources/views/pages/mail/send-preview.php',
     'app/Core/Mail/MailSendService.php',
     'app/Core/Mail/MailSender.php',
+    'app/Core/Mail/SmtpMailer.php',
     'app/Core/Mail/MailAttachmentRepository.php',
     'app/Core/Mail/MailAttachmentService.php',
     'resources/views/pages/auth/login.php',

@@ -24,6 +24,9 @@ final readonly class MailConfig
             'from_name' => (string) ($from['name'] ?? ''),
             'send_enabled' => (bool) ($this->config['send_enabled'] ?? false),
             'allow_test_send' => (bool) ($this->config['allow_test_send'] ?? false),
+            'max_attachments' => max(1, (int) ($this->config['max_attachments'] ?? 5)),
+            'max_attachment_mb' => max(1, (int) ($this->config['max_attachment_mb'] ?? 10)),
+            'max_total_attachment_mb' => max(1, (int) ($this->config['max_total_attachment_mb'] ?? 20)),
             'is_valid' => $this->isValid(),
             'validation_errors' => $this->validationErrors(),
         ];
@@ -32,6 +35,11 @@ final readonly class MailConfig
     public function isValid(): bool
     {
         return $this->validationErrors() === [];
+    }
+
+    public function raw(): array
+    {
+        return $this->config;
     }
 
     public function senderConfig(): array

@@ -33,6 +33,7 @@ use App\Core\Mail\MailConfig;
 use App\Core\Mail\MailAttachmentRepository;
 use App\Core\Mail\MailAttachmentService;
 use App\Core\Mail\MailSendService;
+use App\Core\Mail\MailOutgoingAttachmentService;
 use App\Core\Cloud\CloudFileRepository;
 use App\Core\Cloud\CloudFolderRepository;
 use App\Core\Cloud\CloudRootRepository;
@@ -611,7 +612,7 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
         try {
             $pdo=PdoFactory::make($config['database']);
-            $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []));
+            $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []), new MailOutgoingAttachmentService(new MailAttachmentRepository($pdo), $config['cloud'] ?? [], $config['mail'] ?? []));
             $preview = $service->previewDraftSend($tenantId, $userId, $id);
             $preview['can_send_real'] = $service->canSendReal($preview);
         } catch (\Throwable) {
@@ -627,9 +628,9 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
         try {
             $pdo=PdoFactory::make($config['database']);
-            $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []));
+            $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []), new MailOutgoingAttachmentService(new MailAttachmentRepository($pdo), $config['cloud'] ?? [], $config['mail'] ?? []));
             $result = $service->sendDraft($tenantId, $userId, $id);
-            auditLog($pdo, ['action'=>'mail.send_attempted', 'entity_type'=>'mail_messages', 'entity_id'=>$id, 'tenant_id'=>$tenantId, 'new_values'=>['result_action'=>(string)($result['action']??'mail.send_failed'),'ok'=>(bool)($result['ok']??false),'ready'=>(bool)($result['ready']??false),'reason'=>(string)($result['reason']??'')]]);
+            auditLog($pdo, ['action'=>'mail.send_attempted', 'entity_type'=>'mail_messages', 'entity_id'=>$id, 'tenant_id'=>$tenantId, 'new_values'=>['result_action'=>(string)($result['action']??'mail.send_failed'),'ok'=>(bool)($result['ok']??false),'ready'=>(bool)($result['ready']??false),'reason'=>(string)($result['reason']??''),'attachment_count'=>(int)($result['attachment_count']??0),'attachment_total_bytes'=>(int)($result['attachment_total_bytes']??0)]]);
             $message = (string) ($result['reason'] ?? 'Preparación ejecutada.');
         } catch (\Throwable) {
             $message = 'No se pudo preparar el envío.';

@@ -17,4 +17,7 @@ return [
     ],
     'send_enabled' => filter_var(Env::get('MAIL_SEND_ENABLED', false), FILTER_VALIDATE_BOOL),
     'allow_test_send' => filter_var(Env::get('MAIL_ALLOW_TEST_SEND', false), FILTER_VALIDATE_BOOL),
+    'max_attachments' => max(1, (int) Env::get('MAIL_MAX_ATTACHMENTS', 5)),
+    'max_attachment_mb' => max(1, (int) Env::get('MAIL_MAX_ATTACHMENT_MB', 10)),
+    'max_total_attachment_mb' => max(1, (int) Env::get('MAIL_MAX_TOTAL_ATTACHMENT_MB', 20)),
 ];

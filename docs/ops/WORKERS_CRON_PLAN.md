@@ -73,3 +73,7 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 
 - Mail worker sigue pendiente (no implementado).
 - Adjuntos salientes automáticos siguen pendientes (sin colas/workers).
+
+## Estado mail adjuntos (PR #38)
+- Mail worker/cola sigue pendiente (no implementado).
+- El envío con adjuntos continúa siendo **manual e individual** desde preview.

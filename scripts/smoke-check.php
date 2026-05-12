@@ -56,6 +56,10 @@ $requiredFiles = [
     '.env.example',
     'public/assets/css/ecosistema-ui.css',
     'README.md',
+    'resources/views/pages/cloud/drive-root.php',
+    'app/Core/Cloud/EcosistemaDriveRootService.php',
+    'app/Core/Cloud/EcosistemaDriveRootRepository.php',
+    'docs/deploy/CORE_ADMIN_VM_RUNBOOK.md',
     'config/mail.php',
     'config/cloud.php',
     'app/Core/Cloud/S3DriveIntegrationConfig.php',
@@ -181,6 +185,12 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /cloud/drive en routes/web.php.', $criticalFailures);
     }
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/root")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/root para raíz read-only de usuario Drive.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/root en routes/web.php.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/folders")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/folders para metadata read-only de carpetas.');
     } else {
@@ -279,6 +289,12 @@ if (is_file($adapterFile) && str_contains((string)file_get_contents($adapterFile
     ok('EcosistemaDriveAdapter contiene capability read_buckets_metadata.');
 } else {
     fail('EcosistemaDriveAdapter no contiene capability read_buckets_metadata.', $criticalFailures);
+}
+
+if (is_file($adapterFile) && str_contains((string)file_get_contents($adapterFile), 'read_user_root')) {
+    ok('EcosistemaDriveAdapter contiene capability read_user_root.');
+} else {
+    fail('EcosistemaDriveAdapter no contiene capability read_user_root.', $criticalFailures);
 }
 
 $requiredClasses = [

@@ -85,3 +85,13 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 - Fuente: metadata de `cloud_buckets` por tenant (solo campos seguros confirmados).
 - No lista buckets reales de AWS, no usa llamadas remotas y no expone credenciales/configuración cruda.
 - No crea, edita ni borra buckets.
+
+## Raíz de usuario Drive
+- Ruta: `GET /cloud/drive/root` (sesión autenticada + permiso `cloud.view`).
+- Fuente: `cloud_user_roots` read-only por tenant/usuario, sin exponer rutas internas.
+- Operación: sin AWS/S3 real.
+
+## Buckets Drive (read-only)
+- Ruta: `GET /cloud/drive/buckets`.
+- Fuente: `cloud_buckets` (campos seguros confirmados).
+- No expone credenciales/configuración cruda ni conecta AWS/S3 real.

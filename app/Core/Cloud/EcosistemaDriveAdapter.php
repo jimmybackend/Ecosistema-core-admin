@@ -69,6 +69,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => true,
                 'description' => 'Lectura read-only de metadata de buckets desde cloud_buckets (sin AWS/S3 real).',
             ],
+            'read_user_root' => [
+                'enabled' => true,
+                'description' => 'Lectura read-only de raíz de usuario desde cloud_user_roots (sin AWS/S3 real).',
+            ],
             'read_folder_detail' => [
                 'enabled' => true,
                 'description' => 'Detalle read-only de carpeta por id usando cloud_folders (sin exponer prefix/rutas internas).',

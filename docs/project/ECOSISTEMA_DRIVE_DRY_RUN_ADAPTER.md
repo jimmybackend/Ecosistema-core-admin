@@ -54,3 +54,7 @@ En PRs siguientes se podrá:
 - Se habilita capacidad `read_buckets_metadata=true` en el adapter.
 - La UI `/cloud/drive/buckets` es solo informativa/read-only y usa `cloud_buckets`.
 - Se mantiene `remote_calls=false`, `signed_urls=false`, `remote_uploads=false`, `remote_downloads=false`, `aws_connection=false`.
+
+- Capability `read_user_root=true` para vista read-only de raíz de usuario.
+- Capability `read_buckets_metadata=true` para vista read-only de buckets.
+- Se mantiene: `remote_calls=false`, `signed_urls=false`, `remote_uploads=false`, `remote_downloads=false`, `aws_connection=false`.

@@ -384,3 +384,7 @@ Estado actual:
 - Navegación básica read-only Drive disponible en `/cloud/drive/browse` usando metadata de `cloud_folders` y `cloud_files` (sin listar bucket real, sin exponer `prefix`/`s3_key`, sin AWS/S3).
 
 - Vista administrativa read-only disponible en `/cloud/drive/buckets` para mostrar metadata segura de `cloud_buckets` (sin credenciales, sin config/policy cruda, sin AWS/S3 real).
+
+- Runbook VM: `docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`.
+
+- Vista read-only de raíz Drive disponible en `/cloud/drive/root` usando metadata de `cloud_user_roots` (sin AWS/S3 real).

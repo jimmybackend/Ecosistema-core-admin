@@ -49,3 +49,6 @@ En PRs siguientes se podrá:
 - Se agregó navegación read-only de carpetas y archivos por metadata DB (`cloud_folders`, `cloud_files`).
 - No hay llamadas a bucket real ni generación de signed URLs.
 - Se mantiene bloqueo de AWS/S3, uploads, downloads y operaciones mutables.
+
+- Capability agregada: `read_user_root=true` para habilitar resumen read-only desde `cloud_user_roots`.
+- Se mantiene dry-run: sin llamadas AWS/S3, sin signed URLs, sin uploads/downloads remotos y sin cambios de base de datos.

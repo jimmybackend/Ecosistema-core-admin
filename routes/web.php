@@ -48,6 +48,8 @@ use App\Core\Cloud\EcosistemaDriveFileRepository;
 use App\Core\Cloud\EcosistemaDriveFileService;
 use App\Core\Cloud\EcosistemaDriveFolderService;
 use App\Core\Cloud\EcosistemaDriveFolderRepository;
+use App\Core\Cloud\EcosistemaDriveRootRepository;
+use App\Core\Cloud\EcosistemaDriveRootService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -717,6 +719,29 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('status','capabilities')]);
     },
+
+    'GET /cloud/drive/root' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $root = null;
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveRootService(new EcosistemaDriveRootRepository($pdo));
+            $root = $service->getUserRootSummary($tenantId, $userId);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo consultar la raíz Drive del usuario actual.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Raíz Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-root','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('root','errorMessage')]);
+    },
+
     'GET /cloud/drive/files' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }

@@ -64,6 +64,9 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-folders.php',
     'app/Core/Cloud/EcosistemaDriveFolderService.php',
     'app/Core/Cloud/EcosistemaDriveFolderRepository.php',
+    'app/Core/Cloud/EcosistemaDriveRootRepository.php',
+    'app/Core/Cloud/EcosistemaDriveRootService.php',
+    'resources/views/pages/cloud/drive-root.php',
     'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
     'docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md',
     'config/s3_drive.php',
@@ -197,6 +200,13 @@ if (is_file($routesFile)) {
         ok('routes/web.php contiene ruta GET /cloud/drive/folders/{id} para detalle read-only de carpetas.');
     } else {
         fail('No se encontró ruta GET /cloud/drive/folders/{id} en routes/web.php.', $criticalFailures);
+    }
+
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/root")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/root para resumen read-only de raíz de usuario.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/root en routes/web.php.', $criticalFailures);
     }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/browse")) {
@@ -482,4 +492,11 @@ if (is_file($driveAdapterFile)) {
     } else {
         fail('EcosistemaDriveAdapter no declara capability read_folders_metadata.', $criticalFailures);
     }
+}
+
+$driveAdapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($driveAdapterFile) && str_contains((string)file_get_contents($driveAdapterFile), "'read_user_root'")) {
+    ok('EcosistemaDriveAdapter contiene capability read_user_root.');
+} else {
+    fail('EcosistemaDriveAdapter no contiene capability read_user_root.', $criticalFailures);
 }

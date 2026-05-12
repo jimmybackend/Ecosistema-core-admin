@@ -382,3 +382,6 @@ Estado actual:
 - No imprimir ni commitear secretos (`DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_SECRET_ACCESS_KEY`).
 
 - Navegación básica read-only Drive disponible en `/cloud/drive/browse` usando metadata de `cloud_folders` y `cloud_files` (sin listar bucket real, sin exponer `prefix`/`s3_key`, sin AWS/S3).
+
+- Drive admin incluye vista protegida **read-only** `/cloud/drive/root` para resumen de raíz de usuario (tabla `cloud_user_roots`) sin exponer `root_prefix`, rutas internas ni secretos.
+- Esta vista no crea/edita raíces, no activa AWS/S3 real y no modifica base de datos.

@@ -39,6 +39,7 @@ use App\Core\Cloud\CloudService;
 use App\Core\Cloud\CloudStorageConfig;
 use App\Core\Cloud\CloudStorageService;
 use App\Core\Cloud\CloudUploadService;
+use App\Core\Cloud\CloudDownloadService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -653,6 +654,37 @@ return [
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $file=$service->findFile($tenantId,$userId,$id);}catch(\Throwable){$file=null;}
         if($file===null){http_response_code(404);} header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud detalle | Ecosistema Core Admin','contentView'=>'pages/cloud/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('file')]);
     },
+
+    'GET /cloud/files/{id}/download' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        try { $authCheck=AuthSession::getAuth(); $p=PdoFactory::make($config['database']); $az=new \App\Core\Auth\AuthorizationService(new \App\Core\Auth\AuthorizationRepository($p)); if(!$az->can((int)($authCheck['auth_user_id']??0),(int)($authCheck['auth_tenant_id']??0),'cloud.view')&&!$az->can((int)($authCheck['auth_user_id']??0),(int)($authCheck['auth_tenant_id']??0),'cloud.manage')){ renderError($config,403); return; }} catch (\Throwable) { renderError($config,403); return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try {
+            $pdo=PdoFactory::make($config['database']);
+            $service = new CloudDownloadService(new CloudFileRepository($pdo), $config);
+            $result = $service->resolveLocalFile($tenantId, $userId, $id);
+            if (!(bool)($result['ok'] ?? false)) {
+                http_response_code((int)($result['code'] ?? 403));
+                header('Content-Type: text/html; charset=UTF-8');
+                View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['files'=>[],'statusMessage'=>null,'errorMessage'=>(string)($result['message'] ?? 'No autorizado.')]]);
+                return;
+            }
+            $file = (array)($result['file'] ?? []);
+            $downloadName = (string)($file['original_name'] ?? 'archivo');
+            header('Content-Description: File Transfer');
+            header('Content-Type: ' . (string)($file['mime_type'] ?? 'application/octet-stream'));
+            header('Content-Disposition: attachment; filename="' . str_replace('"', '', $downloadName) . '"');
+            header('Content-Length: ' . (string) filesize((string) $result['path']));
+            header('X-Content-Type-Options: nosniff');
+            header('Cache-Control: private, no-store, no-cache, must-revalidate');
+            auditLog($pdo,['action'=>'cloud.file_downloaded','entity_type'=>'cloud_files','entity_id'=>(int)($file['id'] ?? 0),'new_values'=>['status'=>(string)($file['status'] ?? 'active')]]);
+            readfile((string) $result['path']);
+            exit;
+        } catch (\Throwable) {
+            renderError($config, 404);
+        }
+    },
+
     'POST /cloud/files/{id}/archive' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }

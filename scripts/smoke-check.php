@@ -64,6 +64,9 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-folders.php',
     'app/Core/Cloud/EcosistemaDriveFolderService.php',
     'app/Core/Cloud/EcosistemaDriveFolderRepository.php',
+    'resources/views/pages/cloud/drive-buckets.php',
+    'app/Core/Cloud/EcosistemaDriveBucketService.php',
+    'app/Core/Cloud/EcosistemaDriveBucketRepository.php',
     'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
     'docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md',
     'config/s3_drive.php',
@@ -199,6 +202,12 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/drive/folders/{id} en routes/web.php.', $criticalFailures);
     }
 
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/buckets")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/buckets para metadata read-only de buckets Drive.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/buckets en routes/web.php.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/browse")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/browse para navegación read-only de carpetas/archivos.');
     } else {
@@ -264,6 +273,12 @@ if (is_file($adapterFile) && str_contains((string)file_get_contents($adapterFile
     ok('EcosistemaDriveAdapter contiene capability read_folder_navigation.');
 } else {
     fail('EcosistemaDriveAdapter no contiene capability read_folder_navigation.', $criticalFailures);
+}
+
+if (is_file($adapterFile) && str_contains((string)file_get_contents($adapterFile), 'read_buckets_metadata')) {
+    ok('EcosistemaDriveAdapter contiene capability read_buckets_metadata.');
+} else {
+    fail('EcosistemaDriveAdapter no contiene capability read_buckets_metadata.', $criticalFailures);
 }
 
 $requiredClasses = [

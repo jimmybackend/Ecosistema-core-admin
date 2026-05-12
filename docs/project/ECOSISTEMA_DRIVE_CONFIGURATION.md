@@ -79,3 +79,9 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 - Solo lee metadata de `cloud_folders` y `cloud_files`.
 - No expone `prefix`, `prefix_hash`, `s3_key`, `s3_key_hash` ni rutas internas.
 - No permite crear/editar/borrar/subir/descargar ni activa AWS/S3 real.
+
+## Vista read-only de buckets Drive
+- Ruta: `GET /cloud/drive/buckets` (sesión autenticada + permiso `cloud.view`).
+- Fuente: metadata de `cloud_buckets` por tenant (solo campos seguros confirmados).
+- No lista buckets reales de AWS, no usa llamadas remotas y no expone credenciales/configuración cruda.
+- No crea, edita ni borra buckets.

@@ -382,3 +382,5 @@ Estado actual:
 - No imprimir ni commitear secretos (`DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_SECRET_ACCESS_KEY`).
 
 - Navegación básica read-only Drive disponible en `/cloud/drive/browse` usando metadata de `cloud_folders` y `cloud_files` (sin listar bucket real, sin exponer `prefix`/`s3_key`, sin AWS/S3).
+
+- Vista administrativa read-only disponible en `/cloud/drive/buckets` para mostrar metadata segura de `cloud_buckets` (sin credenciales, sin config/policy cruda, sin AWS/S3 real).

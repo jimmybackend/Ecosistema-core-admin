@@ -49,3 +49,8 @@ En PRs siguientes se podrá:
 - Se agregó navegación read-only de carpetas y archivos por metadata DB (`cloud_folders`, `cloud_files`).
 - No hay llamadas a bucket real ni generación de signed URLs.
 - Se mantiene bloqueo de AWS/S3, uploads, downloads y operaciones mutables.
+
+## Buckets metadata en dry-run
+- Se habilita capacidad `read_buckets_metadata=true` en el adapter.
+- La UI `/cloud/drive/buckets` es solo informativa/read-only y usa `cloud_buckets`.
+- Se mantiene `remote_calls=false`, `signed_urls=false`, `remote_uploads=false`, `remote_downloads=false`, `aws_connection=false`.

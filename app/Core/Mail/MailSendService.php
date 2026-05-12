@@ -81,6 +81,11 @@ final readonly class MailSendService
             return ['ok' => false, 'action' => 'mail.send_failed', 'ready' => false, 'reason' => 'La configuración SMTP no es válida.'];
         }
 
+        $attachments = is_array($preview['attachments'] ?? null) ? $preview['attachments'] : [];
+        if ($attachments !== []) {
+            return ['ok' => false, 'action' => 'mail.send_blocked_attachments_pending', 'ready' => false, 'reason' => 'Adjuntos salientes aún no habilitados para envío binario seguro.'];
+        }
+
         $message = (array) ($preview['message'] ?? []);
         $sendResult = $this->resolveSender()->send([
             'from' => (string) ($message['from_address'] ?? ''),

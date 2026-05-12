@@ -29,10 +29,10 @@ $recipients = is_array($preview['recipients'] ?? null) ? $preview['recipients'] 
         <tr><th>Estado envío</th><td><?= e((string) ($preview['reason'] ?? '')) ?></td></tr>
       </tbody></table>
       <p><strong>Body text (resumen escapado):</strong><br><?= nl2br(e((string) ($preview['body_text_preview'] ?? ''))) ?></p>
-      <div class="eco-alert" role="status">Los adjuntos salientes se habilitarán en un PR posterior.</div>
+      <div class="eco-alert" role="status">Adjuntos lógicos preparados; envío binario aún no habilitado en este PR.</div>
       <?php if ($attachments !== []): ?>
-      <table class="eco-table" style="width:100%"><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th></tr></thead><tbody>
-      <?php foreach ($attachments as $attachment): ?><tr><td><?= e((string) ($attachment['original_name'] ?? '')) ?></td><td><?= e((string) ($attachment['mime_type'] ?? '')) ?></td><td><?= e((string) ($attachment['size_bytes'] ?? '')) ?></td></tr><?php endforeach; ?>
+      <table class="eco-table" style="width:100%"><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Envío</th></tr></thead><tbody>
+      <?php foreach ($attachments as $attachment): ?><tr><td><?= e((string) ($attachment['original_name'] ?? '')) ?></td><td><?= e((string) ($attachment['mime_type'] ?? '')) ?></td><td><?= e((string) ($attachment['size_bytes'] ?? '')) ?></td><td><span class="eco-badge">No incluido aún</span></td></tr><?php endforeach; ?>
       </tbody></table>
       <?php endif; ?>
       <form method="post" action="/mail/messages/<?= e((string) $id) ?>/prepare-send">

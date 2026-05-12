@@ -66,6 +66,7 @@ $requiredFiles = [
     'app/Core/Cloud/CloudStorageConfig.php',
     'resources/views/pages/mail/show.php',
     'resources/views/pages/mail/send-preview.php',
+    'resources/views/pages/mail/attachments.php',
     'app/Core/Mail/MailSendService.php',
     'app/Core/Mail/MailSender.php',
     'app/Core/Mail/SmtpMailer.php',
@@ -161,6 +162,18 @@ if (is_file($routesFile)) {
         ok('routes/web.php contiene ruta GET /mail/messages/{id}/send-preview.');
     } else {
         fail('No se encontró ruta GET /mail/messages/{id}/send-preview en routes/web.php.', $criticalFailures);
+    }
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /mail/messages/{id}/attachments")) {
+        ok('routes/web.php contiene ruta GET /mail/messages/{id}/attachments.');
+    } else {
+        fail('No se encontró ruta GET /mail/messages/{id}/attachments en routes/web.php.', $criticalFailures);
+    }
+
+    if ($routesContent !== false && str_contains($routesContent, "POST /mail/messages/{id}/attachments")) {
+        ok('routes/web.php contiene ruta POST /mail/messages/{id}/attachments.');
+    } else {
+        fail('No se encontró ruta POST /mail/messages/{id}/attachments en routes/web.php.', $criticalFailures);
     }
 
     if ($routesContent !== false && str_contains($routesContent, "POST /mail/messages/{id}/prepare-send")) {

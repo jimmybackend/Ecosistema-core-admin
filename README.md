@@ -304,3 +304,11 @@ Estado actual:
 - Auditoría esperada: `mail.send_attempted`, `mail.sent`, `mail.send_failed`, `mail.send_blocked_by_config`.
 - No incluye envío masivo, campañas, workers, colas, reintentos, tracking ni webhooks.
 - Adjuntos salientes: pendientes para PR posterior.
+
+
+## PR #37 — Adjuntos Cloud en borradores Mail
+- Gestión de adjuntos lógicos por rutas protegidas: `GET /mail/messages/{id}/attachments` y `POST /mail/messages/{id}/attachments`.
+- Relación usada: tabla real `cloud_files` con `origin_table = 'mail_messages'` y `origin_id = mail_messages.id`.
+- Seguridad: sesión + permiso `mail.manage` + CSRF + aislamiento `tenant_id`/`user_id`; sólo se aceptan IDs (`cloud_file_ids[]`).
+- No hay subida de archivos desde Mail, no hay envío masivo, campañas, workers ni colas.
+- En este PR los adjuntos se preparan lógicamente para preview; el envío binario MIME queda pendiente para PR posterior.

@@ -560,6 +560,51 @@ return [
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail detalle | Ecosistema Core Admin','contentView'=>'pages/mail/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message','attachments')]);
     },
 
+
+    'GET /mail/messages/{id}/attachments' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        try {
+            $pdo=PdoFactory::make($config['database']);
+            $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
+            $message=$service->findMessage($tenantId,$userId,$id);
+            $attachmentService = new MailAttachmentService(new MailAttachmentRepository($pdo));
+            $availableFiles = $attachmentService->listAvailableCloudFiles($tenantId, $userId);
+            $attachedFiles = $attachmentService->listMessageAttachments($tenantId, $userId, $id);
+        } catch (\Throwable) {
+            $message=null; $availableFiles=[]; $attachedFiles=[];
+            $errorMessage = 'No se pudieron cargar los adjuntos.';
+        }
+        if ($message===null) { http_response_code(404); }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Adjuntos Mail | Ecosistema Core Admin','contentView'=>'pages/mail/attachments','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message','availableFiles','attachedFiles','statusMessage','errorMessage')]);
+    },
+    'POST /mail/messages/{id}/attachments' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try {
+            $pdo=PdoFactory::make($config['database']);
+            $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
+            $message=$service->findMessage($tenantId,$userId,$id);
+            if ($message === null) { header('Location: /mail?error='.urlencode('Mensaje no encontrado.')); return; }
+            if ((int) ($message['is_draft'] ?? 0) !== 1 || (int) ($message['is_deleted'] ?? 0) === 1) { header('Location: /mail/messages/'.(string)$id.'/attachments?error='.urlencode('Sólo se permiten adjuntos en borradores activos.')); return; }
+            $selectedFileIds = is_array($_POST['cloud_file_ids'] ?? null) ? (array) $_POST['cloud_file_ids'] : [];
+            $attachmentService = new MailAttachmentService(new MailAttachmentRepository($pdo));
+            $result = $attachmentService->replaceMessageAttachments($tenantId, $userId, $id, $selectedFileIds);
+            if (($result['ok'] ?? false) === true) {
+                auditLog($pdo, ['action'=>'mail.attachments_updated','entity_type'=>'mail_messages','entity_id'=>$id,'tenant_id'=>$tenantId,'new_values'=>['selected_count'=>count($selectedFileIds)]]);
+            }
+            $key = (($result['ok'] ?? false) === true) ? 'ok' : 'error';
+            header('Location: /mail/messages/'.(string)$id.'/attachments?'.$key.'='.urlencode((string) ($result['reason'] ?? 'No se pudieron actualizar los adjuntos.')));
+            return;
+        } catch (\Throwable) {
+            header('Location: /mail/messages/'.(string)$id.'/attachments?error='.urlencode('No se pudieron actualizar los adjuntos.'));
+            return;
+        }
+    },
     'GET /mail/messages/{id}/send-preview' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }

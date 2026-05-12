@@ -14,4 +14,14 @@ final readonly class MailAttachmentService
     {
         return $this->attachments->listLogicalByMessageForUser($tenantId, $userId, $messageId, 100);
     }
+
+    public function listAvailableCloudFiles(int $tenantId, int $userId): array
+    {
+        return $this->attachments->listAvailableCloudFilesForUser($tenantId, $userId, 200);
+    }
+
+    public function replaceMessageAttachments(int $tenantId, int $userId, int $messageId, array $selectedFileIds): array
+    {
+        return $this->attachments->replaceMessageAttachments($tenantId, $userId, $messageId, $selectedFileIds);
+    }
 }

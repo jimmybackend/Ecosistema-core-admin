@@ -263,6 +263,7 @@ Notas clave:
 
 ## Checklist de despliegue EC2/producción
 - Ver guía: `docs/deploy/EC2_PRODUCTION_CHECKLIST.md`.
+- Runbook VM Core Admin: `docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`.
 
 ## Comandos rápidos
 ```bash

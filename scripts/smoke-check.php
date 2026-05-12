@@ -170,6 +170,14 @@ if (!$deployChecklistFound) {
 }
 
 
+$vmRunbookPath = 'docs/deploy/CORE_ADMIN_VM_RUNBOOK.md';
+if (is_file($root . '/' . $vmRunbookPath)) {
+    ok('Existe runbook VM de Core Admin: ' . $vmRunbookPath);
+} else {
+    fail('No se encontró runbook VM de Core Admin en docs/deploy/CORE_ADMIN_VM_RUNBOOK.md.', $criticalFailures);
+}
+
+
 $routesFile = $root . '/routes/web.php';
 if (is_file($routesFile)) {
     $routesContent = file_get_contents($routesFile);

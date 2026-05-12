@@ -44,3 +44,8 @@ En PRs siguientes se podrá:
 - Se agrega listado administrativo `GET /cloud/drive/folders` (metadata read-only de `cloud_folders`, sin AWS/S3 real ni exposición de `prefix` o rutas internas).
 - Se agrega detalle administrativo `GET /cloud/drive/folders/{id}` (metadata read-only por carpeta, con aislamiento por tenant/usuario, sin exponer `prefix`, rutas internas o secretos).
 - Se mantiene `remote_calls=false`, `signed_urls=false`, `remote_uploads=false`, `remote_downloads=false` y `aws_connection=false`.
+
+## Navegador Drive (dry-run)
+- Se agregó navegación read-only de carpetas y archivos por metadata DB (`cloud_folders`, `cloud_files`).
+- No hay llamadas a bucket real ni generación de signed URLs.
+- Se mantiene bloqueo de AWS/S3, uploads, downloads y operaciones mutables.

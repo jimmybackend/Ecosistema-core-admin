@@ -73,3 +73,9 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 - Fuente: metadata de `cloud_folders` filtrada por `tenant_id`, `user_id`, `id`, `is_deleted=0`.
 - Seguridad: no expone `prefix`, `prefix_hash`, `password_hash`, `secure_hint`, rutas internas ni secretos.
 - Operación: no habilita navegación de carpetas, no crea/edita/borra, no activa AWS/S3 real y no hace llamadas remotas.
+
+## Navegación read-only de carpetas
+- Ruta protegida: `GET /cloud/drive/browse` con `folder_id` opcional entero positivo.
+- Solo lee metadata de `cloud_folders` y `cloud_files`.
+- No expone `prefix`, `prefix_hash`, `s3_key`, `s3_key_hash` ni rutas internas.
+- No permite crear/editar/borrar/subir/descargar ni activa AWS/S3 real.

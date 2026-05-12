@@ -749,7 +749,7 @@ return [
 
         try {
             $pdo = PdoFactory::make($config['database']);
-            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo));
+            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo));
             $folders = $service->listFolders($tenantId, $userId, 100);
         } catch (\Throwable) {
             $errorMessage = 'No se pudo cargar metadata de carpetas de Drive.';
@@ -776,7 +776,7 @@ return [
         } else {
             try {
                 $pdo = PdoFactory::make($config['database']);
-                $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo));
+                $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo));
                 $folder = $service->getFolderDetail($tenantId, $userId, (int)$idRaw);
                 if ($folder === null) {
                     http_response_code(404);
@@ -791,6 +791,40 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Detalle carpeta Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-folder-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('folder','errorMessage')]);
+    },
+
+    'GET /cloud/drive/browse' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $folderIdRaw = isset($_GET['folder_id']) ? (string)$_GET['folder_id'] : null;
+        $folderId = null;
+
+        if ($folderIdRaw !== null && $folderIdRaw !== '') {
+            if (!preg_match('/^[1-9][0-9]*$/', $folderIdRaw)) {
+                http_response_code(404);
+                renderError($config, 404);
+                return;
+            }
+            $folderId = (int)$folderIdRaw;
+        }
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo));
+            $browser = $service->getFolderBrowser($tenantId, $userId, $folderId);
+            $errorMessage = null;
+        } catch (\Throwable) {
+            http_response_code(404);
+            $browser = ['current_folder' => null, 'parent_folder' => null, 'child_folders' => [], 'files' => [], 'breadcrumbs' => [], 'limits' => ['max_items' => 100], 'read_only' => true];
+            $errorMessage = 'Carpeta no encontrada.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Navegador Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-browse','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('browser','errorMessage')]);
     },
 
     'GET /cloud/drive/files/{id}' => static function (array $config, array $params): void {

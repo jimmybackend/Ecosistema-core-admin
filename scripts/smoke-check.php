@@ -72,6 +72,7 @@ $requiredFiles = [
     'resources/views/pages/cloud/settings.php',
     'resources/views/pages/cloud/drive-files.php',
     'resources/views/pages/cloud/drive-file-detail.php',
+    'resources/views/pages/cloud/drive-folder-detail.php',
     'app/Core/Cloud/CloudStorageService.php',
     'app/Core/Cloud/CloudUploadService.php',
     'resources/views/pages/cloud/upload.php',
@@ -191,6 +192,11 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /cloud/drive/files/{id} en routes/web.php.', $criticalFailures);
     }
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/folders/{id}")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/folders/{id} para detalle read-only de carpetas.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/folders/{id} en routes/web.php.', $criticalFailures);
+    }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/files/{id}/download")) {
         ok('routes/web.php contiene ruta de descarga cloud controlada.');
@@ -274,6 +280,36 @@ if (is_file($driveServiceFile)) {
         ok('EcosistemaDriveFileService contiene getFileDetail para DTO de detalle.');
     } else {
         fail('EcosistemaDriveFileService no contiene getFileDetail.', $criticalFailures);
+    }
+}
+
+$folderRepositoryFile = $root . '/app/Core/Cloud/EcosistemaDriveFolderRepository.php';
+if (is_file($folderRepositoryFile)) {
+    $content = file_get_contents($folderRepositoryFile);
+    if ($content !== false && str_contains($content, 'function findVisibleById(')) {
+        ok('EcosistemaDriveFolderRepository contiene findVisibleById para detalle seguro de carpetas.');
+    } else {
+        fail('EcosistemaDriveFolderRepository no contiene findVisibleById.', $criticalFailures);
+    }
+}
+
+$folderServiceFile = $root . '/app/Core/Cloud/EcosistemaDriveFolderService.php';
+if (is_file($folderServiceFile)) {
+    $content = file_get_contents($folderServiceFile);
+    if ($content !== false && str_contains($content, 'function getFolderDetail(')) {
+        ok('EcosistemaDriveFolderService contiene getFolderDetail para DTO de detalle de carpetas.');
+    } else {
+        fail('EcosistemaDriveFolderService no contiene getFolderDetail.', $criticalFailures);
+    }
+}
+
+$driveAdapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($driveAdapterFile)) {
+    $content = file_get_contents($driveAdapterFile);
+    if ($content !== false && str_contains($content, "'read_folder_detail'")) {
+        ok('EcosistemaDriveAdapter declara capability read_folder_detail.');
+    } else {
+        warn('EcosistemaDriveAdapter no declara capability read_folder_detail (opcional).', $warnings);
     }
 }
 

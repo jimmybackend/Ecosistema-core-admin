@@ -6,6 +6,7 @@ $errorMessage = isset($contentData['errorMessage']) ? (string)$contentData['erro
   <h1>Archivos de Ecosistema Drive (read-only)</h1>
   <p>
     <a class="eco-button btn" href="/cloud/drive">Volver a Ecosistema Drive</a>
+    <a class="eco-button btn" href="/cloud/drive/folders">Ver carpetas Drive</a>
   </p>
 
   <div class="eco-alert eco-alert--warning">

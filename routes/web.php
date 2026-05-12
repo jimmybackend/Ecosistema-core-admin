@@ -46,6 +46,8 @@ use App\Core\Cloud\EcosistemaDriveConfig;
 use App\Core\Cloud\EcosistemaDriveAdapter;
 use App\Core\Cloud\EcosistemaDriveFileRepository;
 use App\Core\Cloud\EcosistemaDriveFileService;
+use App\Core\Cloud\EcosistemaDriveFolderService;
+use App\Core\Cloud\EcosistemaDriveFolderRepository;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -733,6 +735,30 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Archivos Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-files','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','errorMessage')]);
     },
+
+    'GET /cloud/drive/folders' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['auth_user_id'] ?? 0);
+        $folders = [];
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo));
+            $folders = $service->listFolders($tenantId, $userId, 100);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo cargar metadata de carpetas de Drive.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Carpetas Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-folders','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('folders','errorMessage')]);
+    },
+
     'GET /cloud/drive/files/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }

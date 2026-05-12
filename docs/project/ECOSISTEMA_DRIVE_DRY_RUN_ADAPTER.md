@@ -40,3 +40,5 @@ En PRs siguientes se podrá:
 - No muestra `s3_key` completa, bucket ni rutas internas.
 - No activa AWS/S3, no llama HTTP externo y no genera signed URLs.
 - No sube/descarga archivos remotos.
+
+- Se agrega listado administrativo `GET /cloud/drive/folders` (metadata read-only de `cloud_folders`, sin AWS/S3 real ni exposición de `prefix` o rutas internas).

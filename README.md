@@ -61,7 +61,7 @@ Limitaciones vigentes de autenticación:
 - System: `/system/health`, `/system/logs`, `/system/audit`
 - Mail: `/mail`
 - Cloud: `/cloud`
-- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/files`, `/cloud/drive/files/{id}`
+- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/files`, `/cloud/drive/files/{id}`, `/cloud/drive/folders`
 - Onboarding: `/onboarding`
 - Health técnico DB: `/health/db`
 
@@ -125,6 +125,7 @@ Limitaciones vigentes de autenticación:
 - Configuración base segura: `docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md`.
 - Modo por defecto `contract`, sin AWS/S3 real, sin llamadas remotas y con `s3` como repositorio de referencia técnica.
 - Listado read-only de Drive (`/cloud/drive/files`) usando metadata de `cloud_files`, sin listar bucket/key real, sin signed URLs y sin operaciones remotas.
+- Listado read-only de carpetas (`/cloud/drive/folders`) usando metadata de `cloud_folders`, sin exponer `prefix` ni rutas internas, y sin crear/editar/borrar carpetas.
 - Detalle read-only por archivo (`/cloud/drive/files/{id}`) usando metadata segura de `cloud_files` (aislamiento por tenant/usuario, sin exponer `s3_key`, `stored_name`, hashes sensibles ni `metadata_json` crudo).
 
 ## Inventario técnico S3 Drive

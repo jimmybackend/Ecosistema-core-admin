@@ -1,3 +1,5 @@
+> Nota PR #46: este documento debe interpretarse bajo la construcción de Ecosistema Drive como servicio propio; `s3` es referencia técnica y no dependencia directa.
+
 # Mapeo DB Cloud/S3 para Integración Core Admin ↔ S3 Drive (PR #44)
 
 ## 1) Propósito
@@ -141,7 +143,7 @@ Base de validación usada en este PR:
 - **Estado actual**: **sólo referencia**.
 
 ## 4) Límites explícitos de este PR
-- No activa AWS/S3 real.
+- No activa AWS/S3 real (permanece en modo contract para Ecosistema Drive).
 - No crea endpoints nuevos.
 - No crea migraciones, tablas, campos ni seeds.
 - No modifica repos `jimmybackend/s3` ni `jimmybackend/Ecosistema-bd`.

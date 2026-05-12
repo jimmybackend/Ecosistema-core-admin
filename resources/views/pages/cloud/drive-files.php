@@ -25,11 +25,12 @@ $errorMessage = isset($contentData['errorMessage']) ? (string)$contentData['erro
         <th>Estado</th>
         <th>Fecha</th>
         <th>Origen</th>
+        <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
       <?php if ($files === []): ?>
-        <tr><td colspan="6">Sin archivos para este usuario/tenant.</td></tr>
+        <tr><td colspan="7">Sin archivos para este usuario/tenant.</td></tr>
       <?php else: ?>
         <?php foreach ($files as $file): ?>
           <tr>
@@ -39,6 +40,9 @@ $errorMessage = isset($contentData['errorMessage']) ? (string)$contentData['erro
             <td><span class="eco-badge"><?= e((string)($file['status'] ?? '')) ?></span></td>
             <td><?= e((string)($file['uploaded_at'] ?? '')) ?></td>
             <td><?= e((string)($file['origin_module'] ?? '')) ?></td>
+            <td>
+              <a class="eco-button btn" href="/cloud/drive/files/<?= e((string)($file['id'] ?? '0')) ?>">Ver detalle</a>
+            </td>
           </tr>
         <?php endforeach; ?>
       <?php endif; ?>

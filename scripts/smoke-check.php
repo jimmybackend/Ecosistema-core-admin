@@ -68,6 +68,7 @@ $requiredFiles = [
     'resources/views/pages/mail/settings.php',
     'resources/views/pages/cloud/settings.php',
     'resources/views/pages/cloud/drive-files.php',
+    'resources/views/pages/cloud/drive-file-detail.php',
     'app/Core/Cloud/CloudStorageService.php',
     'app/Core/Cloud/CloudUploadService.php',
     'resources/views/pages/cloud/upload.php',
@@ -177,6 +178,11 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /cloud/drive/files en routes/web.php.', $criticalFailures);
     }
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/files/{id} para detalle read-only de Drive.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/files/{id} en routes/web.php.', $criticalFailures);
+    }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/files/{id}/download")) {
         ok('routes/web.php contiene ruta de descarga cloud controlada.');
@@ -239,6 +245,26 @@ foreach ($requiredClasses as $className) {
     }
 
     fail("No se pudo cargar clase crítica: {$className}", $criticalFailures);
+}
+
+$driveRepositoryFile = $root . '/app/Core/Cloud/EcosistemaDriveFileRepository.php';
+if (is_file($driveRepositoryFile)) {
+    $content = file_get_contents($driveRepositoryFile);
+    if ($content !== false && str_contains($content, 'function findVisibleById(')) {
+        ok('EcosistemaDriveFileRepository contiene findVisibleById para detalle seguro.');
+    } else {
+        fail('EcosistemaDriveFileRepository no contiene findVisibleById.', $criticalFailures);
+    }
+}
+
+$driveServiceFile = $root . '/app/Core/Cloud/EcosistemaDriveFileService.php';
+if (is_file($driveServiceFile)) {
+    $content = file_get_contents($driveServiceFile);
+    if ($content !== false && str_contains($content, 'function getFileDetail(')) {
+        ok('EcosistemaDriveFileService contiene getFileDetail para DTO de detalle.');
+    } else {
+        fail('EcosistemaDriveFileService no contiene getFileDetail.', $criticalFailures);
+    }
 }
 
 

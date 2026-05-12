@@ -54,3 +54,9 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 ## 10) Referencias externas
 - `jimmybackend/s3` sigue como referencia técnica/funcional (no dependencia runtime).
 - `jimmybackend/mailit-click` queda para etapa posterior (short URLs, tracking y multilenguaje).
+
+## 11) Detalle read-only de archivo Drive (PR #50)
+- Ruta: `GET /cloud/drive/files/{id}` (protegida por sesión y permiso `cloud.view`).
+- Fuente: metadata de `cloud_files` filtrada por `tenant_id`, `user_id` e `id`, excluyendo `status = 'deleted'`.
+- Seguridad: no expone `s3_key`, `stored_name`, hashes sensibles, secretos de cifrado ni `metadata_json` crudo.
+- Operación: sin AWS/S3 real, sin signed URLs, sin preview/descarga/subida remota y sin llamadas HTTP externas.

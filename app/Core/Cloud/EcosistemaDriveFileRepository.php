@@ -35,4 +35,32 @@ final readonly class EcosistemaDriveFileRepository
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
+
+    /**
+     * @return array<string,mixed>|null
+     */
+    public function findVisibleById(int $tenantId, int $userId, int $id): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id, original_name, mime_type, extension, size_bytes, status, virus_scan_status,
+                    access_type, encrypted, found_in_s3, origin_module, origin_table, origin_id,
+                    uploaded_by_user_id, uploaded_at, updated_at, deleted_at
+             FROM cloud_files
+             WHERE tenant_id = :tenant_id
+               AND user_id = :user_id
+               AND id = :id
+               AND status <> :deleted_status
+             LIMIT 1'
+        );
+
+        $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+        $stmt->bindValue(':deleted_status', 'deleted');
+        $stmt->execute();
+
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $result !== false ? $result : null;
+    }
 }

@@ -733,6 +733,39 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Archivos Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-files','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','errorMessage')]);
     },
+    'GET /cloud/drive/files/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? 0);
+        $idRaw = (string)($params['id'] ?? '');
+        $file = null;
+        $errorMessage = null;
+
+        if (!preg_match('/^[1-9][0-9]*$/', $idRaw)) {
+            http_response_code(404);
+            $errorMessage = 'Archivo no encontrado.';
+        } else {
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $service = new EcosistemaDriveFileService(new EcosistemaDriveFileRepository($pdo));
+                $file = $service->getFileDetail($tenantId, $userId, (int)$idRaw);
+                if ($file === null) {
+                    http_response_code(404);
+                    $errorMessage = 'Archivo no encontrado.';
+                }
+            } catch (\Throwable) {
+                http_response_code(404);
+                $file = null;
+                $errorMessage = 'Archivo no encontrado.';
+            }
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Detalle archivo Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-file-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('file','errorMessage')]);
+    },
 
     'GET /cloud/settings' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

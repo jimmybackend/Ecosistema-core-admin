@@ -13,6 +13,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Estado operativo actual](#estado-operativo-actual)
 - [Integración futura con S3 Drive](#integración-futura-con-s3-drive)
 - [Inventario técnico S3 Drive](#inventario-técnico-s3-drive)
+- [Mapeo DB Cloud/S3](#mapeo-db-clouds3)
 - [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
 - [Comandos rápidos](#comandos-rápidos)
 - [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
@@ -119,6 +120,10 @@ Limitaciones vigentes de autenticación:
 - Inventario documental de preparación: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.
 - Este inventario no activa integración real ni modifica el repositorio `jimmybackend/s3`.
 
+## Mapeo DB Cloud/S3
+- Mapeo documental de tablas Cloud/S3 para integración futura: `docs/project/CLOUD_S3_DATABASE_MAPPING.md`.
+- No activa AWS/S3 real ni modifica esquema de base de datos.
+
 ## Documentación del proyecto
 - `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_ESTADO_ACTUAL.md`
@@ -128,6 +133,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`
 - `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`
 - `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`
+- `docs/project/CLOUD_S3_DATABASE_MAPPING.md`
 - `docs/ops/MONITORING_OPERATIONS_PLAN.md`
 
 ## Smoke checks básicos (PR #22)

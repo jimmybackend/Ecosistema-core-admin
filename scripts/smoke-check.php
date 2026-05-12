@@ -92,6 +92,7 @@ $requiredFiles = [
     'docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md',
     'docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md',
     'docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md',
+    'docs/project/CLOUD_S3_DATABASE_MAPPING.md',
     'scripts/backup-check.php',
     'scripts/cron-runner.php',
     'scripts/ops-monitor-check.php',

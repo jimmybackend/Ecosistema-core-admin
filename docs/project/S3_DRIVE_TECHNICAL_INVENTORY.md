@@ -8,6 +8,8 @@ Objetivos:
 - Dejar trazabilidad de lo observado en el entorno actual.
 - Definir qué falta confirmar antes de un PR de integración técnica.
 
+Referencia adicional: `docs/project/CLOUD_S3_DATABASE_MAPPING.md` (mapeo documental tabla por tabla para Cloud/S3).
+
 ## 2) Estado de acceso al repositorio `jimmybackend/s3`
 Estado en este entorno Codex: **NO accesible**.
 

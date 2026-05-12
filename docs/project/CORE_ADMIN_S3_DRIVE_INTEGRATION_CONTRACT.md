@@ -9,6 +9,7 @@ Este PR no implementa integración técnica real; fija límites, responsabilidad
 
 ## 1.1) Inventario técnico relacionado (PR #43)
 - Documento de inventario técnico/documental: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.
+- Mapeo DB Cloud/S3 (tablas y límites): `docs/project/CLOUD_S3_DATABASE_MAPPING.md`.
 - Este inventario amplía el descubrimiento y riesgos sin alterar el contrato funcional ni activar integración real.
 
 ## 2) Separación de repositorios

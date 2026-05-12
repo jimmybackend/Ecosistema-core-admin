@@ -136,6 +136,17 @@ if (!$deployChecklistFound) {
     fail('No se encontró checklist de despliegue EC2/producción en docs/deploy o docs/project.', $criticalFailures);
 }
 
+
+$routesFile = $root . '/routes/web.php';
+if (is_file($routesFile)) {
+    $routesContent = file_get_contents($routesFile);
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/files/{id}/download")) {
+        ok('routes/web.php contiene ruta de descarga cloud controlada.');
+    } else {
+        fail('No se encontró ruta GET /cloud/files/{id}/download en routes/web.php.', $criticalFailures);
+    }
+}
+
 $requiredClasses = [
     'App\\Core\\Auth\\AuthorizationRepository',
     'App\\Core\\Auth\\AuthorizationService',
@@ -145,7 +156,8 @@ $requiredClasses = [
     'App\\Http\\Response\\ErrorResponder',
     'App\\Core\\Auth\\AuthSession',
     'App\\Core\\Mail\\MailConfig',
-    'App\\Core\\Cloud\\CloudStorageConfig',
+    'App\Core\Cloud\CloudStorageConfig',
+    'App\Core\Cloud\CloudDownloadService',
 ];
 
 foreach ($requiredClasses as $className) {

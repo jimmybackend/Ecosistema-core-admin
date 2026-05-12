@@ -240,3 +240,12 @@ composer smoke
 - No hay descarga pública ni signed URLs en este PR.
 - No guardar secretos en código/documentación.
 - Verificar permisos de escritura del directorio `storage/app/cloud` antes de habilitar uploads.
+
+## Descarga controlada Cloud (PR #30)
+- Ruta: `GET /cloud/files/{id}/download`.
+- Protecciones: sesión, permiso fino (`cloud.view` o `cloud.manage`), validación por `tenant_id` y `user_id` del archivo.
+- `CLOUD_ALLOW_DOWNLOADS=false` por defecto; con este valor la descarga se bloquea.
+- En este PR solo se descarga almacenamiento local bajo `CLOUD_LOCAL_STORAGE_PATH`.
+- No hay descarga S3 real, no hay signed URLs y no hay rutas públicas.
+- Seguridad: resolución por `id` en `cloud_files`, validación anti path traversal, headers `attachment` y `X-Content-Type-Options: nosniff`.
+- No exponer `storage/` públicamente.

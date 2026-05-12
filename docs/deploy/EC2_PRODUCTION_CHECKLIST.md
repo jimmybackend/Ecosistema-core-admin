@@ -106,3 +106,10 @@ Validaciones y seguridad:
 - Aplicar permisos mínimos de escritura para usuario web (sin `777`).
 - Mantener `CLOUD_ALLOW_UPLOADS=false` por defecto en producción hasta validar operación.
 - Al habilitar S3 real, usar IAM de mínimo privilegio (sin usuario root).
+
+## 14) Descargas Cloud controladas (PR #30)
+- Confirmar que `storage/app/cloud` no esté bajo `DocumentRoot`/`root` público.
+- Confirmar permisos de lectura mínimos solo para usuario web/proceso PHP.
+- Mantener `CLOUD_ALLOW_DOWNLOADS=false` hasta validar operación completa.
+- Verificar que no exista listado de directorio público para `storage`.
+- Monitorear auditoría (`cloud.file_downloaded`) y logs de errores de descarga.

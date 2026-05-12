@@ -9,6 +9,7 @@ Objetivos:
 - Definir qué falta confirmar antes de un PR de integración técnica.
 
 Referencia adicional: `docs/project/CLOUD_S3_DATABASE_MAPPING.md` (mapeo documental tabla por tabla para Cloud/S3).
+Configuración compartida segura: `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`.
 
 ## 1.1) Aclaración canónica de estructura (PR #45)
 - `Ecosistema-bd` contiene la base real de referencia `adbbmis1_eco` y es la fuente canónica de estructura.

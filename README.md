@@ -14,6 +14,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Integración futura con S3 Drive](#integración-futura-con-s3-drive)
 - [Inventario técnico S3 Drive](#inventario-técnico-s3-drive)
 - [Mapeo DB Cloud/S3](#mapeo-db-clouds3)
+- [Configuración compartida S3 Drive](#configuración-compartida-s3-drive)
 - [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
 - [Comandos rápidos](#comandos-rápidos)
 - [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
@@ -125,6 +126,10 @@ Limitaciones vigentes de autenticación:
 - Mapeo documental de tablas Cloud/S3 para integración futura: `docs/project/CLOUD_S3_DATABASE_MAPPING.md`.
 - No activa AWS/S3 real ni modifica esquema de base de datos.
 
+## Configuración compartida S3 Drive
+- Configuración compartida y segura para integración futura: `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`.
+- Modo por defecto `contract`, sin llamadas reales al repo `s3` y sin activación AWS/S3.
+
 ## Documentación del proyecto
 - `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_ESTADO_ACTUAL.md`
@@ -135,6 +140,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`
 - `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`
 - `docs/project/CLOUD_S3_DATABASE_MAPPING.md`
+- `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`
 - `docs/ops/MONITORING_OPERATIONS_PLAN.md`
 
 ## Smoke checks básicos (PR #22)

@@ -166,6 +166,7 @@ $requiredClasses = [
     'App\Core\Onboarding\OnboardingRunner',
     'App\Core\Onboarding\OnboardingStepExecutor',
     'App\Core\System\CronHealthCheckRunner',
+    'App\Core\Auth\CronSessionCleanupRunner',
 ];
 
 foreach ($requiredClasses as $className) {
@@ -185,6 +186,12 @@ if (is_file($cronRunnerFile)) {
         ok('scripts/cron-runner.php soporta --run=health-checks.');
     } else {
         fail('scripts/cron-runner.php no declara --run=health-checks.', $criticalFailures);
+    }
+
+    if ($cronRunnerContent !== false && str_contains($cronRunnerContent, '--run=session-cleanup')) {
+        ok('scripts/cron-runner.php soporta --run=session-cleanup.');
+    } else {
+        fail('scripts/cron-runner.php no declara --run=session-cleanup.', $criticalFailures);
     }
 }
 

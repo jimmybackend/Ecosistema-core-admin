@@ -38,4 +38,25 @@ final class SessionRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':id' => $coreSessionId]);
     }
+
+    /**
+     * @return array{candidates:int,revoked:int}
+     */
+    public function revokeExpiredSessions(DateTimeImmutable $threshold): array
+    {
+        $countSql = 'SELECT COUNT(*) FROM core_sessions WHERE revoked_at IS NULL AND expires_at < :threshold';
+        $countStmt = $this->pdo->prepare($countSql);
+        $countStmt->execute([':threshold' => $threshold->format('Y-m-d H:i:s')]);
+        $candidates = (int) $countStmt->fetchColumn();
+
+        $updateSql = 'UPDATE core_sessions SET revoked_at = NOW() WHERE revoked_at IS NULL AND expires_at < :threshold';
+        $updateStmt = $this->pdo->prepare($updateSql);
+        $updateStmt->execute([':threshold' => $threshold->format('Y-m-d H:i:s')]);
+
+        return [
+            'candidates' => $candidates,
+            'revoked' => $updateStmt->rowCount(),
+        ];
+    }
+
 }

@@ -224,12 +224,15 @@ composer dump-autoload
 composer smoke
 composer cron:check
 composer cron:health
+composer cron:sessions
 ```
 
-### Cron seguro (health checks controlados)
+### Cron seguro (jobs controlados)
 - `composer cron:check`: valida autoload/bootstrap y modo seguro sin tocar DB.
 - `composer cron:health`: ejecuta únicamente el job controlado `health-checks`.
+- `composer cron:sessions`: ejecuta el job controlado `session-cleanup` para revocar sesiones expiradas en `core_sessions` según `SESSION_IDLE_TIMEOUT`.
 - `cron:health` usa checks existentes del módulo System con `check_type` `db/database` y registra resultados/logs si las tablas reales están disponibles.
+- `cron:sessions` usa UPDATE seguro (`revoked_at`) y no elimina usuarios/roles/permisos ni expone tokens/hashes.
 - Requiere DB real configurada (`adbbmis1_eco`) en `.env`.
 - **No** ejecuta AWS, SMTP, procesamiento de archivos, workers permanentes ni checks HTTP externos.
 

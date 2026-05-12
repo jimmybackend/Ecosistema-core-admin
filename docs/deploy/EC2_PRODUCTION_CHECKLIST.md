@@ -172,3 +172,8 @@ Ejemplo de cron (activar solo después de validar manualmente):
 - Mantener límites de envío bajos en proveedor SMTP.
 - Revisar auditoría de `mail.send_attempted`, `mail.sent`, `mail.send_failed`, `mail.send_blocked_by_config`.
 - Después de pruebas iniciales, evaluar volver `MAIL_ALLOW_TEST_SEND=false`.
+
+- Verificar permisos de `storage/` antes de habilitar envío real con adjuntos.
+- Confirmar que `storage/` no sea público.
+- Confirmar límites de tamaño para adjuntos y upload cloud.
+- Confirmar registro de auditoría para `mail.attachments_updated`.

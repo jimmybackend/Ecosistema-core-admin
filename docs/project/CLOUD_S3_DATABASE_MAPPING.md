@@ -10,6 +10,7 @@ Base de validación usada en este PR:
 
 
 ## 1.1) Aclaración canónica de propiedad Cloud/S3 (PR #45)
+- Configuración compartida segura (PR #46): `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`.
 - `jimmybackend/Ecosistema-bd` contiene la base real/canónica de referencia del ecosistema (`adbbmis1_eco`).
 - Las tablas `cloud_*` pertenecen funcionalmente al sistema **Cloud/S3 Drive** (repo `jimmybackend/s3`, ArcadeCloud Drive) dentro de `adbbmis1_eco`.
 - Core Admin consume/administra partes de esa estructura **solo por contrato**; no debe duplicarla ni redefinirla en este repositorio.

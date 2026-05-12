@@ -8,6 +8,7 @@ Definir el **contrato documental** para una futura integración entre:
 Este PR no implementa integración técnica real; fija límites, responsabilidades y reglas de seguridad para evitar acoplamientos inseguros o suposiciones no verificadas.
 
 ## 1.1) Inventario técnico relacionado (PR #43)
+- Configuración compartida segura (PR #46): `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`.
 - Documento de inventario técnico/documental: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.
 - Mapeo DB Cloud/S3 (tablas y límites): `docs/project/CLOUD_S3_DATABASE_MAPPING.md`.
 - Este inventario amplía el descubrimiento y riesgos sin alterar el contrato funcional ni activar integración real.

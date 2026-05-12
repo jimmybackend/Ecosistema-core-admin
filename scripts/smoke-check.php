@@ -58,6 +58,9 @@ $requiredFiles = [
     'README.md',
     'config/mail.php',
     'config/cloud.php',
+    'app/Core/Cloud/S3DriveIntegrationConfig.php',
+    'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
+    'config/s3_drive.php',
     'resources/views/pages/mail/settings.php',
     'resources/views/pages/cloud/settings.php',
     'app/Core/Cloud/CloudStorageService.php',
@@ -128,7 +131,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS=', 'MAIL_MAX_ATTACHMENTS=', 'MAIL_MAX_ATTACHMENT_MB=', 'MAIL_MAX_TOTAL_ATTACHMENT_MB='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS=', 'MAIL_MAX_ATTACHMENTS=', 'MAIL_MAX_ATTACHMENT_MB=', 'MAIL_MAX_TOTAL_ATTACHMENT_MB=', 'S3_DRIVE_ENABLED=', 'S3_DRIVE_MODE=', 'S3_DRIVE_BASE_URL=', 'S3_DRIVE_API_TIMEOUT=', 'S3_DRIVE_ALLOW_REMOTE_CALLS=', 'S3_DRIVE_ALLOW_SIGNED_URLS=', 'S3_DRIVE_ALLOW_REMOTE_UPLOADS=', 'S3_DRIVE_ALLOW_REMOTE_DOWNLOADS='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
@@ -204,6 +207,7 @@ $requiredClasses = [
     'App\Core\Cloud\CloudDownloadService',
     'App\Core\Onboarding\OnboardingRunner',
     'App\Core\Onboarding\OnboardingStepExecutor',
+    'App\Core\Cloud\S3DriveIntegrationConfig',
     'App\Core\System\CronHealthCheckRunner',
     'App\Core\Auth\CronSessionCleanupRunner',
 ];

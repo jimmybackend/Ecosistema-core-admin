@@ -177,3 +177,11 @@ Ejemplo de cron (activar solo después de validar manualmente):
 - Confirmar que `storage/` no sea público.
 - Confirmar límites de tamaño para adjuntos y upload cloud.
 - Confirmar registro de auditoría para `mail.attachments_updated`.
+
+## 19) Mail adjuntos locales salientes (PR #38)
+- Revisar `CLOUD_LOCAL_STORAGE_PATH` y confirmar que exista.
+- Confirmar que `storage/` no sea público.
+- Confirmar permisos mínimos de lectura para usuario web/PHP.
+- Configurar límites: `MAIL_MAX_ATTACHMENTS`, `MAIL_MAX_ATTACHMENT_MB`, `MAIL_MAX_TOTAL_ATTACHMENT_MB`.
+- Probar SMTP con archivo pequeño antes de uso operativo.
+- Revisar auditoría de `mail.send_attempted`, `mail.sent`, `mail.send_failed`, `mail.send_blocked_by_attachments`.

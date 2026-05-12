@@ -9,7 +9,7 @@ $recipients = is_array($preview['recipients'] ?? null) ? $preview['recipients'] 
 ?>
 <section>
   <h1>Preview de envío individual</h1>
-  <p>Envío individual controlado (sin masivo, campañas, workers ni adjuntos salientes).</p>
+  <p>Envío individual controlado (sin masivo, campañas ni workers).</p>
   <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
   <?php if ($errorMessage): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
 
@@ -29,10 +29,13 @@ $recipients = is_array($preview['recipients'] ?? null) ? $preview['recipients'] 
         <tr><th>Estado envío</th><td><?= e((string) ($preview['reason'] ?? '')) ?></td></tr>
       </tbody></table>
       <p><strong>Body text (resumen escapado):</strong><br><?= nl2br(e((string) ($preview['body_text_preview'] ?? ''))) ?></p>
-      <div class="eco-alert" role="status">Adjuntos lógicos preparados; envío binario aún no habilitado en este PR.</div>
+
       <?php if ($attachments !== []): ?>
-      <table class="eco-table" style="width:100%"><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Envío</th></tr></thead><tbody>
-      <?php foreach ($attachments as $attachment): ?><tr><td><?= e((string) ($attachment['original_name'] ?? '')) ?></td><td><?= e((string) ($attachment['mime_type'] ?? '')) ?></td><td><?= e((string) ($attachment['size_bytes'] ?? '')) ?></td><td><span class="eco-badge">No incluido aún</span></td></tr><?php endforeach; ?>
+      <?php $summary = is_array($preview['attachments_summary'] ?? null) ? $preview['attachments_summary'] : []; ?>
+      <p><strong>Total adjuntos:</strong> <?= e((string) ($summary['count'] ?? 0)) ?> | <strong>Total bytes:</strong> <?= e((string) ($summary['total_bytes'] ?? 0)) ?></p>
+      <p><strong>Límites:</strong> max <?= e((string) (($summary['limits']['max_attachments'] ?? 0))) ?> archivos, <?= e((string) (($smtp['max_attachment_mb'] ?? 0))) ?>MB por archivo, <?= e((string) (($smtp['max_total_attachment_mb'] ?? 0))) ?>MB total</p>
+      <table class="eco-table" style="width:100%"><thead><tr><th>Nombre</th><th>Tipo</th><th>Tamaño</th><th>Estado</th></tr></thead><tbody>
+      <?php foreach ($attachments as $attachment): ?><tr><td><?= e((string) ($attachment['original_name'] ?? '')) ?></td><td><?= e((string) ($attachment['mime_type'] ?? '')) ?></td><td><?= e((string) ($attachment['size_bytes'] ?? '')) ?></td><td><span class="eco-badge"><?= !empty($attachment['ready']) ? 'Listo' : e((string) ($attachment['blocked_reason'] ?? 'Bloqueado')) ?></span></td></tr><?php endforeach; ?>
       </tbody></table>
       <?php endif; ?>
       <form method="post" action="/mail/messages/<?= e((string) $id) ?>/prepare-send">

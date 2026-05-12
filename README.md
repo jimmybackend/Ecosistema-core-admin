@@ -312,3 +312,11 @@ Estado actual:
 - Seguridad: sesión + permiso `mail.manage` + CSRF + aislamiento `tenant_id`/`user_id`; sólo se aceptan IDs (`cloud_file_ids[]`).
 - No hay subida de archivos desde Mail, no hay envío masivo, campañas, workers ni colas.
 - En este PR los adjuntos se preparan lógicamente para preview; el envío binario MIME queda pendiente para PR posterior.
+
+## Mail envío individual con adjuntos locales (PR #38)
+- Se habilita envío controlado de **un solo borrador** con adjuntos Cloud ya asociados.
+- Requiere: `MAIL_SEND_ENABLED=true` y `MAIL_ALLOW_TEST_SEND=true`.
+- Límites configurables: `MAIL_MAX_ATTACHMENTS`, `MAIL_MAX_ATTACHMENT_MB`, `MAIL_MAX_TOTAL_ATTACHMENT_MB`.
+- Se bloquea envío si hay adjuntos inválidos (inexistentes, fuera de `CLOUD_LOCAL_STORAGE_PATH`, S3-only/remotos o tamaño/cantidad excedidos).
+- No hay envío masivo, campañas, workers, colas, S3 real ni signed URLs.
+- Recomendado: probar primero con archivos pequeños y SMTP controlado.

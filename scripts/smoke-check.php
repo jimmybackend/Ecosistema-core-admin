@@ -72,6 +72,7 @@ $requiredFiles = [
     'app/Core/Mail/SmtpMailer.php',
     'app/Core/Mail/MailAttachmentRepository.php',
     'app/Core/Mail/MailAttachmentService.php',
+    'app/Core/Mail/MailOutgoingAttachmentService.php',
     'resources/views/pages/auth/login.php',
     'resources/views/pages/dashboard.php',
     'resources/views/pages/users/index.php',
@@ -119,7 +120,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS=', 'MAIL_MAX_ATTACHMENTS=', 'MAIL_MAX_ATTACHMENT_MB=', 'MAIL_MAX_TOTAL_ATTACHMENT_MB='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
@@ -318,3 +319,11 @@ echo "- Críticos fallidos: {$criticalFailures}" . PHP_EOL;
 echo "- Warnings: {$warnings}" . PHP_EOL;
 
 exit($criticalFailures === 0 ? 0 : 1);
+
+
+$smtpMailerFile = $root . '/app/Core/Mail/SmtpMailer.php';
+if (is_file($smtpMailerFile)) {
+    $smtpMailerContent = file_get_contents($smtpMailerFile);
+    if ($smtpMailerContent !== false && str_contains($smtpMailerContent, 'buildMimeMessage')) { ok('SmtpMailer contiene soporte de adjuntos MIME.'); }
+    else { fail('SmtpMailer no contiene soporte de adjuntos MIME.', $criticalFailures); }
+}

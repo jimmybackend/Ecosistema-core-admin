@@ -69,7 +69,9 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-buckets.php',
     'app/Core/Cloud/EcosistemaDriveBucketService.php',
     'app/Core/Cloud/EcosistemaDriveBucketRepository.php',
+    'app/Core/Cloud/EcosistemaDriveSummaryService.php',
     'resources/views/pages/cloud/drive-root.php',
+    'resources/views/pages/cloud/drive-summary.php',
     'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
     'docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md',
     'config/s3_drive.php',
@@ -229,6 +231,12 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/drive/buckets en routes/web.php.', $criticalFailures);
     }
 
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/summary")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/summary para resumen operativo read-only.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/summary en routes/web.php.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/browse")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/browse para navegación read-only de carpetas/archivos.');
     } else {
@@ -276,7 +284,6 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta POST /mail/messages/{id}/prepare-send en routes/web.php.', $criticalFailures);
     }
-
 
 
 $adapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
@@ -515,34 +522,3 @@ echo "- Críticos fallidos: {$criticalFailures}" . PHP_EOL;
 echo "- Warnings: {$warnings}" . PHP_EOL;
 
 exit($criticalFailures === 0 ? 0 : 1);
-
-
-$smtpMailerFile = $root . '/app/Core/Mail/SmtpMailer.php';
-if (is_file($smtpMailerFile)) {
-    $smtpMailerContent = file_get_contents($smtpMailerFile);
-    if ($smtpMailerContent !== false && str_contains($smtpMailerContent, 'buildMimeMessage')) { ok('SmtpMailer contiene soporte de adjuntos MIME.'); }
-    else { fail('SmtpMailer no contiene soporte de adjuntos MIME.', $criticalFailures); }
-}
-
-
-$backupCheckPath = $root . '/scripts/backup-check.php';
-if (is_file($backupCheckPath)) {
-    ok('Existe script no destructivo de backup check: scripts/backup-check.php');
-}
-
-$driveAdapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
-if (is_file($driveAdapterFile)) {
-    $content = file_get_contents($driveAdapterFile);
-    if ($content !== false && str_contains($content, 'read_folders_metadata')) {
-        ok('EcosistemaDriveAdapter declara capability read_folders_metadata.');
-    } else {
-        fail('EcosistemaDriveAdapter no declara capability read_folders_metadata.', $criticalFailures);
-    }
-}
-
-$driveAdapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
-if (is_file($driveAdapterFile) && str_contains((string)file_get_contents($driveAdapterFile), "'read_user_root'")) {
-    ok('EcosistemaDriveAdapter contiene capability read_user_root.');
-} else {
-    fail('EcosistemaDriveAdapter no contiene capability read_user_root.', $criticalFailures);
-}

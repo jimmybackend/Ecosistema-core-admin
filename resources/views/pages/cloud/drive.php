@@ -6,6 +6,7 @@ $capabilities = (array)($contentData['capabilities'] ?? []);
   <h1>Ecosistema Drive</h1>
   <p>
     <a class="eco-button btn" href="/cloud">Volver a Cloud</a>
+    <a class="eco-button btn" href="/cloud/drive/summary">Resumen Drive</a>
     <a class="eco-button btn" href="/cloud/drive/files">Ver archivos Drive</a>
     <a class="eco-button btn" href="/cloud/drive/folders">Ver carpetas Drive</a>
     <a class="eco-button btn" href="/cloud/drive/browse">Navegar Drive</a>

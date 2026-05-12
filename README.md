@@ -61,7 +61,7 @@ Limitaciones vigentes de autenticación:
 - System: `/system/health`, `/system/logs`, `/system/audit`
 - Mail: `/mail`
 - Cloud: `/cloud`
-- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/files`, `/cloud/drive/files/{id}`, `/cloud/drive/folders`, `/cloud/drive/folders/{id}`
+- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/summary`, `/cloud/drive/files`, `/cloud/drive/files/{id}`, `/cloud/drive/folders`, `/cloud/drive/folders/{id}`, `/cloud/drive/browse`, `/cloud/drive/root`, `/cloud/drive/buckets`
 - Onboarding: `/onboarding`
 - Health técnico DB: `/health/db`
 
@@ -388,3 +388,5 @@ Estado actual:
 
 - Drive admin incluye vista protegida **read-only** `/cloud/drive/root` para resumen de raíz de usuario (tabla `cloud_user_roots`) sin exponer `root_prefix`, rutas internas ni secretos.
 - Esta vista no crea/edita raíces, no activa AWS/S3 real y no modifica base de datos.
+
+- Resumen operativo read-only de Drive (`/cloud/drive/summary`) usando metadata de `cloud_files`, `cloud_folders`, `cloud_user_roots` y `cloud_buckets`, sin exponer keys/prefixes/rutas internas ni activar AWS/S3 o modificar DB.

@@ -52,6 +52,7 @@ use App\Core\Cloud\EcosistemaDriveRootRepository;
 use App\Core\Cloud\EcosistemaDriveRootService;
 use App\Core\Cloud\EcosistemaDriveBucketService;
 use App\Core\Cloud\EcosistemaDriveBucketRepository;
+use App\Core\Cloud\EcosistemaDriveSummaryService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -720,6 +721,27 @@ return [
         $capabilities = $adapter->getCapabilities();
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('status','capabilities')]);
+    },
+
+
+    'GET /cloud/drive/summary' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $summary = ['root_summary' => null, 'file_count' => 0, 'folder_count' => 0, 'bucket_count' => 0, 'quota_bytes' => null, 'used_bytes' => null, 'read_only' => true, 'mode' => 'contract/dry-run', 'warnings' => ['No se pudo cargar el resumen operativo Drive.']];
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveSummaryService($pdo, new EcosistemaDriveRootRepository($pdo));
+            $summary = $service->getSummary($tenantId, $userId);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Resumen Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-summary','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary')]);
     },
 
     'GET /cloud/drive/root' => static function (array $config): void {

@@ -249,3 +249,18 @@ composer smoke
 - No hay descarga S3 real, no hay signed URLs y no hay rutas públicas.
 - Seguridad: resolución por `id` en `cloud_files`, validación anti path traversal, headers `attachment` y `X-Content-Type-Options: nosniff`.
 - No exponer `storage/` públicamente.
+
+## Plan operativo de workers/cron (PR #31)
+- Documento: `docs/ops/WORKERS_CRON_PLAN.md`.
+- Validación segura (sin ejecutar jobs reales):
+
+```bash
+composer cron:check
+```
+
+Estado actual:
+- No hay workers activos todavía.
+- No hay colas reales todavía.
+- No se envían correos desde workers.
+- No se procesan archivos desde workers.
+- No hay sincronización AWS/S3 activa desde cron.

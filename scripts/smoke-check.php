@@ -80,6 +80,8 @@ $requiredFiles = [
     'resources/views/pages/errors/404.php',
     'resources/views/pages/errors/419.php',
     'resources/views/pages/errors/500.php',
+    'docs/ops/WORKERS_CRON_PLAN.md',
+    'scripts/cron-runner.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {

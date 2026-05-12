@@ -13,6 +13,7 @@
   "minimum-stability": "stable",
   "prefer-stable": true,
   "scripts": {
-    "smoke": "php scripts/smoke-check.php"
+    "smoke": "php scripts/smoke-check.php",
+    "cron:check": "php scripts/cron-runner.php --check"
   }
 }

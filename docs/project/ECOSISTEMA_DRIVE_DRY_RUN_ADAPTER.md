@@ -33,3 +33,10 @@ En PRs siguientes se podrá:
 
 ## Estado de `mailit-click`
 `jimmybackend/mailit-click` queda para una etapa posterior (URLs cortas, tracking y multilenguaje) y no participa en este PR.
+
+## Listado read-only de archivos (PR #49)
+- Se agrega listado administrativo `GET /cloud/drive/files`.
+- Lee únicamente metadata desde la tabla real `cloud_files` (aislada por `tenant_id` y `user_id`).
+- No muestra `s3_key` completa, bucket ni rutas internas.
+- No activa AWS/S3, no llama HTTP externo y no genera signed URLs.
+- No sube/descarga archivos remotos.

@@ -6,10 +6,14 @@ $capabilities = (array)($contentData['capabilities'] ?? []);
   <h1>Ecosistema Drive</h1>
   <p>
     <a class="eco-button btn" href="/cloud">Volver a Cloud</a>
+    <a class="eco-button btn" href="/cloud/drive/files">Ver archivos Drive</a>
   </p>
 
   <div class="eco-alert eco-alert--warning">
     Ecosistema Drive está en modo contract/dry-run. No hay AWS/S3 real ni llamadas remotas.
+  </div>
+  <div class="eco-alert">
+    El listado de archivos Drive usa metadata en DB (`cloud_files`) y no enumera buckets/keys reales.
   </div>
 
   <h2>Estado seguro de integración</h2>

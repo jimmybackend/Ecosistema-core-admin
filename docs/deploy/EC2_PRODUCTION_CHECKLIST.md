@@ -113,3 +113,17 @@ Validaciones y seguridad:
 - Mantener `CLOUD_ALLOW_DOWNLOADS=false` hasta validar operación completa.
 - Verificar que no exista listado de directorio público para `storage`.
 - Monitorear auditoría (`cloud.file_downloaded`) y logs de errores de descarga.
+
+## 15) Cron/Workers futuros (PR #31)
+- Estado actual: solo preparación documental y check pasivo; **no hay cron activo**.
+- Ejecutar cron/worker con usuario Linux dedicado (no root).
+- Ejecutar siempre desde la raíz del proyecto.
+- Redirigir salida a `storage/logs` o a `syslog` según política operativa.
+- No activar cron hasta validar permisos, `.env` y `composer smoke`.
+
+Ejemplo futuro **comentado** (no activar sin revisión):
+```cron
+# * * * * * cd /var/www/ecosistema-core-admin && php scripts/cron-runner.php --check >> storage/logs/cron.log 2>&1
+```
+
+> Este ejemplo es de referencia futura y no debe activarse en producción sin revisión técnica y de seguridad.

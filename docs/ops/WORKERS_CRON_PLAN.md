@@ -54,3 +54,10 @@ Todos los siguientes puntos quedan en estado **pendiente/no implementado** en es
 2. Definir política de reintentos y observabilidad.
 3. Acordar retención de logs y auditoría operativa.
 4. Habilitar ejecución real por fases, con checklist de rollback.
+
+## Actualización PR #32: Onboarding seguro manual
+- Se habilitó únicamente ejecución manual/controlada desde UI para avanzar el siguiente paso seguro de una run existente.
+- Tipos permitidos ahora: `null/empty`, `noop`, `manual`, `checklist`.
+- Tipos no soportados: `skipped` con warning y sin ejecución externa.
+- Sigue sin cron activo, sin workers, sin AWS y sin SMTP.
+- La integración con `scripts/cron-runner.php` queda pendiente para PR futuro.

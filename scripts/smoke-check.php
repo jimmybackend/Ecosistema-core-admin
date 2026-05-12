@@ -82,6 +82,9 @@ $requiredFiles = [
     'resources/views/pages/errors/500.php',
     'docs/ops/WORKERS_CRON_PLAN.md',
     'scripts/cron-runner.php',
+    'app/Core/Onboarding/OnboardingRunner.php',
+    'app/Core/Onboarding/OnboardingStepExecutor.php',
+    'resources/views/pages/onboarding/show-run.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -160,6 +163,8 @@ $requiredClasses = [
     'App\\Core\\Mail\\MailConfig',
     'App\Core\Cloud\CloudStorageConfig',
     'App\Core\Cloud\CloudDownloadService',
+    'App\Core\Onboarding\OnboardingRunner',
+    'App\Core\Onboarding\OnboardingStepExecutor',
 ];
 
 foreach ($requiredClasses as $className) {

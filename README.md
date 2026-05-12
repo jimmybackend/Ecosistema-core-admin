@@ -154,6 +154,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/CLOUD_S3_DATABASE_MAPPING.md`
 - `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`
 - `docs/ops/MONITORING_OPERATIONS_PLAN.md`
+- `docs/auth/CONTROLLED_INITIAL_REGISTRATION.md`
 - `docs/MAILIT_CLICK_TECHNICAL_INVENTORY.md` (inventario documental de referencia para Mailit.click / futuro Ecosistema URL Locator).
 
 ## Smoke checks básicos (PR #22)

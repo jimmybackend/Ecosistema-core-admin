@@ -17,4 +17,11 @@ return [
         'samesite' => Env::get('SESSION_SAMESITE', 'Lax'),
         'idle_timeout' => (int) Env::get('SESSION_IDLE_TIMEOUT', 1800),
     ],
+    'core_registration' => [
+        'enabled' => Env::get('CORE_REGISTRATION_ENABLED', 'false'),
+        'mode' => Env::get('CORE_REGISTRATION_MODE', 'first_user'),
+        'invite_code' => Env::get('CORE_REGISTRATION_INVITE_CODE', ''),
+        'default_tenant_id' => Env::get('CORE_REGISTRATION_DEFAULT_TENANT_ID', ''),
+        'default_role_id' => Env::get('CORE_REGISTRATION_DEFAULT_ROLE_ID', ''),
+    ],
 ];

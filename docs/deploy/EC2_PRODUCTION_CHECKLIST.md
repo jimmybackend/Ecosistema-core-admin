@@ -127,3 +127,18 @@ Ejemplo futuro **comentado** (no activar sin revisión):
 ```
 
 > Este ejemplo es de referencia futura y no debe activarse en producción sin revisión técnica y de seguridad.
+
+
+## 16) Cron health checks controlados (PR #33)
+- Probar primero en forma manual:
+  - `composer cron:check`
+  - `composer cron:health`
+- `cron:health` requiere DB real configurada en `.env` (`DB_DATABASE=adbbmis1_eco`).
+- Ejecutar cron con usuario Linux dedicado (no root).
+- Verificar permisos de escritura en `storage/logs` antes de redirigir salida.
+- No activar cron en producción sin validar previamente `.env`, conectividad DB y salida del comando manual.
+
+Ejemplo de cron (activar solo después de validar manualmente):
+```cron
+* * * * * cd /var/www/ecosistema-core-admin && php scripts/cron-runner.php --run=health-checks >> storage/logs/cron-health.log 2>&1
+```

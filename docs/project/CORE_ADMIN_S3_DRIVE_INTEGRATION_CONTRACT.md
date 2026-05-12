@@ -1,3 +1,5 @@
+> Nota PR #46: este documento debe interpretarse bajo la construcción de Ecosistema Drive como servicio propio; `s3` es referencia técnica y no dependencia directa.
+
 # Contrato de Integración Core Admin ↔ S3 Drive (PR #42)
 
 ## 1) Propósito

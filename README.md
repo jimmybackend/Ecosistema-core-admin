@@ -112,11 +112,16 @@ Limitaciones vigentes de autenticación:
 - Este README mantiene un resumen breve para evitar duplicidad; el detalle vive en el documento de cierre.
 
 
-## Integración futura con S3 Drive
+## Integración futura con Ecosistema Drive
 - Contrato documental de integración: `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`.
 - Core Admin mantiene operación Cloud local/controlada en estado actual.
-- La integración con `jimmybackend/s3` se tratará como componente separado y sólo por contrato explícito en PRs futuros.
+- Ecosistema Drive será el producto propio futuro del ecosistema; `jimmybackend/s3` se mantiene como referencia técnica/funcional y no como dependencia directa en esta etapa.
 - Nota de propiedad canónica (PR #45): `cloud_*` en `adbbmis1_eco` (referencia en `jimmybackend/Ecosistema-bd`) es la estructura canónica del sistema `s3` / ArcadeCloud Drive; Core Admin no debe duplicarla ni modificarla desde este repositorio.
+
+
+## Configuración segura Ecosistema Drive
+- Configuración base segura: `docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md`.
+- Modo por defecto `contract`, sin AWS/S3 real, sin llamadas remotas y con `s3` como repositorio de referencia técnica.
 
 ## Inventario técnico S3 Drive
 - Inventario documental de preparación: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.

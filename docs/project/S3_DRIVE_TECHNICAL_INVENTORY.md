@@ -1,7 +1,7 @@
 # Inventario Técnico S3 Drive (ArcadeCloud) para Core Admin (PR #43)
 
 ## 1) Propósito
-Este documento consolida un inventario técnico/documental para preparar una futura integración entre `jimmybackend/Ecosistema-core-admin` y `jimmybackend/s3` (ArcadeCloud Drive), **sin implementar integración real** y **sin activar AWS/S3** en esta etapa.
+Este documento consolida un inventario técnico/documental para preparar una futura construcción de Ecosistema Drive en Core Admin usando `jimmybackend/s3` como referencia técnica (ArcadeCloud Drive), **sin implementar integración real** y **sin activar AWS/S3** en esta etapa.
 
 Objetivos:
 - Reducir riesgo de supuestos no verificados.

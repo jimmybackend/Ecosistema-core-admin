@@ -120,6 +120,7 @@ Limitaciones vigentes de autenticación:
 
 
 ## Configuración segura Ecosistema Drive
+- Adaptador dry-run/contract-only: `docs/project/ECOSISTEMA_DRIVE_DRY_RUN_ADAPTER.md`.
 - Configuración base segura: `docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md`.
 - Modo por defecto `contract`, sin AWS/S3 real, sin llamadas remotas y con `s3` como repositorio de referencia técnica.
 

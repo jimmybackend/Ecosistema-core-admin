@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Core\Cloud;
+
+final class EcosistemaDriveAdapter
+{
+    public function __construct(private readonly EcosistemaDriveConfig $config)
+    {
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function getStatus(): array
+    {
+        return [
+            'enabled' => $this->config->isEnabled(),
+            'mode' => $this->config->mode(),
+            'reference_repo' => $this->config->referenceRepo(),
+            'api_timeout' => $this->config->apiTimeout(),
+            'remote_calls_blocked' => !$this->config->allowsRemoteCalls(),
+            'signed_urls_blocked' => !$this->config->allowsSignedUrls(),
+            'remote_uploads_blocked' => !$this->config->allowsRemoteUploads(),
+            'remote_downloads_blocked' => !$this->config->allowsRemoteDownloads(),
+            'database_required' => false,
+            'external_http_allowed' => false,
+            'aws_connected' => false,
+            'contract_only' => true,
+        ];
+    }
+
+    /**
+     * @return array<string,array<string,mixed>>
+     */
+    public function getCapabilities(): array
+    {
+        return [
+            'configuration_contract' => [
+                'enabled' => true,
+                'description' => 'Expone estado seguro de configuración para integración futura de Ecosistema Drive.',
+            ],
+            'remote_calls' => [
+                'enabled' => false,
+                'description' => 'Bloqueadas en modo contract/dry-run.',
+            ],
+            'signed_urls' => [
+                'enabled' => false,
+                'description' => 'Generación de URLs firmadas deshabilitada en este PR.',
+            ],
+            'remote_uploads' => [
+                'enabled' => false,
+                'description' => 'Subidas remotas a S3/AWS no permitidas.',
+            ],
+            'remote_downloads' => [
+                'enabled' => false,
+                'description' => 'Descargas remotas desde S3/AWS no permitidas.',
+            ],
+            's3_reference_only' => [
+                'enabled' => true,
+                'description' => 'El repositorio s3 se usa solo como referencia técnica/funcional.',
+            ],
+        ];
+    }
+}

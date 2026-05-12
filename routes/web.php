@@ -42,6 +42,8 @@ use App\Core\Cloud\CloudStorageConfig;
 use App\Core\Cloud\CloudStorageService;
 use App\Core\Cloud\CloudUploadService;
 use App\Core\Cloud\CloudDownloadService;
+use App\Core\Cloud\EcosistemaDriveConfig;
+use App\Core\Cloud\EcosistemaDriveAdapter;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -700,6 +702,18 @@ return [
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage')]);
     },
+    'GET /cloud/drive' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $auth = AuthSession::getAuth();
+        $driveConfig = new EcosistemaDriveConfig((array)($config['ecosistema_drive'] ?? []));
+        $adapter = new EcosistemaDriveAdapter($driveConfig);
+        $status = $adapter->getStatus();
+        $capabilities = $adapter->getCapabilities();
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('status','capabilities')]);
+    },
+
     'GET /cloud/settings' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }

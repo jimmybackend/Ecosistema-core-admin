@@ -89,6 +89,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => true,
                 'description' => 'Política interna read-only de acceso Drive para tenant/user y operaciones bloqueadas.',
             ],
+            'read_only_audit' => [
+                'enabled' => true,
+                'description' => 'Auditoría read-only de visualización administrativa de Drive en core_audit, sin exponer keys/prefixes/secretos.',
+            ],
             's3_reference_only' => [
                 'enabled' => true,
                 'description' => 'El repositorio s3 se usa solo como referencia técnica/funcional.',

@@ -105,3 +105,4 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 ## Política de acceso read-only
 
 Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md` para reglas de tenant/user y operaciones bloqueadas.
+- Se incorpora auditoría read-only de visualización Drive sobre `core_audit` (eventos `drive.*.viewed/listed`) sin registrar keys/prefixes ni secretos.

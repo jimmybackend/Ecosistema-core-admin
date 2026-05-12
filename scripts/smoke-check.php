@@ -70,7 +70,9 @@ $requiredFiles = [
     'app/Core/Cloud/EcosistemaDriveBucketService.php',
     'app/Core/Cloud/EcosistemaDriveBucketRepository.php',
     'app/Core/Cloud/EcosistemaDriveSummaryService.php',
+    'app/Core/Cloud/EcosistemaDriveAuditLogger.php',
     'docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md',
+    'docs/project/ECOSISTEMA_DRIVE_READ_ONLY_AUDIT.md',
     'resources/views/pages/cloud/drive-access.php',
     'app/Core/Cloud/EcosistemaDriveAccessPolicy.php',
     'resources/views/pages/cloud/drive-root.php',
@@ -517,6 +519,27 @@ foreach ($securityTargets as $targetFile) {
             $secretHits++;
             fail('Posible exposición sensible en ' . str_replace($root . '/', '', $targetFile) . " (patrón: {$pattern})", $criticalFailures);
         }
+    }
+}
+
+
+$adapterPath = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($adapterPath)) {
+    $adapterContent = file_get_contents($adapterPath);
+    if ($adapterContent !== false && str_contains($adapterContent, 'read_only_audit')) {
+        ok('EcosistemaDriveAdapter declara capability read_only_audit.');
+    } else {
+        fail('EcosistemaDriveAdapter no contiene capability read_only_audit.', $criticalFailures);
+    }
+}
+
+$routesPath = $root . '/routes/web.php';
+if (is_file($routesPath)) {
+    $routesContent = file_get_contents($routesPath);
+    if ($routesContent !== false && str_contains($routesContent, 'driveAuditLog(')) {
+        ok('routes/web.php contiene llamadas de auditoría read-only para Drive.');
+    } else {
+        fail('routes/web.php no contiene llamadas de auditoría Drive esperadas.', $criticalFailures);
     }
 }
 

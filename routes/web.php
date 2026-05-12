@@ -32,6 +32,7 @@ use App\Core\Mail\MailboxRepository;
 use App\Core\Mail\MailConfig;
 use App\Core\Mail\MailAttachmentRepository;
 use App\Core\Mail\MailAttachmentService;
+use App\Core\Mail\MailSendService;
 use App\Core\Cloud\CloudFileRepository;
 use App\Core\Cloud\CloudFolderRepository;
 use App\Core\Cloud\CloudRootRepository;
@@ -557,6 +558,37 @@ return [
         }
         if ($message===null) { http_response_code(404); }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail detalle | Ecosistema Core Admin','contentView'=>'pages/mail/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message','attachments')]);
+    },
+
+    'GET /mail/messages/{id}/send-preview' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try {
+            $pdo=PdoFactory::make($config['database']);
+            $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []));
+            $preview = $service->previewDraftSend($tenantId, $userId, $id);
+        } catch (\Throwable) {
+            $preview = ['ok'=>false,'reason'=>'No se pudo preparar el preview de envío.'];
+        }
+        if (($preview['ok'] ?? false) !== true) { http_response_code(422); }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Preview envío Mail | Ecosistema Core Admin','contentView'=>'pages/mail/send-preview','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('preview','id')]);
+    },
+    'POST /mail/messages/{id}/prepare-send' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        try {
+            $pdo=PdoFactory::make($config['database']);
+            $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []));
+            $result = $service->prepareDryRunSend($tenantId, $userId, $id);
+            auditLog($pdo, ['action'=>(string)($result['action'] ?? 'mail.send_prepared'), 'entity_type'=>'mail_messages', 'entity_id'=>$id, 'tenant_id'=>$tenantId, 'new_values'=>['ok'=>(bool)($result['ok']??false), 'ready'=>(bool)($result['ready']??false), 'dry_run'=>(bool)($result['dry_run']??false), 'reason'=>(string)($result['reason']??'')]]);
+            $message = (string) ($result['reason'] ?? 'Preparación ejecutada.');
+        } catch (\Throwable) {
+            $message = 'No se pudo preparar el envío.';
+        }
+        header('Location: /mail/messages/'.(string)$id.'/send-preview?'.(str_contains(mb_strtolower($message), 'no se pudo') ? 'error=' : 'ok=').urlencode($message));
     },
     'GET /mail/settings' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

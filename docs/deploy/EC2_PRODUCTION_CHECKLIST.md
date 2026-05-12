@@ -157,3 +157,10 @@ Ejemplo de cron (activar solo después de validar manualmente):
 ```cron
 */15 * * * * cd /var/www/ecosistema-core-admin && php scripts/cron-runner.php --run=session-cleanup >> storage/logs/cron-sessions.log 2>&1
 ```
+
+## Mail saliente (PR #35)
+- Verificar SMTP técnico antes de habilitar envío real.
+- No usar credenciales personales en SMTP.
+- Mantener `MAIL_SEND_ENABLED=false` hasta validación funcional/auditoría.
+- Mantener `MAIL_ALLOW_TEST_SEND=false` en producción inicial.
+- Revisar logs y auditoría al preparar envío individual.

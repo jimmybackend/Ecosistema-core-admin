@@ -65,6 +65,9 @@ $requiredFiles = [
     'resources/views/pages/cloud/upload.php',
     'app/Core/Cloud/CloudStorageConfig.php',
     'resources/views/pages/mail/show.php',
+    'resources/views/pages/mail/send-preview.php',
+    'app/Core/Mail/MailSendService.php',
+    'app/Core/Mail/MailSender.php',
     'app/Core/Mail/MailAttachmentRepository.php',
     'app/Core/Mail/MailAttachmentService.php',
     'resources/views/pages/auth/login.php',
@@ -114,7 +117,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
@@ -151,6 +154,19 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/files/{id}/download en routes/web.php.', $criticalFailures);
     }
 }
+
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /mail/messages/{id}/send-preview")) {
+        ok('routes/web.php contiene ruta GET /mail/messages/{id}/send-preview.');
+    } else {
+        fail('No se encontró ruta GET /mail/messages/{id}/send-preview en routes/web.php.', $criticalFailures);
+    }
+
+    if ($routesContent !== false && str_contains($routesContent, "POST /mail/messages/{id}/prepare-send")) {
+        ok('routes/web.php contiene ruta POST /mail/messages/{id}/prepare-send.');
+    } else {
+        fail('No se encontró ruta POST /mail/messages/{id}/prepare-send en routes/web.php.', $criticalFailures);
+    }
 
 $requiredClasses = [
     'App\\Core\\Auth\\AuthorizationRepository',

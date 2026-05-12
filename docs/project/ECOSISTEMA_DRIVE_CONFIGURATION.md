@@ -60,3 +60,10 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 - Fuente: metadata de `cloud_files` filtrada por `tenant_id`, `user_id` e `id`, excluyendo `status = 'deleted'`.
 - Seguridad: no expone `s3_key`, `stored_name`, hashes sensibles, secretos de cifrado ni `metadata_json` crudo.
 - Operación: sin AWS/S3 real, sin signed URLs, sin preview/descarga/subida remota y sin llamadas HTTP externas.
+
+
+## 7) Listado read-only de carpetas Drive (PR #51)
+- Ruta: `GET /cloud/drive/folders` (protegida por sesión y permiso `cloud.view`).
+- Fuente: metadata de `cloud_folders` filtrada por `tenant_id`, `user_id`, `is_deleted=0` y límite seguro.
+- Seguridad: no expone `prefix`, `prefix_hash`, `password_hash`, `secure_hint` ni rutas internas.
+- Operación: no lista S3 real, no activa AWS/S3 y no crea/edita/borra carpetas.

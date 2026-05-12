@@ -61,6 +61,9 @@ $requiredFiles = [
     'app/Core/Cloud/S3DriveIntegrationConfig.php',
     'app/Core/Cloud/EcosistemaDriveFileRepository.php',
     'app/Core/Cloud/EcosistemaDriveFileService.php',
+    'resources/views/pages/cloud/drive-folders.php',
+    'app/Core/Cloud/EcosistemaDriveFolderService.php',
+    'app/Core/Cloud/EcosistemaDriveFolderRepository.php',
     'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
     'docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md',
     'config/s3_drive.php',
@@ -173,6 +176,11 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /cloud/drive en routes/web.php.', $criticalFailures);
     }
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/folders")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/folders para metadata read-only de carpetas.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/folders en routes/web.php.', $criticalFailures);
+    }
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/files para metadata read-only de Drive.');
     } else {
@@ -234,6 +242,8 @@ $requiredClasses = [
     'App\Core\Cloud\EcosistemaDriveAdapter',
     'App\Core\Cloud\EcosistemaDriveFileRepository',
     'App\Core\Cloud\EcosistemaDriveFileService',
+    'App\Core\Cloud\EcosistemaDriveFolderService',
+    'App\Core\Cloud\EcosistemaDriveFolderRepository',
     'App\Core\System\CronHealthCheckRunner',
     'App\Core\Auth\CronSessionCleanupRunner',
 ];
@@ -390,4 +400,14 @@ if (is_file($smtpMailerFile)) {
 $backupCheckPath = $root . '/scripts/backup-check.php';
 if (is_file($backupCheckPath)) {
     ok('Existe script no destructivo de backup check: scripts/backup-check.php');
+}
+
+$driveAdapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+if (is_file($driveAdapterFile)) {
+    $content = file_get_contents($driveAdapterFile);
+    if ($content !== false && str_contains($content, 'read_folders_metadata')) {
+        ok('EcosistemaDriveAdapter declara capability read_folders_metadata.');
+    } else {
+        fail('EcosistemaDriveAdapter no declara capability read_folders_metadata.', $criticalFailures);
+    }
 }

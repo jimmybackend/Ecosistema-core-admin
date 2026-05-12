@@ -61,6 +61,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => true,
                 'description' => 'Lectura read-only de metadata desde cloud_files (sin llamadas AWS/S3).',
             ],
+            'read_folders_metadata' => [
+                'enabled' => true,
+                'description' => 'Lectura read-only de metadata de carpetas desde cloud_folders (sin llamadas AWS/S3).',
+            ],
             's3_reference_only' => [
                 'enabled' => true,
                 'description' => 'El repositorio s3 se usa solo como referencia técnica/funcional.',

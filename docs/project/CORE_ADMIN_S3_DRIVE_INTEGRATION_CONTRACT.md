@@ -15,13 +15,20 @@ Este PR no implementa integración técnica real; fija límites, responsabilidad
 ## 2) Separación de repositorios
 
 ### Ecosistema-core-admin
-Responsable de operación administrativa y flujos internos ya activos (Auth, Roles, Permissions, Mail/Cloud/Onboarding en modo controlado).
+Responsable de operación administrativa y flujos internos ya activos (Auth, Roles, Permissions, Mail/Cloud/Onboarding en modo controlado), además de integración controlada por contrato con Cloud/S3 Drive.
 
 ### s3 / ArcadeCloud Drive
-Componente separado orientado a capacidades Drive sobre S3 (según README del repo s3: S3, Rekognition, Polly, Translate, KMS/Encrypt y ZIP), con su propio ciclo de vida, configuración y riesgos operativos.
+Componente separado orientado a capacidades Drive sobre S3 (según README del repo s3: S3, Rekognition, Polly, Translate, KMS/Encrypt y ZIP), con su propio ciclo de vida, configuración y riesgos operativos. Es responsable operativo/funcional de la capa Drive sobre la estructura `cloud_*` canónica.
 
 ### Ecosistema-bd
-Repositorio separado para dumps SQL. La referencia operativa real se mantiene sobre la base `adbbmis1_eco`. No se asume que los dumps existan dentro de Core Admin ni dentro de s3.
+Repositorio separado para dumps SQL y **fuente canónica de estructura**. La referencia operativa real se mantiene sobre la base `adbbmis1_eco`. No se asume que los dumps existan dentro de Core Admin ni dentro de s3.
+
+
+## 2.1) Propiedad canónica de estructura Cloud/S3 (PR #45)
+- `Ecosistema-bd` es la **fuente canónica de estructura** para `adbbmis1_eco`.
+- Las tablas `cloud_*` son estructura funcional del sistema `s3` / ArcadeCloud Drive dentro de esa base real.
+- Core Admin se integra por contrato; no debe crear estructura paralela, redefinir esquema ni asumir columnas fuera de referencia canónica.
+- Este repositorio no modifica `Ecosistema-bd`; cualquier cambio estructural se gestiona en PR separado y explícito en `jimmybackend/Ecosistema-bd`.
 
 ## 3) Responsabilidades de Core Admin
 - Mantener Cloud en modo local/controlado en la fase actual.
@@ -87,6 +94,7 @@ Reglas:
 
 ## 9) Permitido en fases futuras
 - Definir interfaz de integración formal (API interna/adapter/cola), documentada y versionada.
+- Futuras APIs/workers deberán consumir este contrato y la estructura canónica vigente, sin inventar esquema paralelo.
 - Implementar observabilidad mínima de integración (logs técnicos sin secretos).
 - Incorporar pruebas de contrato y validaciones de errores controlados.
 - Habilitar S3 por entornos de forma gradual y reversible.

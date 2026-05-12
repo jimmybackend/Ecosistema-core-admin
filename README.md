@@ -115,6 +115,7 @@ Limitaciones vigentes de autenticación:
 - Contrato documental de integración: `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`.
 - Core Admin mantiene operación Cloud local/controlada en estado actual.
 - La integración con `jimmybackend/s3` se tratará como componente separado y sólo por contrato explícito en PRs futuros.
+- Nota de propiedad canónica (PR #45): `cloud_*` en `adbbmis1_eco` (referencia en `jimmybackend/Ecosistema-bd`) es la estructura canónica del sistema `s3` / ArcadeCloud Drive; Core Admin no debe duplicarla ni modificarla desde este repositorio.
 
 ## Inventario técnico S3 Drive
 - Inventario documental de preparación: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.

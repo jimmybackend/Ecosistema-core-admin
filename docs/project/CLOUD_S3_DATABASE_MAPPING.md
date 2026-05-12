@@ -8,6 +8,14 @@ Base de validación usada en este PR:
 - Contrato e inventario documental vigentes.
 - Sin modificar `jimmybackend/s3` ni `jimmybackend/Ecosistema-bd`.
 
+
+## 1.1) Aclaración canónica de propiedad Cloud/S3 (PR #45)
+- `jimmybackend/Ecosistema-bd` contiene la base real/canónica de referencia del ecosistema (`adbbmis1_eco`).
+- Las tablas `cloud_*` pertenecen funcionalmente al sistema **Cloud/S3 Drive** (repo `jimmybackend/s3`, ArcadeCloud Drive) dentro de `adbbmis1_eco`.
+- Core Admin consume/administra partes de esa estructura **solo por contrato**; no debe duplicarla ni redefinirla en este repositorio.
+- Core Admin **no debe modificar** `Ecosistema-bd` desde este repo.
+- Cualquier cambio estructural (`cloud_*`) debe hacerse en `jimmybackend/Ecosistema-bd` mediante PR separado y explícito.
+
 ## 2) Reglas críticas (obligatorias)
 1. No duplicar tablas Cloud dentro de Core Admin.
 2. No inventar columnas ni tipos fuera del esquema real.
@@ -17,6 +25,7 @@ Base de validación usada en este PR:
 6. Toda operación futura debe validar `tenant_id` y `user_id`.
 7. Toda subida/descarga futura debe quedar auditada.
 8. S3 Drive debe respetar contrato y datos reales de `adbbmis1_eco`.
+9. No modificar estructura `cloud_*` desde Core Admin.
 
 ## 3) Tabla por tabla
 

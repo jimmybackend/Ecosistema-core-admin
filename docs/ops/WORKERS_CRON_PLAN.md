@@ -1,63 +1,59 @@
 # Plan Operativo Seguro: Workers/Cron (futuro)
 
-> Estado actual (PR #31): **documentación y verificación pasiva solamente**.
-> Este plan **no activa cron**, **no ejecuta jobs reales**, **no crea colas**, **no envía correos**, **no procesa archivos** y **no conecta a AWS**.
+> Estado actual (PR #33): **primer job controlado habilitado** para health checks de DB.
+> Este plan **no activa crontab automáticamente**, **no crea colas**, **no envía correos**, **no procesa archivos** y **no conecta a AWS**.
 
 ## 1. Objetivo
-Definir la estructura mínima para preparar una operación futura de tareas periódicas en Core Admin, con enfoque seguro y trazable.
+Definir y habilitar la primera ejecución controlada de cron en Core Admin con enfoque seguro, trazable y acotado.
 
 ## 2. Principios de seguridad
 - Ejecutar con usuario Linux dedicado (no root).
 - Ejecutar siempre desde la raíz del proyecto.
 - Mantener `.env` fuera de control de versiones.
 - No exponer secretos (`DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_SECRET_ACCESS_KEY`) en logs ni salidas.
-- No habilitar tareas reales sin validación previa (composer smoke, permisos y configuración).
+- No habilitar tareas reales sin validación previa (`composer smoke`, permisos y configuración).
 
-## 3. Jobs futuros (pendiente/no implementado)
-Todos los siguientes puntos quedan en estado **pendiente/no implementado** en este PR:
-
+## 3. Jobs y estado
 1. **System health checks periódicos**
-   - Verificaciones técnicas controladas y acotadas por tenant/contexto.
+   - Estado: **disponible (primer job controlado)**.
+   - Comando manual: `php scripts/cron-runner.php --run=health-checks`.
+   - Alcance: solo checks seguros existentes con `check_type` `db/database`.
 2. **Limpieza de sesiones expiradas**
-   - Limpieza segura sobre tabla real de sesiones según políticas vigentes.
+   - Estado: pendiente/no implementado.
 3. **Limpieza/revisión de archivos temporales/locales**
-   - Rotación y limpieza de temporales sin exponer rutas sensibles.
+   - Estado: pendiente/no implementado.
 4. **Procesamiento de mail saliente**
-   - Flujo futuro de salida con controles de reintento y auditoría.
+   - Estado: pendiente/no implementado.
 5. **Sincronización futura de S3**
-   - Solo cuando S3 real esté aprobado y habilitado.
+   - Estado: pendiente/no implementado.
 6. **Mantenimiento de logs/auditoría**
-   - Rotación/retención de logs y mantenimiento mínimo de trazabilidad.
+   - Estado: pendiente/no implementado.
 7. **Onboarding con aprovisionamiento real**
-   - Ejecución real diferida a PR posterior.
+   - Estado: pendiente/no implementado.
 8. **Backups/verificaciones operativas**
-   - Controles de respaldo/restauración y verificaciones periódicas.
+   - Estado: pendiente/no implementado.
 
-## 4. Estructura mínima propuesta (actual)
-- `scripts/cron-runner.php` (placeholder seguro)
-  - Modo `--check`: valida carga de autoload/bootstrap.
-  - Lista jobs como pendiente/no implementado.
-  - Retorna `0` si estructura base carga correctamente.
-  - Retorna `1` si falta autoload/bootstrap o hay error crítico.
+## 4. Estructura operativa mínima (actual)
+- `scripts/cron-runner.php`
+  - `--check`: validación segura de estructura (sin DB).
+  - `--run=health-checks`: ejecuta primer job controlado.
+  - Job desconocido => error controlado y `exit 1`.
+- `app/Core/System/CronHealthCheckRunner.php`
+  - Runner acotado para ejecutar health checks seguros del módulo System.
 
-## 5. No alcance explícito de este PR
-- No se modifica base de datos ni esquema.
+## 5. No alcance explícito
+- No se modifica esquema de DB.
 - No se crean migraciones, seeds, tablas ni campos.
-- No hay conexión obligatoria a DB para checks.
+- No se activa crontab automáticamente.
 - No se envían correos.
-- No se suben/descargan archivos.
+- No se suben/descargan archivos desde cron.
 - No se conecta a AWS.
 - No se instala supervisor ni systemd.
 
-## 6. Próximos pasos (PR futuros)
-1. Definir contrato de cada job (input/output/errores).
-2. Definir política de reintentos y observabilidad.
-3. Acordar retención de logs y auditoría operativa.
-4. Habilitar ejecución real por fases, con checklist de rollback.
+## 6. Operación manual recomendada
+1. Ejecutar `composer cron:check`.
+2. Validar `.env` y conectividad DB real (`adbbmis1_eco`).
+3. Ejecutar `composer cron:health` manualmente.
+4. Revisar salida CLI y logs.
 
-## Actualización PR #32: Onboarding seguro manual
-- Se habilitó únicamente ejecución manual/controlada desde UI para avanzar el siguiente paso seguro de una run existente.
-- Tipos permitidos ahora: `null/empty`, `noop`, `manual`, `checklist`.
-- Tipos no soportados: `skipped` con warning y sin ejecución externa.
-- Sigue sin cron activo, sin workers, sin AWS y sin SMTP.
-- La integración con `scripts/cron-runner.php` queda pendiente para PR futuro.
+> La activación de cron real en servidor queda para una fase posterior, después de validar manualmente en entorno objetivo.

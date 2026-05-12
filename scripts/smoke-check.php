@@ -165,6 +165,7 @@ $requiredClasses = [
     'App\Core\Cloud\CloudDownloadService',
     'App\Core\Onboarding\OnboardingRunner',
     'App\Core\Onboarding\OnboardingStepExecutor',
+    'App\Core\System\CronHealthCheckRunner',
 ];
 
 foreach ($requiredClasses as $className) {
@@ -174,6 +175,17 @@ foreach ($requiredClasses as $className) {
     }
 
     fail("No se pudo cargar clase crítica: {$className}", $criticalFailures);
+}
+
+
+$cronRunnerFile = $root . '/scripts/cron-runner.php';
+if (is_file($cronRunnerFile)) {
+    $cronRunnerContent = file_get_contents($cronRunnerFile);
+    if ($cronRunnerContent !== false && str_contains($cronRunnerContent, '--run=health-checks')) {
+        ok('scripts/cron-runner.php soporta --run=health-checks.');
+    } else {
+        fail('scripts/cron-runner.php no declara --run=health-checks.', $criticalFailures);
+    }
 }
 
 $lintDirs = ['app', 'bootstrap', 'config', 'public', 'routes', 'resources/views'];

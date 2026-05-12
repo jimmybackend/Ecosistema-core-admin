@@ -33,7 +33,7 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 7. **Onboarding con aprovisionamiento real**
    - Estado: pendiente/no implementado.
 8. **Backups/verificaciones operativas**
-   - Estado: pendiente/no implementado.
+   - Estado: pendiente/no implementado (este PR #39 solo documenta y agrega checks seguros no destructivos).
 
 ## 4. Estructura operativa mínima (actual)
 - `scripts/cron-runner.php`
@@ -77,3 +77,9 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 ## Estado mail adjuntos (PR #38)
 - Mail worker/cola sigue pendiente (no implementado).
 - El envío con adjuntos continúa siendo **manual e individual** desde preview.
+
+
+## Nota PR #39
+- Se agrega documentación de backup/restore y check pasivo de estructura.
+- Backups automáticos por cron: **pendiente/no implementado**.
+- No activar cron de backups todavía.

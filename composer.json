@@ -16,6 +16,7 @@
     "smoke": "php scripts/smoke-check.php",
     "cron:check": "php scripts/cron-runner.php --check",
     "cron:health": "php scripts/cron-runner.php --run=health-checks",
-    "cron:sessions": "php scripts/cron-runner.php --run=session-cleanup"
+    "cron:sessions": "php scripts/cron-runner.php --run=session-cleanup",
+    "backup:check": "php scripts/backup-check.php"
   }
 }

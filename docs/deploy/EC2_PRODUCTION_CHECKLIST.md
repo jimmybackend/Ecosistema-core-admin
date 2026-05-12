@@ -185,3 +185,22 @@ Ejemplo de cron (activar solo después de validar manualmente):
 - Configurar límites: `MAIL_MAX_ATTACHMENTS`, `MAIL_MAX_ATTACHMENT_MB`, `MAIL_MAX_TOTAL_ATTACHMENT_MB`.
 - Probar SMTP con archivo pequeño antes de uso operativo.
 - Revisar auditoría de `mail.send_attempted`, `mail.sent`, `mail.send_failed`, `mail.send_blocked_by_attachments`.
+
+
+## 20) Backup/Restore operativo (PR #39)
+Antes de despliegue:
+- Confirmar backup reciente de DB y archivos locales Cloud.
+- Confirmar backup seguro de `.env` fuera del repo.
+- Confirmar checksums/integridad de artefactos.
+
+Después de despliegue:
+- Validar login (`/login`).
+- Validar health DB (`/health/db`) sin exposición de secretos.
+- Validar operación Cloud local según configuración.
+- Validar flujo básico de Mail controlado.
+
+Recomendaciones:
+- Probar restore primero en ambiente separado (staging/pruebas).
+- Mantener backups cifrados o en almacenamiento seguro.
+- Restringir permisos de lectura de backups (mínimo privilegio).
+- No activar cron de backups en este PR.

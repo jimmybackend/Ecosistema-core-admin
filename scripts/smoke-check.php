@@ -87,6 +87,8 @@ $requiredFiles = [
     'resources/views/pages/errors/419.php',
     'resources/views/pages/errors/500.php',
     'docs/ops/WORKERS_CRON_PLAN.md',
+    'docs/ops/BACKUP_RESTORE_PLAN.md',
+    'scripts/backup-check.php',
     'scripts/cron-runner.php',
     'app/Core/Onboarding/OnboardingRunner.php',
     'app/Core/Onboarding/OnboardingStepExecutor.php',
@@ -326,4 +328,10 @@ if (is_file($smtpMailerFile)) {
     $smtpMailerContent = file_get_contents($smtpMailerFile);
     if ($smtpMailerContent !== false && str_contains($smtpMailerContent, 'buildMimeMessage')) { ok('SmtpMailer contiene soporte de adjuntos MIME.'); }
     else { fail('SmtpMailer no contiene soporte de adjuntos MIME.', $criticalFailures); }
+}
+
+
+$backupCheckPath = $root . '/scripts/backup-check.php';
+if (is_file($backupCheckPath)) {
+    ok('Existe script no destructivo de backup check: scripts/backup-check.php');
 }

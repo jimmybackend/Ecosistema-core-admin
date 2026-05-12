@@ -320,3 +320,11 @@ Estado actual:
 - Se bloquea envío si hay adjuntos inválidos (inexistentes, fuera de `CLOUD_LOCAL_STORAGE_PATH`, S3-only/remotos o tamaño/cantidad excedidos).
 - No hay envío masivo, campañas, workers, colas, S3 real ni signed URLs.
 - Recomendado: probar primero con archivos pequeños y SMTP controlado.
+
+
+## Backup/Restore operativo (PR #39)
+- Ver plan: `docs/ops/BACKUP_RESTORE_PLAN.md`.
+- Check no destructivo: `composer backup:check`.
+- **No guardar backups dentro de este repositorio**.
+- **No commitear `.env` ni dumps SQL con datos reales**.
+- Todo restore debe probarse primero en un ambiente separado de producción.

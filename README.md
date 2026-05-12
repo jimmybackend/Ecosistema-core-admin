@@ -10,6 +10,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Tablas reales usadas](#tablas-reales-usadas)
 - [Limitaciones actuales](#limitaciones-actuales)
 - [Documentación del proyecto](#documentación-del-proyecto)
+- [Estado operativo actual](#estado-operativo-actual)
 - [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
 - [Comandos rápidos](#comandos-rápidos)
 - [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
@@ -101,12 +102,18 @@ Limitaciones vigentes de autenticación:
 - No hay auditoría automática específica para la asignación de roles todavía.
 - No hay UI avanzada de perfiles, grupos o jerarquías.
 
+## Estado operativo actual
+- Estado consolidado: `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`.
+- Resumen operativo: módulos activos, comandos, rutas, variables, riesgos, limitaciones y pendientes mayores.
+- Este README mantiene un resumen breve para evitar duplicidad; el detalle vive en el documento de cierre.
+
 ## Documentación del proyecto
 - `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_ESTADO_ACTUAL.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_QA_CHECKLIST.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_RUTAS.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_PENDIENTES.md`
+- `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`
 - `docs/ops/MONITORING_OPERATIONS_PLAN.md`
 
 ## Smoke checks básicos (PR #22)

@@ -59,12 +59,15 @@ $requiredFiles = [
     'config/mail.php',
     'config/cloud.php',
     'app/Core/Cloud/S3DriveIntegrationConfig.php',
+    'app/Core/Cloud/EcosistemaDriveFileRepository.php',
+    'app/Core/Cloud/EcosistemaDriveFileService.php',
     'docs/project/S3_DRIVE_SHARED_CONFIGURATION.md',
     'docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md',
     'config/s3_drive.php',
     'config/ecosistema_drive.php',
     'resources/views/pages/mail/settings.php',
     'resources/views/pages/cloud/settings.php',
+    'resources/views/pages/cloud/drive-files.php',
     'app/Core/Cloud/CloudStorageService.php',
     'app/Core/Cloud/CloudUploadService.php',
     'resources/views/pages/cloud/upload.php',
@@ -169,6 +172,11 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /cloud/drive en routes/web.php.', $criticalFailures);
     }
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/files para metadata read-only de Drive.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/files en routes/web.php.', $criticalFailures);
+    }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/files/{id}/download")) {
         ok('routes/web.php contiene ruta de descarga cloud controlada.');
@@ -218,6 +226,8 @@ $requiredClasses = [
     'App\Core\Cloud\S3DriveIntegrationConfig',
     'App\Core\Cloud\EcosistemaDriveConfig',
     'App\Core\Cloud\EcosistemaDriveAdapter',
+    'App\Core\Cloud\EcosistemaDriveFileRepository',
+    'App\Core\Cloud\EcosistemaDriveFileService',
     'App\Core\System\CronHealthCheckRunner',
     'App\Core\Auth\CronSessionCleanupRunner',
 ];

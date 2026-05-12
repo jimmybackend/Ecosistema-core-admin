@@ -43,3 +43,14 @@ Este modo indica que Core Admin sólo mantiene contrato de integración y config
 
 ## 8) Mailit-click
 La integración con mailit-click queda fuera de alcance y se mantiene para una etapa posterior.
+
+## 9) Listado read-only de archivos Drive (PR #49)
+- Ruta: `GET /cloud/drive/files` (protegida por sesión y permiso `cloud.view`).
+- Fuente: metadata en `cloud_files` (sin lectura de bucket real).
+- Seguridad: aislamiento por `tenant_id`/`user_id`, límite de resultados y sin exposición de `s3_key` completa.
+- Operación: sin AWS/S3 real, sin signed URLs, sin uploads/downloads remotos, sin llamadas HTTP externas.
+- Base de datos: sin migraciones, sin cambios de esquema, sin seeds.
+
+## 10) Referencias externas
+- `jimmybackend/s3` sigue como referencia técnica/funcional (no dependencia runtime).
+- `jimmybackend/mailit-click` queda para etapa posterior (short URLs, tracking y multilenguaje).

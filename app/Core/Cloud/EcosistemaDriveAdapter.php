@@ -57,6 +57,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => false,
                 'description' => 'Descargas remotas desde S3/AWS no permitidas.',
             ],
+            'read_metadata' => [
+                'enabled' => true,
+                'description' => 'Lectura read-only de metadata desde cloud_files (sin llamadas AWS/S3).',
+            ],
             's3_reference_only' => [
                 'enabled' => true,
                 'description' => 'El repositorio s3 se usa solo como referencia técnica/funcional.',

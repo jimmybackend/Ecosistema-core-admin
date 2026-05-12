@@ -44,6 +44,8 @@ use App\Core\Cloud\CloudUploadService;
 use App\Core\Cloud\CloudDownloadService;
 use App\Core\Cloud\EcosistemaDriveConfig;
 use App\Core\Cloud\EcosistemaDriveAdapter;
+use App\Core\Cloud\EcosistemaDriveFileRepository;
+use App\Core\Cloud\EcosistemaDriveFileService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -712,6 +714,24 @@ return [
         $capabilities = $adapter->getCapabilities();
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('status','capabilities')]);
+    },
+    'GET /cloud/drive/files' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? 0);
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveFileService(new EcosistemaDriveFileRepository($pdo));
+            $files = $service->listFiles($tenantId, $userId, 100);
+            $errorMessage = null;
+        } catch (\Throwable) {
+            $files = [];
+            $errorMessage = 'No se pudo consultar metadata de archivos Drive.';
+        }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Archivos Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-files','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','errorMessage')]);
     },
 
     'GET /cloud/settings' => static function (array $config): void {

@@ -61,6 +61,7 @@ Limitaciones vigentes de autenticación:
 - System: `/system/health`, `/system/logs`, `/system/audit`
 - Mail: `/mail`
 - Cloud: `/cloud`
+- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/files`
 - Onboarding: `/onboarding`
 - Health técnico DB: `/health/db`
 
@@ -123,6 +124,7 @@ Limitaciones vigentes de autenticación:
 - Adaptador dry-run/contract-only: `docs/project/ECOSISTEMA_DRIVE_DRY_RUN_ADAPTER.md`.
 - Configuración base segura: `docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md`.
 - Modo por defecto `contract`, sin AWS/S3 real, sin llamadas remotas y con `s3` como repositorio de referencia técnica.
+- Listado read-only de Drive (`/cloud/drive/files`) usando metadata de `cloud_files`, sin listar bucket/key real, sin signed URLs y sin operaciones remotas.
 
 ## Inventario técnico S3 Drive
 - Inventario documental de preparación: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.
@@ -131,6 +133,7 @@ Limitaciones vigentes de autenticación:
 ## Mapeo DB Cloud/S3
 - Mapeo documental de tablas Cloud/S3 para integración futura: `docs/project/CLOUD_S3_DATABASE_MAPPING.md`.
 - No activa AWS/S3 real ni modifica esquema de base de datos.
+- `mailit-click` permanece fuera de alcance en esta etapa (futuro short URL/tracking).
 
 ## Configuración compartida S3 Drive
 - Configuración compartida y segura para integración futura: `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`.

@@ -89,6 +89,7 @@ $requiredFiles = [
     'docs/ops/WORKERS_CRON_PLAN.md',
     'docs/ops/BACKUP_RESTORE_PLAN.md',
     'docs/ops/MONITORING_OPERATIONS_PLAN.md',
+    'docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md',
     'scripts/backup-check.php',
     'scripts/cron-runner.php',
     'scripts/ops-monitor-check.php',

@@ -107,6 +107,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_CORE_ADMIN_QA_CHECKLIST.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_RUTAS.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_PENDIENTES.md`
+- `docs/ops/MONITORING_OPERATIONS_PLAN.md`
 
 ## Smoke checks básicos (PR #22)
 Ejecutar:
@@ -225,6 +226,7 @@ composer smoke
 composer cron:check
 composer cron:health
 composer cron:sessions
+composer ops:monitor
 ```
 
 ### Cron seguro (jobs controlados)
@@ -328,3 +330,7 @@ Estado actual:
 - **No guardar backups dentro de este repositorio**.
 - **No commitear `.env` ni dumps SQL con datos reales**.
 - Todo restore debe probarse primero en un ambiente separado de producción.
+
+
+## Nota operativa de seguridad
+- No imprimir ni commitear secretos (`DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_SECRET_ACCESS_KEY`).

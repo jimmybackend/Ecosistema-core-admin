@@ -204,3 +204,20 @@ Recomendaciones:
 - Mantener backups cifrados o en almacenamiento seguro.
 - Restringir permisos de lectura de backups (mínimo privilegio).
 - No activar cron de backups en este PR.
+
+## 21) Monitoreo básico (PR #40)
+- Revisar salud de aplicación: `/login`, `/dashboard`, `/health/db`.
+- Revisar logs web/PHP ante errores (Nginx/Apache + PHP-FPM/php.ini).
+- Revisar espacio libre en disco periódicamente.
+- Revisar permisos de `storage/` y `storage/app/cloud` (si aplica).
+- Ejecutar cron manual antes de activar crontab:
+  - `composer cron:check`
+  - `composer cron:health`
+  - `composer cron:sessions`
+- Confirmar `APP_DEBUG=false` en producción.
+- Confirmar `SESSION_SECURE=true` con HTTPS activo.
+- Confirmar backup reciente de DB/archivos operativos.
+- Ejecutar checks no destructivos:
+  - `composer smoke`
+  - `composer backup:check`
+  - `composer ops:monitor`

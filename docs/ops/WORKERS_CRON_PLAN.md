@@ -83,3 +83,9 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 - Se agrega documentación de backup/restore y check pasivo de estructura.
 - Backups automáticos por cron: **pendiente/no implementado**.
 - No activar cron de backups todavía.
+
+## Nota de monitoreo operativo (PR #40)
+- Referencia de operación diaria: `docs/ops/MONITORING_OPERATIONS_PLAN.md`.
+- Este repositorio mantiene monitoreo básico/manual y checks locales no destructivos.
+- Monitoreo automático avanzado (alertas externas/APM) sigue pendiente.
+- En este PR no se activa ningún cron nuevo.

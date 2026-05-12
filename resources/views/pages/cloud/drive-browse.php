@@ -13,6 +13,7 @@ $formatBytes = static fn (int $bytes): string => $bytes >= 1024 ? number_format(
     <a class="eco-button btn" href="/cloud/drive">Volver a Ecosistema Drive</a>
     <a class="eco-button btn" href="/cloud/drive/folders">Volver a carpetas Drive</a>
     <a class="eco-button btn" href="/cloud/drive/root">Ver raíz Drive</a>
+    <a class="eco-button btn" href="/cloud/drive/buckets">Ver buckets Drive</a>
     <?php if ($parent !== null): ?>
       <a class="eco-button btn" href="/cloud/drive/browse?folder_id=<?= e((string)$parent['id']) ?>">Volver a carpeta padre</a>
     <?php endif; ?>

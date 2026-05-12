@@ -86,3 +86,11 @@ La integración con mailit-click queda fuera de alcance y se mantiene para una e
 - Campos visibles: `id`, `bucket_id`, `display_name`, `quota_bytes`, `used_bytes`, `file_count`, `status`, `created_at`, `updated_at`.
 - Seguridad: no expone `root_prefix`, `root_prefix_hash`, rutas internas, secretos ni config cruda.
 - Operación: no crea raíz automática, no edita raíz, no activa AWS/S3 y no modifica DB.
+
+
+## Buckets Drive (read-only)
+- Existe vista administrativa protegida en `/cloud/drive/buckets`.
+- Lee metadata informativa desde `cloud_buckets` para el tenant autenticado.
+- No lista buckets reales de AWS ni activa AWS/S3 real.
+- No expone credenciales, tokens, `config_json`/`policy_json` crudos ni rutas internas.
+- No crea, edita ni borra buckets (solo lectura).

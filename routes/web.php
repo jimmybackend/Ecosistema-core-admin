@@ -50,6 +50,8 @@ use App\Core\Cloud\EcosistemaDriveFolderService;
 use App\Core\Cloud\EcosistemaDriveFolderRepository;
 use App\Core\Cloud\EcosistemaDriveRootRepository;
 use App\Core\Cloud\EcosistemaDriveRootService;
+use App\Core\Cloud\EcosistemaDriveBucketService;
+use App\Core\Cloud\EcosistemaDriveBucketRepository;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -850,6 +852,28 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Navegador Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-browse','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('browser','errorMessage')]);
+    },
+
+
+    'GET /cloud/drive/buckets' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $buckets = [];
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveBucketService(new EcosistemaDriveBucketRepository($pdo));
+            $buckets = $service->listBucketSummaries($tenantId);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo consultar metadata de buckets Drive.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Buckets Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-buckets','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('buckets','errorMessage')]);
     },
 
     'GET /cloud/drive/files/{id}' => static function (array $config, array $params): void {

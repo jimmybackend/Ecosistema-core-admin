@@ -52,3 +52,11 @@ En PRs siguientes se podrá:
 
 - Capability agregada: `read_user_root=true` para habilitar resumen read-only desde `cloud_user_roots`.
 - Se mantiene dry-run: sin llamadas AWS/S3, sin signed URLs, sin uploads/downloads remotos y sin cambios de base de datos.
+
+
+## Buckets Drive (read-only)
+- Existe vista administrativa protegida en `/cloud/drive/buckets`.
+- Lee metadata informativa desde `cloud_buckets` para el tenant autenticado.
+- No lista buckets reales de AWS ni activa AWS/S3 real.
+- No expone credenciales, tokens, `config_json`/`policy_json` crudos ni rutas internas.
+- No crea, edita ni borra buckets (solo lectura).

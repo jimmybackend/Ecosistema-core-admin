@@ -81,6 +81,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => true,
                 'description' => 'Navegación básica read-only por carpetas/archivos con metadata DB (sin AWS/S3 real).',
             ],
+            'read_drive_summary' => [
+                'enabled' => true,
+                'description' => 'Resumen operativo read-only de Drive con conteos seguros y estado general (sin AWS/S3 real).',
+            ],
             's3_reference_only' => [
                 'enabled' => true,
                 'description' => 'El repositorio s3 se usa solo como referencia técnica/funcional.',

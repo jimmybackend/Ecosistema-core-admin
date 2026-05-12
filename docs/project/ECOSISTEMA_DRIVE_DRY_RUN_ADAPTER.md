@@ -60,3 +60,9 @@ En PRs siguientes se podrá:
 - No lista buckets reales de AWS ni activa AWS/S3 real.
 - No expone credenciales, tokens, `config_json`/`policy_json` crudos ni rutas internas.
 - No crea, edita ni borra buckets (solo lectura).
+
+## Resumen operativo Drive (read-only)
+- Ruta protegida: `GET /cloud/drive/summary` (sesión autenticada + permiso `cloud.view`).
+- Usa metadata segura de `cloud_files`, `cloud_folders`, `cloud_user_roots` y `cloud_buckets` para conteos/estado general.
+- No expone `s3_key`, `prefix`, `root_prefix`, rutas internas ni JSON crudo sensible.
+- No activa AWS/S3 real, no hace llamadas remotas y no modifica base de datos.

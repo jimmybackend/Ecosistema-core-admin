@@ -1,5 +1,5 @@
 <?php $files = $contentData['files'] ?? []; $statusMessage=$contentData['statusMessage']??null; $errorMessage=$contentData['errorMessage']??null; $downloadsEnabled=(bool)($config['cloud']['allow_downloads']??false); ?>
-<div class="eco-card"><h1>Cloud</h1><a class="eco-button btn" href="/cloud/folders">Carpetas</a> <a class="eco-button btn" href="/cloud/settings">Configuración S3</a> <a class="eco-button btn" href="/cloud/files/upload">Subir archivo</a>
+<div class="eco-card"><h1>Cloud</h1><a class="eco-button btn" href="/cloud/folders">Carpetas</a> <a class="eco-button btn" href="/cloud/settings">Configuración S3</a> <a class="eco-button btn" href="/cloud/drive">Ecosistema Drive</a> <a class="eco-button btn" href="/cloud/files/upload">Subir archivo</a>
 <?php if(!$downloadsEnabled):?><span class="eco-badge">Descargas deshabilitadas</span><?php endif; ?>
 <?php if($statusMessage):?><div class="eco-alert eco-alert--success"><?= e($statusMessage) ?></div><?php endif; ?>
 <?php if($errorMessage):?><div class="eco-alert eco-alert--danger"><?= e($errorMessage) ?></div><?php endif; ?>

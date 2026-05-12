@@ -164,6 +164,12 @@ if (!$deployChecklistFound) {
 $routesFile = $root . '/routes/web.php';
 if (is_file($routesFile)) {
     $routesContent = file_get_contents($routesFile);
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive para estado de Ecosistema Drive.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive en routes/web.php.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/files/{id}/download")) {
         ok('routes/web.php contiene ruta de descarga cloud controlada.');
     } else {
@@ -211,6 +217,7 @@ $requiredClasses = [
     'App\Core\Onboarding\OnboardingStepExecutor',
     'App\Core\Cloud\S3DriveIntegrationConfig',
     'App\Core\Cloud\EcosistemaDriveConfig',
+    'App\Core\Cloud\EcosistemaDriveAdapter',
     'App\Core\System\CronHealthCheckRunner',
     'App\Core\Auth\CronSessionCleanupRunner',
 ];

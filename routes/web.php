@@ -53,6 +53,7 @@ use App\Core\Cloud\EcosistemaDriveRootService;
 use App\Core\Cloud\EcosistemaDriveBucketService;
 use App\Core\Cloud\EcosistemaDriveBucketRepository;
 use App\Core\Cloud\EcosistemaDriveSummaryService;
+use App\Core\Cloud\EcosistemaDriveAccessPolicy;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -724,6 +725,19 @@ return [
     },
 
 
+
+    'GET /cloud/drive/access' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $policy = new EcosistemaDriveAccessPolicy();
+        $policyDescription = $policy->describeReadOnlyPolicy();
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Política de acceso Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-access','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('policyDescription')]);
+    },
+
     'GET /cloud/drive/summary' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
@@ -756,7 +770,7 @@ return [
 
         try {
             $pdo = PdoFactory::make($config['database']);
-            $service = new EcosistemaDriveRootService(new EcosistemaDriveRootRepository($pdo));
+            $service = new EcosistemaDriveRootService(new EcosistemaDriveRootRepository($pdo), new EcosistemaDriveAccessPolicy());
             $root = $service->getUserRootSummary($tenantId, $userId);
         } catch (\Throwable) {
             $errorMessage = 'No se pudo consultar la raíz Drive del usuario actual.';
@@ -774,7 +788,7 @@ return [
         $userId = (int)($auth['user_id'] ?? 0);
         try {
             $pdo = PdoFactory::make($config['database']);
-            $service = new EcosistemaDriveFileService(new EcosistemaDriveFileRepository($pdo));
+            $service = new EcosistemaDriveFileService(new EcosistemaDriveFileRepository($pdo), new EcosistemaDriveAccessPolicy());
             $files = $service->listFiles($tenantId, $userId, 100);
             $errorMessage = null;
         } catch (\Throwable) {
@@ -798,7 +812,7 @@ return [
 
         try {
             $pdo = PdoFactory::make($config['database']);
-            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo));
+            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo), new EcosistemaDriveAccessPolicy());
             $folders = $service->listFolders($tenantId, $userId, 100);
         } catch (\Throwable) {
             $errorMessage = 'No se pudo cargar metadata de carpetas de Drive.';
@@ -825,7 +839,7 @@ return [
         } else {
             try {
                 $pdo = PdoFactory::make($config['database']);
-                $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo));
+                $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo), new EcosistemaDriveAccessPolicy());
                 $folder = $service->getFolderDetail($tenantId, $userId, (int)$idRaw);
                 if ($folder === null) {
                     http_response_code(404);
@@ -863,7 +877,7 @@ return [
 
         try {
             $pdo = PdoFactory::make($config['database']);
-            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo));
+            $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo), new EcosistemaDriveFileRepository($pdo), new EcosistemaDriveAccessPolicy());
             $browser = $service->getFolderBrowser($tenantId, $userId, $folderId);
             $errorMessage = null;
         } catch (\Throwable) {
@@ -888,7 +902,7 @@ return [
 
         try {
             $pdo = PdoFactory::make($config['database']);
-            $service = new EcosistemaDriveBucketService(new EcosistemaDriveBucketRepository($pdo));
+            $service = new EcosistemaDriveBucketService(new EcosistemaDriveBucketRepository($pdo), new EcosistemaDriveAccessPolicy());
             $buckets = $service->listBucketSummaries($tenantId);
         } catch (\Throwable) {
             $errorMessage = 'No se pudo consultar metadata de buckets Drive.';
@@ -915,7 +929,7 @@ return [
         } else {
             try {
                 $pdo = PdoFactory::make($config['database']);
-                $service = new EcosistemaDriveFileService(new EcosistemaDriveFileRepository($pdo));
+                $service = new EcosistemaDriveFileService(new EcosistemaDriveFileRepository($pdo), new EcosistemaDriveAccessPolicy());
                 $file = $service->getFileDetail($tenantId, $userId, (int)$idRaw);
                 if ($file === null) {
                     http_response_code(404);

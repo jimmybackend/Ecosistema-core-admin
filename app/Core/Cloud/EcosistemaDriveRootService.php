@@ -6,8 +6,10 @@ namespace App\Core\Cloud;
 
 final readonly class EcosistemaDriveRootService
 {
-    public function __construct(private EcosistemaDriveRootRepository $repository)
-    {
+    public function __construct(
+        private EcosistemaDriveRootRepository $repository,
+        private EcosistemaDriveAccessPolicy $policy,
+    ) {
     }
 
     /**
@@ -16,7 +18,7 @@ final readonly class EcosistemaDriveRootService
     public function getUserRootSummary(int $tenantId, int $userId): ?array
     {
         $root = $this->repository->findForUser($tenantId, $userId);
-        if ($root === null) {
+        if ($root === null || !$this->policy->canViewRootMetadata($root, $tenantId, $userId)) {
             return null;
         }
 

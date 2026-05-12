@@ -6,8 +6,10 @@ namespace App\Core\Cloud;
 
 final readonly class EcosistemaDriveFileService
 {
-    public function __construct(private EcosistemaDriveFileRepository $repository)
-    {
+    public function __construct(
+        private EcosistemaDriveFileRepository $repository,
+        private EcosistemaDriveAccessPolicy $policy,
+    ) {
     }
 
     /**
@@ -15,7 +17,10 @@ final readonly class EcosistemaDriveFileService
      */
     public function listFiles(int $tenantId, int $userId, int $limit = 100): array
     {
-        return $this->repository->listMetadataByUser($tenantId, $userId, $limit);
+        return array_values(array_filter(
+            $this->repository->listMetadataByUser($tenantId, $userId, $limit),
+            fn (array $file): bool => $this->policy->canViewFileMetadata($file, $tenantId, $userId),
+        ));
     }
 
     /**
@@ -24,7 +29,7 @@ final readonly class EcosistemaDriveFileService
     public function getFileDetail(int $tenantId, int $userId, int $id): ?array
     {
         $file = $this->repository->findVisibleById($tenantId, $userId, $id);
-        if ($file === null) {
+        if ($file === null || !$this->policy->canViewFileMetadata($file, $tenantId, $userId)) {
             return null;
         }
 

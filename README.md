@@ -390,3 +390,5 @@ Estado actual:
 - Esta vista no crea/edita raíces, no activa AWS/S3 real y no modifica base de datos.
 
 - Resumen operativo read-only de Drive (`/cloud/drive/summary`) usando metadata de `cloud_files`, `cloud_folders`, `cloud_user_roots` y `cloud_buckets`, sin exponer keys/prefixes/rutas internas ni activar AWS/S3 o modificar DB.
+
+- Política interna read-only de acceso Drive: `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md`.

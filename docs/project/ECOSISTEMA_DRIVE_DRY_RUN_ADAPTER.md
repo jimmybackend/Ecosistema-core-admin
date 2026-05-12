@@ -71,3 +71,4 @@ En PRs siguientes se podrá:
 ## Capacidad adicional
 
 - `read_access_policy`: habilitada para exponer política interna de acceso read-only sin AWS/S3 real.
+- El adapter declara capability `read_only_audit=true` para trazabilidad administrativa read-only en `core_audit`.

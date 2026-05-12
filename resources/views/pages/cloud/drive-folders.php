@@ -21,12 +21,12 @@ $errorMessage = isset($contentData['errorMessage']) ? (string)$contentData['erro
     <thead>
       <tr>
         <th>ID</th><th>Nombre</th><th>Tipo</th><th>Acceso</th><th>Encontrado en S3</th><th>Es sistema</th>
-        <th>Parent</th><th>Root</th><th>Creado</th><th>Actualizado</th><th>Eliminado</th>
+        <th>Parent</th><th>Root</th><th>Bucket</th><th>Creado</th><th>Actualizado</th><th>Eliminado</th><th>Acciones</th>
       </tr>
     </thead>
     <tbody>
       <?php if ($folders === []): ?>
-        <tr><td colspan="11">Sin carpetas para este usuario/tenant.</td></tr>
+        <tr><td colspan="13">Sin carpetas para este usuario/tenant.</td></tr>
       <?php else: ?>
         <?php foreach ($folders as $folder): ?>
           <tr>
@@ -38,9 +38,11 @@ $errorMessage = isset($contentData['errorMessage']) ? (string)$contentData['erro
             <td><span class="eco-badge"><?= !empty($folder['is_system']) ? 'Sí' : 'No' ?></span></td>
             <td><?= e((string)($folder['parent_folder_id'] ?? '')) ?></td>
             <td><?= e((string)($folder['root_id'] ?? '')) ?></td>
+            <td><?= e((string)($folder['bucket_id'] ?? '')) ?></td>
             <td><?= e((string)($folder['created_at'] ?? '')) ?></td>
             <td><?= e((string)($folder['updated_at'] ?? '')) ?></td>
             <td><?= e((string)($folder['deleted_at'] ?? '')) ?></td>
+            <td><a class="eco-button btn" href="/cloud/drive/folders/<?= e((string)($folder['id'] ?? '0')) ?>">Ver detalle</a></td>
           </tr>
         <?php endforeach; ?>
       <?php endif; ?>

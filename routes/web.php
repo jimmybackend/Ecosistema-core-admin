@@ -759,6 +759,40 @@ return [
         View::render('layouts.admin',['title'=>'Carpetas Ecosistema Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-folders','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('folders','errorMessage')]);
     },
 
+    'GET /cloud/drive/folders/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $idRaw = (string)($params['id'] ?? '');
+        $folder = null;
+        $errorMessage = null;
+
+        if (!preg_match('/^[1-9][0-9]*$/', $idRaw)) {
+            http_response_code(404);
+            $errorMessage = 'Carpeta no encontrada.';
+        } else {
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $service = new EcosistemaDriveFolderService(new EcosistemaDriveFolderRepository($pdo));
+                $folder = $service->getFolderDetail($tenantId, $userId, (int)$idRaw);
+                if ($folder === null) {
+                    http_response_code(404);
+                    $errorMessage = 'Carpeta no encontrada.';
+                }
+            } catch (\Throwable) {
+                http_response_code(404);
+                $folder = null;
+                $errorMessage = 'Carpeta no encontrada.';
+            }
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Detalle carpeta Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-folder-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('folder','errorMessage')]);
+    },
+
     'GET /cloud/drive/files/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }

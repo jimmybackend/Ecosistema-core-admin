@@ -42,3 +42,5 @@ En PRs siguientes se podrá:
 - No sube/descarga archivos remotos.
 
 - Se agrega listado administrativo `GET /cloud/drive/folders` (metadata read-only de `cloud_folders`, sin AWS/S3 real ni exposición de `prefix` o rutas internas).
+- Se agrega detalle administrativo `GET /cloud/drive/folders/{id}` (metadata read-only por carpeta, con aislamiento por tenant/usuario, sin exponer `prefix`, rutas internas o secretos).
+- Se mantiene `remote_calls=false`, `signed_urls=false`, `remote_uploads=false`, `remote_downloads=false` y `aws_connection=false`.

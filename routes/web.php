@@ -56,6 +56,9 @@ use App\Core\Cloud\EcosistemaDriveSummaryService;
 use App\Core\Cloud\EcosistemaDriveAccessPolicy;
 use App\Core\Cloud\EcosistemaDriveAuditLogger;
 use App\Core\Cloud\EcosistemaDriveDownloadContract;
+use App\Core\Cloud\EcosistemaDriveS3KeyValidationRepository;
+use App\Core\Cloud\EcosistemaDriveS3KeyValidationService;
+use App\Core\Cloud\EcosistemaDriveS3KeyValidator;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -989,6 +992,45 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Detalle archivo Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-file-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('file','errorMessage')]);
+    },
+
+
+
+    'GET /cloud/drive/files/{id}/s3-key-validation' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? 0);
+        $idRaw = (string)($params['id'] ?? '');
+        $validation = null;
+        $errorMessage = null;
+
+        if (!preg_match('/^[1-9][0-9]*$/', $idRaw)) {
+            http_response_code(404);
+            $errorMessage = 'Archivo no encontrado.';
+        } else {
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $service = new EcosistemaDriveS3KeyValidationService(
+                    new EcosistemaDriveS3KeyValidationRepository($pdo),
+                    new EcosistemaDriveS3KeyValidator(),
+                );
+                $validation = $service->validate($tenantId, $userId, (int)$idRaw);
+                driveAuditLog($pdo, 'drive.file.s3_key_validation.viewed', 'drive_file', (int)$idRaw, '/cloud/drive/files/{id}/s3-key-validation', 'view');
+                if ($validation === null) {
+                    http_response_code(404);
+                    $errorMessage = 'Archivo no encontrado.';
+                }
+            } catch (\Throwable) {
+                http_response_code(404);
+                $errorMessage = 'Archivo no encontrado.';
+            }
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Validación s3_key Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-s3-key-validation','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('validation','errorMessage')]);
     },
 
     'GET /cloud/settings' => static function (array $config): void {

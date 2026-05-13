@@ -61,7 +61,7 @@ Limitaciones vigentes de autenticación:
 - System: `/system/health`, `/system/logs`, `/system/audit`
 - Mail: `/mail`
 - Cloud: `/cloud`
-- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/summary`, `/cloud/drive/files`, `/cloud/drive/files/{id}`, `/cloud/drive/folders`, `/cloud/drive/folders/{id}`, `/cloud/drive/browse`, `/cloud/drive/root`, `/cloud/drive/buckets`
+- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/summary`, `/cloud/drive/files`, `/cloud/drive/files/{id}, /cloud/drive/files/{id}/s3-key-validation`, `/cloud/drive/folders`, `/cloud/drive/folders/{id}`, `/cloud/drive/browse`, `/cloud/drive/root`, `/cloud/drive/buckets`
 - Onboarding: `/onboarding`
 - Health técnico DB: `/health/db`
 
@@ -126,7 +126,7 @@ Limitaciones vigentes de autenticación:
 - Modo por defecto `contract`, sin AWS/S3 real, sin llamadas remotas y con `s3` como repositorio de referencia técnica.
 - Listado read-only de Drive (`/cloud/drive/files`) usando metadata de `cloud_files`, sin listar bucket/key real, sin signed URLs y sin operaciones remotas.
 - Listado read-only de carpetas (`/cloud/drive/folders`) usando metadata de `cloud_folders`, sin exponer `prefix` ni rutas internas, y sin crear/editar/borrar carpetas.
-- Detalle read-only por archivo (`/cloud/drive/files/{id}`) usando metadata segura de `cloud_files` (aislamiento por tenant/usuario, sin exponer `s3_key`, `stored_name`, hashes sensibles ni `metadata_json` crudo).
+- Detalle read-only por archivo (`/cloud/drive/files/{id}, /cloud/drive/files/{id}/s3-key-validation`) usando metadata segura de `cloud_files` (aislamiento por tenant/usuario, sin exponer `s3_key`, `stored_name`, hashes sensibles ni `metadata_json` crudo).
 - Detalle read-only por carpeta (`/cloud/drive/folders/{id}`) usando metadata segura de `cloud_folders` (aislamiento por tenant/usuario, sin exponer `prefix`, `prefix_hash`, `password_hash`, `secure_hint` ni rutas internas).
 
 ## Inventario técnico S3 Drive

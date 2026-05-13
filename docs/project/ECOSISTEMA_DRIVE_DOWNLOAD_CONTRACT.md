@@ -90,3 +90,6 @@ Definir el contrato documental y técnico para una **descarga controlada futura*
 2. Incorporar política de estado de malware/antivirus si `virus_scan_status` está disponible.
 3. Implementar entrega controlada por modo local/S3, manteniendo secreto de infraestructura.
 4. Añadir pruebas funcionales de autorización y auditoría.
+
+
+- PR #64 añade validación segura de s3_key (dry-run) previa a signed URLs dry-run de PR #65.

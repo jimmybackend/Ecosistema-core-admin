@@ -18,6 +18,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
 - [Comandos rápidos](#comandos-rápidos)
 - [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
+- [Registro inicial controlado en VM](#registro-inicial-controlado-en-vm)
 
 ## Resumen
 Incluye autenticación real, sesión persistida, dashboard, gestión base de tenants/usuarios/roles/permisos/módulos y módulos mínimos de system, mail, cloud y onboarding.
@@ -49,6 +50,11 @@ Limitaciones vigentes de autenticación:
 - No hay remember-me persistente.
 - No hay MFA todavía.
 - No hay rotación avanzada por dispositivo todavía.
+
+
+## Registro inicial controlado en VM
+- Consulta la guía: `docs/auth/CONTROLLED_INITIAL_REGISTRATION.md`.
+- Mantén `CORE_REGISTRATION_ENABLED=false` por defecto y actívalo sólo temporalmente para onboarding inicial.
 
 ## Rutas principales
 - Auth: `/login`, `POST /logout`

@@ -39,6 +39,8 @@ final class EcosistemaDriveAdapter
             'contract_only' => true,
             'controlled_download' => true,
             'controlled_download_available' => false,
+            'db_writes' => false,
+            'upload_dry_run' => true,
         ];
     }
 
@@ -59,6 +61,10 @@ final class EcosistemaDriveAdapter
             'signed_url_dry_run' => [
                 'enabled' => true,
                 'description' => 'Simulación segura de elegibilidad para signed URL futura, sin generar URL real ni conectar AWS/S3.',
+            ],
+            'upload_dry_run' => [
+                'enabled' => true,
+                'description' => 'Simulación informativa de subida S3 en modo dry-run, sin procesar archivos ni escribir en DB/storage.',
             ],
             'signed_urls' => [
                 'enabled' => false,

@@ -63,6 +63,8 @@ use App\Core\Cloud\EcosistemaDriveSignedUrlDryRunService;
 use App\Core\Cloud\EcosistemaDriveSignedUrlDryRun;
 use App\Core\Cloud\EcosistemaDriveAwsS3Config;
 use App\Core\Cloud\EcosistemaDriveS3DownloadService;
+use App\Core\Cloud\EcosistemaDriveS3UploadDryRun;
+use App\Core\Cloud\EcosistemaDriveS3UploadDryRunService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -794,6 +796,26 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Contrato descarga Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-download-contract','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('contract')]);
+    },
+
+
+    'GET /cloud/drive/upload-dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $uploadDryRun = (new EcosistemaDriveS3UploadDryRunService(
+            new EcosistemaDriveAwsS3Config((array)($config['ecosistema_drive'] ?? [])),
+            new EcosistemaDriveS3UploadDryRun(),
+        ))->evaluate();
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            driveAuditLog($pdo, 'drive.upload.dry_run.viewed', 'drive_upload_dry_run', null, '/cloud/drive/upload-dry-run', 'view');
+        } catch (\Throwable) {}
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Subida S3 dry-run | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-upload-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('uploadDryRun')]);
     },
 
     'GET /cloud/drive/summary' => static function (array $config): void {

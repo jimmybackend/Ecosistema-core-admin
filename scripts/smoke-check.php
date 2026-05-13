@@ -98,6 +98,10 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-aws-config.php',
     'app/Core/Cloud/EcosistemaDriveAwsS3Config.php',
     'docs/project/ECOSISTEMA_DRIVE_CONTROLLED_S3_DOWNLOAD.md',
+    'docs/project/ECOSISTEMA_DRIVE_S3_UPLOAD_DRY_RUN.md',
+    'resources/views/pages/cloud/drive-upload-dry-run.php',
+    'app/Core/Cloud/EcosistemaDriveS3UploadDryRunService.php',
+    'app/Core/Cloud/EcosistemaDriveS3UploadDryRun.php',
     'resources/views/pages/cloud/drive-download-blocked.php',
     'app/Core/Cloud/EcosistemaDriveS3DownloadService.php',
     'docs/project/ECOSISTEMA_DRIVE_S3_KEY_VALIDATION.md',
@@ -296,6 +300,16 @@ if (is_file($routesFile)) {
     if ($adapterContent !== false && str_contains($adapterContent, "'signed_urls' => false")) { ok('EcosistemaDriveAdapter mantiene signed_urls=false.'); } else { fail('EcosistemaDriveAdapter no mantiene signed_urls=false.', $criticalFailures); }
     if ($adapterContent !== false && str_contains($adapterContent, "'remote_downloads' => false")) { ok('EcosistemaDriveAdapter mantiene remote_downloads=false.'); } else { fail('EcosistemaDriveAdapter no mantiene remote_downloads=false.', $criticalFailures); }
     if ($adapterContent !== false && str_contains($adapterContent, "'remote_uploads' => false")) { ok('EcosistemaDriveAdapter mantiene remote_uploads=false.'); } else { fail('EcosistemaDriveAdapter no mantiene remote_uploads=false.', $criticalFailures); }
+
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/upload-dry-run")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/upload-dry-run informativa.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/upload-dry-run en routes/web.php.', $criticalFailures);
+    }
+
+    if ($adapterContent !== false && str_contains($adapterContent, "'upload_dry_run' => true")) { ok('EcosistemaDriveAdapter mantiene upload_dry_run=true.'); } else { fail('EcosistemaDriveAdapter no mantiene upload_dry_run=true.', $criticalFailures); }
+    if ($adapterContent !== false && str_contains($adapterContent, "'storage_writes' => false")) { ok('EcosistemaDriveAdapter mantiene storage_writes=false.'); } else { fail('EcosistemaDriveAdapter no mantiene storage_writes=false.', $criticalFailures); }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/download-contract")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/download-contract para contrato informativo de descarga futura.');
@@ -778,3 +792,21 @@ foreach ($scanFiles as $scanFile) { $content = is_file($root . '/' . $scanFile) 
 $viewPath = $root . '/resources/views/pages/cloud/drive-aws-config.php';
 $viewContent = is_file($viewPath) ? file_get_contents($viewPath) : '';
 foreach (['ACCESS_KEY','AWS_SECRET_ACCESS_KEY','AWS_SESSION_TOKEN','s3_key'] as $forbiddenViewToken) { if ($viewContent !== false && str_contains((string)$viewContent, $forbiddenViewToken)) { fail('Vista AWS config contiene token sensible: ' . $forbiddenViewToken, $criticalFailures); } }
+
+
+$uploadDryRunService = $root . '/app/Core/Cloud/EcosistemaDriveS3UploadDryRunService.php';
+if (is_file($uploadDryRunService)) {
+    $content = (string) file_get_contents($uploadDryRunService);
+    foreach (['putObject', 'Aws\\S3\\S3Client', 'move_uploaded_file'] as $forbidden) {
+        if (str_contains($content, $forbidden)) { fail('Servicio upload dry-run contiene operación prohibida: ' . $forbidden, $criticalFailures); }
+        else { ok('Servicio upload dry-run no contiene: ' . $forbidden); }
+    }
+}
+$uploadDryRunView = $root . '/resources/views/pages/cloud/drive-upload-dry-run.php';
+if (is_file($uploadDryRunView)) {
+    $content = (string) file_get_contents($uploadDryRunView);
+    foreach (['AWS_SECRET_ACCESS_KEY', 'AWS_ACCESS_KEY_ID', 'AWS_SESSION_TOKEN', 's3_key', 'stored_name', 'root_prefix', 'config_json'] as $forbidden) {
+        if (str_contains($content, $forbidden)) { fail('Vista upload dry-run expone contenido sensible: ' . $forbidden, $criticalFailures); }
+        else { ok('Vista upload dry-run no expone: ' . $forbidden); }
+    }
+}

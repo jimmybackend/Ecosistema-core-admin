@@ -436,3 +436,8 @@ Estado actual:
 - URL Locator (read-only link detail): ver `docs/project/ECOSISTEMA_URL_LOCATOR_LINK_DETAIL.md`.
 
 - docs/project/ECOSISTEMA_URL_LOCATOR_CREATE_EDIT_CONTROLLED.md
+
+
+## URL Locator public redirect
+
+Se agregó redirect público controlado por flags en `GET /u/{slug}` con defaults apagados y tracking opcional. Ver `docs/project/ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECT.md`.

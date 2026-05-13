@@ -173,6 +173,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md` (inventario canónico del esquema URL Locator sobre `adbbmis1_eco`, previo a implementación funcional).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_CLICKS_READ_ONLY.md` (consulta read-only de clicks existentes con privacidad y sin escrituras).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_REDIRECT_DRY_RUN.md` (simulación protegida de resolución de redirect sin redirección ni escrituras).
+- `docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md` (inventario canónico de Landing Pages sobre `adbbmis1_eco`, previo a implementación funcional de UI/lógica).
 
 ## Smoke checks básicos (PR #22)
 Ejecutar:

@@ -14,6 +14,7 @@
     <a href="/cloud">Cloud</a>
     <a href="/cloud/settings">Configuración S3</a>
     <a href="/cloud/drive">Ecosistema Drive</a>
+    <a href="/url/locator">URL Locator</a>
     <a href="/onboarding">Onboarding</a>
   </nav>
 </aside>

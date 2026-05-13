@@ -82,7 +82,9 @@ use App\Core\Onboarding\OnboardingRunRepository;
 use App\Core\Onboarding\OnboardingService;
 use App\Core\Onboarding\OnboardingRunner;
 use App\Core\Onboarding\OnboardingStepExecutor;
-
+use App\Core\UrlLocator\EcosistemaUrlLocatorAdapter;
+use App\Core\UrlLocator\EcosistemaUrlLocatorLinkRepository;
+use App\Core\UrlLocator\EcosistemaUrlLocatorLinkService;
 
 
 function startAuthSession(array $config): void
@@ -737,6 +739,59 @@ return [
         header('Location: /mail?'.(($message==='Mensaje enviado a papelera.')?'ok=':'error=').urlencode($message));
     },
 
+
+
+    'GET /url/locator' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $statusMessage = null;
+        $errorMessage = null;
+        $summary = ['total' => 0, 'by_status' => [], 'by_smart_type' => []];
+        $capabilities = (new EcosistemaUrlLocatorAdapter())->capabilities();
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaUrlLocatorLinkService(new EcosistemaUrlLocatorLinkRepository($pdo), new EcosistemaUrlLocatorAdapter());
+            $data = $service->listLinks($tenantId, 25);
+            $summary = $data['summary'];
+            $capabilities = $data['capabilities'];
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo cargar URL Locator en modo read-only.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'URL Locator | Ecosistema Core Admin','contentView'=>'pages/url-locator/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','capabilities','statusMessage','errorMessage')]);
+    },
+
+    'GET /url/locator/links' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $statusMessage = null;
+        $errorMessage = null;
+        $summary = ['total' => 0, 'by_status' => [], 'by_smart_type' => []];
+        $links = [];
+        $capabilities = (new EcosistemaUrlLocatorAdapter())->capabilities();
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaUrlLocatorLinkService(new EcosistemaUrlLocatorLinkRepository($pdo), new EcosistemaUrlLocatorAdapter());
+            $data = $service->listLinks($tenantId, 100);
+            $summary = $data['summary'];
+            $links = $data['links'];
+            $capabilities = $data['capabilities'];
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo cargar links URL Locator en modo read-only.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'URL Locator Links | Ecosistema Core Admin','contentView'=>'pages/url-locator/links','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','links','capabilities','statusMessage','errorMessage')]);
+    },
 
     'GET /cloud' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

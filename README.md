@@ -19,6 +19,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Comandos rápidos](#comandos-rápidos)
 - [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
 - [Registro inicial controlado en VM](#registro-inicial-controlado-en-vm)
+- [Configuración de entorno en VM](#configuración-de-entorno-en-vm)
 
 ## Resumen
 Incluye autenticación real, sesión persistida, dashboard, gestión base de tenants/usuarios/roles/permisos/módulos y módulos mínimos de system, mail, cloud y onboarding.
@@ -51,6 +52,10 @@ Limitaciones vigentes de autenticación:
 - No hay MFA todavía.
 - No hay rotación avanzada por dispositivo todavía.
 
+
+## Configuración de entorno en VM
+- Guía rápida segura: `docs/deploy/VM_ENV_SETUP.md`.
+- Usa `bash scripts/setup-vm-env.sh` para crear/actualizar `.env` sin commitear secretos.
 
 ## Registro inicial controlado en VM
 - Consulta la guía: `docs/auth/CONTROLLED_INITIAL_REGISTRATION.md`.

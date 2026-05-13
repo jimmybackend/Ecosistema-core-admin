@@ -201,6 +201,92 @@ if (is_file($envExample)) {
         }
     }
 
+
+$vmRequiredFiles = [
+    '.env.vm.example',
+    'scripts/setup-vm-env.sh',
+    'docs/deploy/VM_ENV_SETUP.md',
+];
+
+foreach ($vmRequiredFiles as $vmRequiredFile) {
+    checkFile($root, $vmRequiredFile, $criticalFailures);
+}
+
+$gitignorePath = $root . '/.gitignore';
+if (is_file($gitignorePath)) {
+    $gitignoreContent = file_get_contents($gitignorePath);
+    if ($gitignoreContent !== false && preg_match('/^\/\.env$/m', $gitignoreContent)) {
+        ok('.gitignore ignora /.env.');
+    } else {
+        fail('.gitignore no ignora /.env.', $criticalFailures);
+    }
+}
+
+$vmEnvExamplePath = $root . '/.env.vm.example';
+if (is_file($vmEnvExamplePath)) {
+    $vmEnvContent = file_get_contents($vmEnvExamplePath);
+
+    if ($vmEnvContent !== false && str_contains($vmEnvContent, 'DB_PASSWORD=CAMBIAR_EN_VM_NO_COMMIT')) {
+        ok('.env.vm.example contiene placeholder seguro para DB_PASSWORD.');
+    } else {
+        fail('.env.vm.example no contiene DB_PASSWORD=CAMBIAR_EN_VM_NO_COMMIT.', $criticalFailures);
+    }
+
+    if ($vmEnvContent !== false && str_contains($vmEnvContent, 'CORE_REGISTRATION_INVITE_CODE=CAMBIAR_EN_VM_NO_COMMIT')) {
+        ok('.env.vm.example contiene placeholder seguro para CORE_REGISTRATION_INVITE_CODE.');
+    } else {
+        fail('.env.vm.example no contiene CORE_REGISTRATION_INVITE_CODE=CAMBIAR_EN_VM_NO_COMMIT.', $criticalFailures);
+    }
+
+    if ($vmEnvContent !== false && !preg_match('/AWS_ACCESS_KEY_ID=(?!change-me$).+/m', $vmEnvContent)) {
+        ok('.env.vm.example no contiene AWS_ACCESS_KEY_ID real.');
+    } else {
+        fail('.env.vm.example contiene AWS_ACCESS_KEY_ID potencialmente real.', $criticalFailures);
+    }
+
+    if ($vmEnvContent !== false && !preg_match('/AWS_SECRET_ACCESS_KEY=(?!change-me$).+/m', $vmEnvContent)) {
+        ok('.env.vm.example no contiene AWS_SECRET_ACCESS_KEY real.');
+    } else {
+        fail('.env.vm.example contiene AWS_SECRET_ACCESS_KEY potencialmente real.', $criticalFailures);
+    }
+}
+
+$setupScriptPath = $root . '/scripts/setup-vm-env.sh';
+if (is_file($setupScriptPath)) {
+    $setupScriptContent = file_get_contents($setupScriptPath);
+
+    if ($setupScriptContent !== false && str_contains($setupScriptContent, 'read -r -s -p')) {
+        ok('setup-vm-env.sh usa read -s para secretos.');
+    } else {
+        fail('setup-vm-env.sh no usa read -s para secretos.', $criticalFailures);
+    }
+
+    if ($setupScriptContent !== false && str_contains($setupScriptContent, '.bak.')) {
+        ok('setup-vm-env.sh crea backup antes de modificar .env existente.');
+    } else {
+        fail('setup-vm-env.sh no crea backup antes de modificar .env existente.', $criticalFailures);
+    }
+
+    if ($setupScriptContent !== false && str_contains($setupScriptContent, 'if grep -Eq "^[[:space:]]*${key}=" "${file}"; then')) {
+        ok('setup-vm-env.sh conserva variables desconocidas al actualizar solo claves gestionadas.');
+    } else {
+        fail('setup-vm-env.sh no demuestra estrategia de preservación de variables desconocidas.', $criticalFailures);
+    }
+
+    if ($setupScriptContent !== false && str_contains($setupScriptContent, 'sed -i -E "s|^[[:space:]]*${key}=.*$|${key}=${escaped_value}|" "${file}"')) {
+        ok('setup-vm-env.sh actualiza líneas puntuales y no borra comentarios existentes.');
+    } else {
+        fail('setup-vm-env.sh no demuestra actualización puntual de líneas para preservar comentarios.', $criticalFailures);
+    }
+
+    if ($setupScriptContent !== false && !str_contains($setupScriptContent, 'echo "DB_PASSWORD') && !str_contains($setupScriptContent, 'echo "CORE_REGISTRATION_INVITE_CODE')) {
+        ok('setup-vm-env.sh no imprime secretos en consola.');
+    } else {
+        fail('setup-vm-env.sh imprime secretos en consola.', $criticalFailures);
+    }
+}
+
+
 $deployChecklistPaths = [
     'docs/deploy/EC2_PRODUCTION_CHECKLIST.md',
     'docs/project/ECOSISTEMA_CORE_ADMIN_DEPLOY_EC2.md',

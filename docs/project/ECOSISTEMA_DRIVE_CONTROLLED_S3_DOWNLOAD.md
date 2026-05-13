@@ -39,3 +39,5 @@ Regresar banderas a `false`.
 Además del flujo de descarga controlada, existe ruta separada `/cloud/drive/upload-dry-run` para simulación de subida, también sin conexión AWS/S3 real.
 
 - Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.
+
+- Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.

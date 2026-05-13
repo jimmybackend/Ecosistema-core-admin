@@ -40,6 +40,10 @@ final class EcosistemaDriveAdapter
             'controlled_download' => true,
             'controlled_download_available' => false,
             'db_writes' => false,
+            'share_links' => false,
+            'public_links' => false,
+            'share_tokens' => false,
+            'email_notifications' => false,
             'upload_dry_run' => true,
             'read_file_versions' => true,
             'version_restore' => false,
@@ -136,6 +140,10 @@ final class EcosistemaDriveAdapter
             'safe_s3_key_validation' => [
                 'enabled' => true,
                 'description' => 'Validación dry-run segura de s3_key sin exponer la key ni habilitar descarga real.',
+            ],
+            'share_contract' => [
+                'enabled' => true,
+                'description' => 'Contrato técnico/documental read-only para compartir archivos en el futuro, sin crear links/tokens/shares.',
             ],
             'download_contract' => [
                 'enabled' => true,

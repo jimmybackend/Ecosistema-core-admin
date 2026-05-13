@@ -41,3 +41,5 @@ Agregar consulta segura **read-only** de versiones por archivo en `/cloud/drive/
 - [x] Sin exposición de `s3_key` / `s3_version_id` crudos.
 - [x] Sin operaciones mutables sobre `cloud_file_versions`.
 - [x] Sin AWS SDK ni llamadas reales a S3.
+
+- Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.

@@ -86,3 +86,5 @@ En PRs siguientes se podrá:
 - Capability adicional: `upload_dry_run=true` (informativo; no habilita `remote_uploads`).
 
 - Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.
+
+- Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.

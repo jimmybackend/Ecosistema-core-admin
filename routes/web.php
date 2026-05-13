@@ -67,6 +67,8 @@ use App\Core\Cloud\EcosistemaDriveAwsS3Config;
 use App\Core\Cloud\EcosistemaDriveS3DownloadService;
 use App\Core\Cloud\EcosistemaDriveS3UploadDryRun;
 use App\Core\Cloud\EcosistemaDriveS3UploadDryRunService;
+use App\Core\Cloud\EcosistemaDriveShareContractService;
+use App\Core\Cloud\EcosistemaDriveShareContract;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -1092,6 +1094,43 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Versiones archivo Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-file-versions','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('versions','fileId','errorMessage')]);
+    },
+
+
+    'GET /cloud/drive/files/{id}/share-contract' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $idRaw = (int)($params['id'] ?? 0);
+        $tenantId = (int)($auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['auth_user_id'] ?? 0);
+        $shareContract = null;
+        $errorMessage = null;
+
+        if ($idRaw <= 0) {
+            $errorMessage = 'No se encontró el archivo solicitado.';
+        } else {
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $service = new EcosistemaDriveShareContractService(
+                    new EcosistemaDriveFileService(new EcosistemaDriveFileRepository($pdo), new EcosistemaDriveAccessPolicy()),
+                    new EcosistemaDriveShareContract(),
+                );
+                $shareContract = $service->describeForFile($tenantId, $userId, $idRaw);
+                if ($shareContract !== null) {
+                    driveAuditLog($pdo, 'drive.file.share_contract.viewed', 'drive_file', (int)$idRaw, '/cloud/drive/files/{id}/share-contract', 'view');
+                } else {
+                    $errorMessage = 'No se encontró el archivo solicitado.';
+                }
+            } catch (\Throwable) {
+                $errorMessage = 'No se encontró el archivo solicitado.';
+            }
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Contrato compartir archivo Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-share-contract','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('shareContract','errorMessage')]);
     },
 
     'GET /cloud/drive/files/{id}/download' => static function (array $config, array $params): void {

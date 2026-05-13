@@ -10,6 +10,7 @@ $errorMessage = isset($contentData['errorMessage']) ? (string)$contentData['erro
     <a class="eco-button btn" href="/cloud/drive/files/<?= e((string)$fileId) ?>/s3-key-validation">Validación s3_key</a>
     <a class="eco-button btn" href="/cloud/drive/files/<?= e((string)$fileId) ?>/signed-url-dry-run">Signed URL dry-run</a>
     <a class="eco-button btn" href="/cloud/drive/files/<?= e((string)$fileId) ?>/download">Descarga controlada</a>
+    <a class="eco-button btn" href="/cloud/drive/files/<?= e((string)$fileId) ?>/share-contract">Contrato compartir</a>
     <a class="eco-button btn" href="/cloud/drive/upload-dry-run">Subida dry-run</a>
     <a class="eco-button btn" href="/cloud/drive/summary">Resumen Drive</a>
   </p>

@@ -35,3 +35,4 @@ Este documento extiende el contrato de `ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md` c
 Implementar contrato de signed URLs **dry-run** (sin AWS real).
 
 - Referencia: `docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md`.
+\n- Controlled download S3 backend route añadida: /cloud/drive/files/{id}/download (bloqueada por defecto).

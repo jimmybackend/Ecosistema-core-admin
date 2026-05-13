@@ -97,6 +97,9 @@ $requiredFiles = [
     'docs/project/ECOSISTEMA_DRIVE_AWS_S3_CONFIG.md',
     'resources/views/pages/cloud/drive-aws-config.php',
     'app/Core/Cloud/EcosistemaDriveAwsS3Config.php',
+    'docs/project/ECOSISTEMA_DRIVE_CONTROLLED_S3_DOWNLOAD.md',
+    'resources/views/pages/cloud/drive-download-blocked.php',
+    'app/Core/Cloud/EcosistemaDriveS3DownloadService.php',
     'docs/project/ECOSISTEMA_DRIVE_S3_KEY_VALIDATION.md',
     'resources/views/pages/cloud/drive-folder-detail.php',
     'resources/views/pages/cloud/drive-browse.php',
@@ -180,6 +183,16 @@ if (is_file($envExample)) {
     }
 }
 
+
+    $requiredDisabled = ['ECOSISTEMA_DRIVE_AWS_ENABLED=false', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS=false', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=false'];
+    foreach ($requiredDisabled as $disabledFlag) {
+        if ($envContent !== false && str_contains($envContent, $disabledFlag)) {
+            ok('.env.example mantiene apagado por defecto: ' . $disabledFlag);
+        } else {
+            fail('.env.example no mantiene apagado por defecto: ' . $disabledFlag, $criticalFailures);
+        }
+    }
+
 $deployChecklistPaths = [
     'docs/deploy/EC2_PRODUCTION_CHECKLIST.md',
     'docs/project/ECOSISTEMA_CORE_ADMIN_DEPLOY_EC2.md',
@@ -226,6 +239,19 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /cloud/drive/files en routes/web.php.', $criticalFailures);
     }
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}/download")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/files/{id}/download para descarga controlada.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/files/{id}/download en routes/web.php.', $criticalFailures);
+    }
+
+    if ($adapterContent !== false && str_contains($adapterContent, "controlled_download")) {
+        ok('EcosistemaDriveAdapter contiene capability controlled_download.');
+    } else {
+        fail('EcosistemaDriveAdapter no contiene capability controlled_download.', $criticalFailures);
+    }
+
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/files/{id} para detalle read-only de Drive.');
     } else {

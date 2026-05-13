@@ -81,3 +81,4 @@ En PRs siguientes se podrá:
 
 - Referencia: `docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md`.
 \n- AWS/S3 config preparada y apagada: ver docs/project/ECOSISTEMA_DRIVE_AWS_S3_CONFIG.md
+\n- Controlled download S3 backend route añadida: /cloud/drive/files/{id}/download (bloqueada por defecto).

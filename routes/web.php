@@ -70,6 +70,8 @@ use App\Core\Cloud\EcosistemaDriveS3UploadDryRunService;
 use App\Core\Cloud\EcosistemaDriveS3UploadService;
 use App\Core\Cloud\EcosistemaDriveShareContractService;
 use App\Core\Cloud\EcosistemaDriveShareContract;
+use App\Core\Cloud\EcosistemaDriveAccessLogService;
+use App\Core\Cloud\EcosistemaDriveAccessLogRepository;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -860,6 +862,62 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Resultado subida S3 | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-upload-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('uploadResult')]);
+    },
+
+
+    'GET /cloud/drive/access-logs' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['auth_tenant_id'] ?? 0);
+        $summary = [];
+        $logs = [];
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveAccessLogService(new EcosistemaDriveAccessLogRepository($pdo));
+            $result = $service->listRecentForTenant($tenantId, 100);
+            $summary = $result['summary'];
+            $logs = $result['logs'];
+            driveAuditLog($pdo, 'drive.access_logs.viewed', 'drive_access_log', null, '/cloud/drive/access-logs', 'list');
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudieron consultar los logs de acceso de Drive.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Logs de acceso Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-access-logs','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','logs','errorMessage')]);
+    },
+
+    'GET /cloud/drive/files/{id}/access-logs' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['auth_tenant_id'] ?? 0);
+        $fileId = (int)($params['id'] ?? 0);
+        $summary = [];
+        $logs = [];
+        $errorMessage = null;
+
+        if ($fileId <= 0) { renderError($config, 404); return; }
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveAccessLogService(new EcosistemaDriveAccessLogRepository($pdo));
+            $result = $service->listForFile($tenantId, $fileId, 100);
+            $summary = $result['summary'];
+            $logs = $result['logs'];
+            driveAuditLog($pdo, 'drive.file.access_logs.viewed', 'drive_file', $fileId, '/cloud/drive/files/{id}/access-logs', 'view');
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudieron consultar los logs de acceso del archivo.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Logs de acceso por archivo | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-file-access-logs','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','logs','fileId','errorMessage')]);
     },
 
     'GET /cloud/drive/summary' => static function (array $config): void {

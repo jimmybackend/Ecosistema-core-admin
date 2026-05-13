@@ -51,6 +51,8 @@ final class EcosistemaDriveAdapter
             'read_file_versions' => true,
             'version_restore' => false,
             'version_download' => false,
+            'access_logs_read' => true,
+            'access_logs_write' => false,
         ];
     }
 
@@ -155,6 +157,14 @@ final class EcosistemaDriveAdapter
             'download_contract' => [
                 'enabled' => true,
                 'description' => 'Contrato técnico/documental para futura descarga controlada de Drive, sin descarga real ni AWS/S3.',
+            ],
+            'access_logs_read' => [
+                'enabled' => true,
+                'description' => 'Consulta read-only de logs de acceso Drive desde cloud_file_access_logs con sanitización de campos sensibles.',
+            ],
+            'access_logs_write' => [
+                'enabled' => false,
+                'description' => 'Creación/modificación de logs de acceso deshabilitada en este PR.',
             ],
             's3_reference_only' => [
                 'enabled' => true,

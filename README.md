@@ -417,5 +417,6 @@ Estado actual:
 - Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.
 
 - Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.
+- Logs de acceso Drive read-only disponibles en `/cloud/drive/access-logs` y `/cloud/drive/files/{id}/access-logs`. Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_LOGS.md`.
 
 - Ver también: \/docs\/project\/ECOSISTEMA_DRIVE_CONTROLLED_S3_UPLOAD.md y ruta controlada `/cloud/drive/upload`.

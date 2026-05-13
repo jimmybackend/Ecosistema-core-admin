@@ -177,6 +177,15 @@ $requiredFiles = [
     'docs/project/ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECT.md',
     'resources/views/pages/url-locator/public-redirect-blocked.php',
     'app/Core/UrlLocator/EcosistemaUrlLocatorPublicRedirectService.php',
+
+    'docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md',
+    'docs/project/ECOSISTEMA_LANDING_PAGES_READ_ONLY.md',
+    'app/Core/Landing/EcosistemaLandingAdapter.php',
+    'app/Core/Landing/EcosistemaLandingPageRepository.php',
+    'app/Core/Landing/EcosistemaLandingPageService.php',
+    'resources/views/pages/landing/index.php',
+    'resources/views/pages/landing/pages.php',
+    'resources/views/pages/landing/page-detail.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {

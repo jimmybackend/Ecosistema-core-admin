@@ -442,3 +442,6 @@ Estado actual:
 ## URL Locator public redirect
 
 Se agregó redirect público controlado por flags en `GET /u/{slug}` con defaults apagados y tracking opcional. Ver `docs/project/ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECT.md`.
+
+
+- Landing Pages (read-only admin): `docs/project/ECOSISTEMA_LANDING_PAGES_READ_ONLY.md`.

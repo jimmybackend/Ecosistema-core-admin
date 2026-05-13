@@ -91,6 +91,9 @@ use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteRepository;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteService;
 use App\Core\UrlLocator\EcosistemaUrlLocatorRedirectDryRunService;
 use App\Core\UrlLocator\EcosistemaUrlLocatorPublicRedirectService;
+use App\Core\Landing\EcosistemaLandingAdapter;
+use App\Core\Landing\EcosistemaLandingPageRepository;
+use App\Core\Landing\EcosistemaLandingPageService;
 
 
 function startAuthSession(array $config): void
@@ -987,6 +990,69 @@ return [
         if (($res['errors'] ?? []) === []) { header('Location: /url/locator/links/'.$id.'?ok=updated'); return; }
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Editar short link | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-form','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['mode'=>'edit','writeEnabled'=>true,'link'=>array_merge($_POST,['id'=>$id]),'errors'=>$res['errors']]]);
+    },
+
+
+
+    'GET /landing' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $adapter = new EcosistemaLandingAdapter();
+        $capabilities = $adapter->capabilities();
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Pages | Ecosistema Core Admin','contentView'=>'pages/landing/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('capabilities')]);
+    },
+
+    'GET /landing/pages' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'by_status' => [], 'by_page_type' => []];
+        $pages = [];
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaLandingPageService(new EcosistemaLandingPageRepository($pdo), new EcosistemaLandingAdapter());
+            $data = $service->listPages($tenantId);
+            $summary = (array) ($data['summary'] ?? []);
+            $pages = (array) ($data['pages'] ?? []);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Pages List | Ecosistema Core Admin','contentView'=>'pages/landing/pages','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','pages')]);
+    },
+
+    'GET /landing/pages/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { http_response_code(404); }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $page = null;
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaLandingPageService(new EcosistemaLandingPageRepository($pdo), new EcosistemaLandingAdapter());
+            $page = $service->getPageDetail($tenantId, $id);
+            if ($page === null) { $errorMessage = 'Landing page no encontrada para el tenant actual.'; }
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo obtener el detalle de la landing page.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Page Detail | Ecosistema Core Admin','contentView'=>'pages/landing/page-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('page','errorMessage')]);
     },
 
     'GET /cloud' => static function (array $config): void {

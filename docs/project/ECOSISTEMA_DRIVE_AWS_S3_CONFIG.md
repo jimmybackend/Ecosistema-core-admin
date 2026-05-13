@@ -31,3 +31,6 @@ Todas apagadas por defecto en `.env.example`:
 ## Futuro PR
 Queda pendiente activar conexión controlada para descarga S3, manteniendo validaciones y auditoría.
 \n- Controlled download S3 backend route añadida: /cloud/drive/files/{id}/download (bloqueada por defecto).
+
+## Relación con upload dry-run
+La vista `/cloud/drive/upload-dry-run` consume esta configuración de forma segura y mantiene AWS/S3 apagado para subida real.

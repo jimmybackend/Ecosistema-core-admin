@@ -34,3 +34,6 @@ Intento de descarga vía `drive.file.download.attempted`, sin secretos.
 
 ## Rollback
 Regresar banderas a `false`.
+
+## Nota de alcance
+Además del flujo de descarga controlada, existe ruta separada `/cloud/drive/upload-dry-run` para simulación de subida, también sin conexión AWS/S3 real.

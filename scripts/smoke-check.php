@@ -95,6 +95,7 @@ $requiredFiles = [
     'app/Core/Cloud/EcosistemaDriveSignedUrlDryRunService.php',
     'app/Core/Cloud/EcosistemaDriveSignedUrlDryRun.php',
     'docs/project/ECOSISTEMA_DRIVE_AWS_S3_CONFIG.md',
+    'docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md',
     'resources/views/pages/cloud/drive-aws-config.php',
     'app/Core/Cloud/EcosistemaDriveAwsS3Config.php',
     'docs/project/ECOSISTEMA_DRIVE_CONTROLLED_S3_DOWNLOAD.md',
@@ -1212,3 +1213,102 @@ if ($criticalFailures > 0) {
 
 report('RESULT', 'SMOKE CHECK OK WARNINGS=' . $warnings);
 exit(0);
+
+
+$driveChecklistPath = $root . '/docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md';
+if (is_file($driveChecklistPath)) {
+    $checklistContent = file_get_contents($driveChecklistPath);
+    $readmeContent = is_file($root . '/README.md') ? file_get_contents($root . '/README.md') : false;
+
+    if ($readmeContent !== false && str_contains($readmeContent, 'ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md')) {
+        ok('README.md referencia checklist de producción de Drive.');
+    } else {
+        fail('README.md no referencia checklist de producción de Drive.', $criticalFailures);
+    }
+
+    $criticalFlags = [
+        'ECOSISTEMA_DRIVE_ENABLED',
+        'ECOSISTEMA_DRIVE_AWS_ENABLED',
+        'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS',
+        'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS',
+        'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS',
+        'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS',
+        'CLOUD_S3_ENABLED',
+        'CLOUD_ALLOW_UPLOADS',
+        'CLOUD_ALLOW_DOWNLOADS',
+    ];
+    foreach ($criticalFlags as $criticalFlag) {
+        if ($checklistContent !== false && str_contains($checklistContent, $criticalFlag)) {
+            ok('Checklist menciona flag crítica: ' . $criticalFlag);
+        } else {
+            fail('Checklist no menciona flag crítica: ' . $criticalFlag, $criticalFailures);
+        }
+    }
+
+    $secretLeakPatterns = ['AKIA', 'aws_secret_access_key=', 'db_password=', 'smtp password'];
+    foreach ($secretLeakPatterns as $pattern) {
+        if ($checklistContent !== false && preg_match('/' . preg_quote($pattern, '/') . '/i', $checklistContent) === 1) {
+            fail('Checklist contiene posible patrón sensible: ' . $pattern, $criticalFailures);
+        } else {
+            ok('Checklist sin patrón sensible: ' . $pattern);
+        }
+    }
+}
+
+if (is_file($envExample)) {
+    $mustBeFalse = [
+        'ECOSISTEMA_DRIVE_ENABLED=false',
+        'ECOSISTEMA_DRIVE_AWS_ENABLED=false',
+        'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=false',
+        'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS=false',
+        'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS=false',
+        'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS=false',
+        'CLOUD_S3_ENABLED=false',
+        'CLOUD_ALLOW_UPLOADS=false',
+        'CLOUD_ALLOW_DOWNLOADS=false',
+    ];
+
+    foreach ($mustBeFalse as $expectedDefault) {
+        if ($envContent !== false && str_contains($envContent, $expectedDefault)) {
+            ok('.env.example mantiene default seguro: ' . $expectedDefault);
+        } else {
+            fail('.env.example no mantiene default seguro: ' . $expectedDefault, $criticalFailures);
+        }
+    }
+}
+
+
+$baseBranch = trim((string) shell_exec('git rev-parse --abbrev-ref HEAD 2>/dev/null'));
+if ($baseBranch !== '') {
+    $diffRoutes = shell_exec('git diff -- routes/web.php');
+    if (is_string($diffRoutes) && preg_match('/^\+\s*\$router->post\(/mi', $diffRoutes) === 1) {
+        fail('Se detectaron rutas POST nuevas en routes/web.php.', $criticalFailures);
+    } else {
+        ok('No se detectaron rutas POST nuevas en routes/web.php.');
+    }
+
+    $diffAll = shell_exec('git diff');
+    if (is_string($diffAll) && preg_match('/^\+.*new\\S3\\S3Client/mi', $diffAll) === 1) {
+        fail('Se detectó nuevo Aws\S3\S3Client fuera de flujo esperado.', $criticalFailures);
+    } else {
+        ok('Sin nuevo Aws\S3\S3Client en cambios del PR.');
+    }
+
+    if (is_string($diffAll) && preg_match('/^\+.*->putObject\(/mi', $diffAll) === 1) {
+        $uploadServiceDiff = shell_exec('git diff -- app/Core/Cloud/EcosistemaDriveS3UploadService.php');
+        $otherPutObject = is_string($diffAll) ? preg_replace('/^\+.*EcosistemaDriveS3UploadService\.php.*$/mi', '', $diffAll) : '';
+        if (is_string($otherPutObject) && preg_match('/^\+.*->putObject\(/mi', $otherPutObject) === 1) {
+            fail('Se detectó putObject fuera de EcosistemaDriveS3UploadService.php.', $criticalFailures);
+        } else {
+            ok('No se detectó putObject nuevo fuera de servicio controlado.');
+        }
+    } else {
+        ok('No se detectó putObject nuevo en cambios del PR.');
+    }
+
+    if (is_string($diffAll) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*cloud_/mi', $diffAll) === 1) {
+        fail('Se detectó nueva escritura SQL sobre tablas cloud_* en este PR.', $criticalFailures);
+    } else {
+        ok('Sin nuevas escrituras SQL sobre cloud_* en este PR.');
+    }
+}

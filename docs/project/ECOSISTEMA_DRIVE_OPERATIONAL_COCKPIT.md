@@ -33,3 +33,6 @@ No expone `s3_key`, `stored_name`, `prefix`, `root_prefix`, `old_s3_key`, `new_s
 - Definir gobernanza de activación de flags remotos.
 - Endurecer observabilidad y alertas sobre rutas controladas.
 - Pruebas de seguridad y revisión de permisos por tenant/usuario.
+
+## Referencia de preparación
+- Checklist de producción: `docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md`.

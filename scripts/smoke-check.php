@@ -102,6 +102,10 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-upload-dry-run.php',
     'app/Core/Cloud/EcosistemaDriveS3UploadDryRunService.php',
     'app/Core/Cloud/EcosistemaDriveS3UploadDryRun.php',
+    'app/Core/Cloud/EcosistemaDriveS3UploadService.php',
+    'resources/views/pages/cloud/drive-upload.php',
+    'resources/views/pages/cloud/drive-upload-result.php',
+    'docs/project/ECOSISTEMA_DRIVE_CONTROLLED_S3_UPLOAD.md',
     'resources/views/pages/cloud/drive-download-blocked.php',
     'app/Core/Cloud/EcosistemaDriveShareContract.php',
     'app/Core/Cloud/EcosistemaDriveShareContractService.php',
@@ -1081,4 +1085,31 @@ if ($versionsViewContent !== false && !str_contains($versionsViewContent, "['s3_
     ok('La vista de versiones no imprime s3_version_id crudo.');
 } else {
     fail('La vista de versiones imprime o podría imprimir s3_version_id crudo.', $criticalFailures);
+}
+
+
+$webRoutesContent = @file_get_contents($root . '/routes/web.php') ?: '';
+if (str_contains($webRoutesContent, "GET /cloud/drive/upload")) { ok('routes/web.php contiene GET /cloud/drive/upload'); } else { fail('Falta GET /cloud/drive/upload en routes/web.php', $criticalFailures); }
+if (str_contains($webRoutesContent, "POST /cloud/drive/upload")) { ok('routes/web.php contiene POST /cloud/drive/upload'); } else { fail('Falta POST /cloud/drive/upload en routes/web.php', $criticalFailures); }
+
+$adapterContent = @file_get_contents($root . '/app/Core/Cloud/EcosistemaDriveAdapter.php') ?: '';
+if (str_contains($adapterContent, "controlled_upload")) { ok('Adapter contiene capability controlled_upload'); } else { fail('Adapter no contiene controlled_upload', $criticalFailures); }
+
+if ($envContent !== false && str_contains($envContent, 'CLOUD_ALLOW_UPLOADS=false') && str_contains($envContent, 'CLOUD_S3_ENABLED=false') && str_contains($envContent, 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS=false')) {
+    ok('.env.example mantiene flags de upload apagadas por defecto.');
+} else {
+    fail('.env.example no mantiene flags de upload apagadas por defecto.', $criticalFailures);
+}
+
+$uploadServiceContent = @file_get_contents($root . '/app/Core/Cloud/EcosistemaDriveS3UploadService.php') ?: '';
+if (str_contains($uploadServiceContent, 'putObject')) { ok('putObject aparece en servicio controlado.'); } else { warn('No se detectó putObject en servicio controlado.', $warnings); }
+if (!str_contains($uploadServiceContent, 'SignatureV4') && !str_contains($uploadServiceContent, 'curl_exec')) { ok('No hay firma manual AWS/curl hack en servicio controlado.'); } else { fail('Se detectó posible firma manual AWS/curl hack.', $criticalFailures); }
+if (!str_contains($uploadServiceContent, "\$_POST['s3_key']") && !str_contains($uploadServiceContent, "\$_POST['bucket']") && !str_contains($uploadServiceContent, "\$_POST['path']")) { ok('No se acepta s3_key/bucket/path desde request.'); } else { fail('Se detectó aceptación de s3_key/bucket/path desde request.', $criticalFailures); }
+
+$viewUploadContent = @file_get_contents($root . '/resources/views/pages/cloud/drive-upload.php') ?: '';
+$viewResultContent = @file_get_contents($root . '/resources/views/pages/cloud/drive-upload-result.php') ?: '';
+if (!str_contains($viewUploadContent, 's3_key') && !str_contains($viewUploadContent, 'stored_name') && !str_contains($viewResultContent, 's3_key') && !str_contains($viewResultContent, 'stored_name')) {
+    ok('Vistas de upload no imprimen s3_key/stored_name.');
+} else {
+    fail('Vistas de upload exponen s3_key o stored_name.', $criticalFailures);
 }

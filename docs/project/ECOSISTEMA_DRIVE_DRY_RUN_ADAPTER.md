@@ -84,3 +84,5 @@ En PRs siguientes se podrá:
 \n- Controlled download S3 backend route añadida: /cloud/drive/files/{id}/download (bloqueada por defecto).
 
 - Capability adicional: `upload_dry_run=true` (informativo; no habilita `remote_uploads`).
+
+- Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.

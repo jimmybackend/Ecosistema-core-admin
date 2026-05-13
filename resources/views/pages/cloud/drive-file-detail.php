@@ -23,6 +23,7 @@ $formatBytes = static function (int $bytes): string {
   <h1>Detalle de archivo Ecosistema Drive (read-only)</h1>
   <p>
     <a class="eco-button btn" href="/cloud/drive/files">Volver al listado</a>
+    <?php if ($file !== null): ?><a class="eco-button btn" href="/cloud/drive/files/<?= e((string)($file['id'] ?? '0')) ?>/versions">Ver versiones</a><?php endif; ?>
   </p>
 
   <div class="eco-alert eco-alert--warning">

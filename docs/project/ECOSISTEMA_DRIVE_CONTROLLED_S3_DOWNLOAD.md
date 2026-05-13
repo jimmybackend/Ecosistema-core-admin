@@ -37,3 +37,5 @@ Regresar banderas a `false`.
 
 ## Nota de alcance
 Además del flujo de descarga controlada, existe ruta separada `/cloud/drive/upload-dry-run` para simulación de subida, también sin conexión AWS/S3 real.
+
+- Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.

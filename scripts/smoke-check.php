@@ -740,6 +740,56 @@ if ($secretHits === 0) {
     ok('Check de seguridad estática sin exposiciones sensibles en vistas/rutas.');
 }
 
+
+
+$versionRepoPath = $root . '/app/Core/Cloud/EcosistemaDriveFileVersionRepository.php';
+$versionServicePath = $root . '/app/Core/Cloud/EcosistemaDriveFileVersionService.php';
+$versionsViewPath = $root . '/resources/views/pages/cloud/drive-file-versions.php';
+$versionsDocPath = $root . '/docs/project/ECOSISTEMA_DRIVE_FILE_VERSIONS.md';
+
+if (is_file($versionRepoPath)) { ok('Existe EcosistemaDriveFileVersionRepository.'); } else { fail('No existe app/Core/Cloud/EcosistemaDriveFileVersionRepository.php.', $criticalFailures); }
+if (is_file($versionServicePath)) { ok('Existe EcosistemaDriveFileVersionService.'); } else { fail('No existe app/Core/Cloud/EcosistemaDriveFileVersionService.php.', $criticalFailures); }
+if (is_file($versionsViewPath)) { ok('Existe vista drive-file-versions.'); } else { fail('No existe resources/views/pages/cloud/drive-file-versions.php.', $criticalFailures); }
+if (is_file($versionsDocPath)) { ok('Existe documentación ECOSISTEMA_DRIVE_FILE_VERSIONS.md.'); } else { fail('No existe docs/project/ECOSISTEMA_DRIVE_FILE_VERSIONS.md.', $criticalFailures); }
+
+
+if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}/versions")) {
+    ok('routes/web.php contiene ruta GET /cloud/drive/files/{id}/versions.');
+} else {
+    fail('No se encontró ruta GET /cloud/drive/files/{id}/versions en routes/web.php.', $criticalFailures);
+}
+
+if ($adapterContent !== false && str_contains($adapterContent, "read_file_versions")) {
+    ok('EcosistemaDriveAdapter contiene capability read_file_versions.');
+} else {
+    fail('EcosistemaDriveAdapter no contiene capability read_file_versions.', $criticalFailures);
+}
+
+if ($adapterContent !== false && str_contains($adapterContent, "'version_restore' => false")) {
+    ok('EcosistemaDriveAdapter mantiene version_restore=false.');
+} else {
+    fail('EcosistemaDriveAdapter no mantiene version_restore=false.', $criticalFailures);
+}
+
+if ($adapterContent !== false && str_contains($adapterContent, "'version_download' => false")) {
+    ok('EcosistemaDriveAdapter mantiene version_download=false.');
+} else {
+    fail('EcosistemaDriveAdapter no mantiene version_download=false.', $criticalFailures);
+}
+
+$versionsViewContent = @file_get_contents($versionsViewPath);
+if ($versionsViewContent !== false && !str_contains($versionsViewContent, "['s3_key']")) {
+    ok('La vista de versiones no imprime s3_key.');
+} else {
+    fail('La vista de versiones imprime o podría imprimir s3_key.', $criticalFailures);
+}
+
+if ($versionsViewContent !== false && !str_contains($versionsViewContent, "['s3_version_id']")) {
+    ok('La vista de versiones no imprime s3_version_id crudo.');
+} else {
+    fail('La vista de versiones imprime o podría imprimir s3_version_id crudo.', $criticalFailures);
+}
+
 warn('Checks HTTP opcionales (manuales): php -S 127.0.0.1:8000 -t public && curl -I /login /dashboard /health/db', $warnings);
 
 echo PHP_EOL;
@@ -809,4 +859,53 @@ if (is_file($uploadDryRunView)) {
         if (str_contains($content, $forbidden)) { fail('Vista upload dry-run expone contenido sensible: ' . $forbidden, $criticalFailures); }
         else { ok('Vista upload dry-run no expone: ' . $forbidden); }
     }
+}
+
+
+$versionRepoPath = $root . '/app/Core/Cloud/EcosistemaDriveFileVersionRepository.php';
+$versionServicePath = $root . '/app/Core/Cloud/EcosistemaDriveFileVersionService.php';
+$versionsViewPath = $root . '/resources/views/pages/cloud/drive-file-versions.php';
+$versionsDocPath = $root . '/docs/project/ECOSISTEMA_DRIVE_FILE_VERSIONS.md';
+
+if (is_file($versionRepoPath)) { ok('Existe EcosistemaDriveFileVersionRepository.'); } else { fail('No existe app/Core/Cloud/EcosistemaDriveFileVersionRepository.php.', $criticalFailures); }
+if (is_file($versionServicePath)) { ok('Existe EcosistemaDriveFileVersionService.'); } else { fail('No existe app/Core/Cloud/EcosistemaDriveFileVersionService.php.', $criticalFailures); }
+if (is_file($versionsViewPath)) { ok('Existe vista drive-file-versions.'); } else { fail('No existe resources/views/pages/cloud/drive-file-versions.php.', $criticalFailures); }
+if (is_file($versionsDocPath)) { ok('Existe documentación ECOSISTEMA_DRIVE_FILE_VERSIONS.md.'); } else { fail('No existe docs/project/ECOSISTEMA_DRIVE_FILE_VERSIONS.md.', $criticalFailures); }
+
+
+if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}/versions")) {
+    ok('routes/web.php contiene ruta GET /cloud/drive/files/{id}/versions.');
+} else {
+    fail('No se encontró ruta GET /cloud/drive/files/{id}/versions en routes/web.php.', $criticalFailures);
+}
+
+if ($adapterContent !== false && str_contains($adapterContent, "read_file_versions")) {
+    ok('EcosistemaDriveAdapter contiene capability read_file_versions.');
+} else {
+    fail('EcosistemaDriveAdapter no contiene capability read_file_versions.', $criticalFailures);
+}
+
+if ($adapterContent !== false && str_contains($adapterContent, "'version_restore' => false")) {
+    ok('EcosistemaDriveAdapter mantiene version_restore=false.');
+} else {
+    fail('EcosistemaDriveAdapter no mantiene version_restore=false.', $criticalFailures);
+}
+
+if ($adapterContent !== false && str_contains($adapterContent, "'version_download' => false")) {
+    ok('EcosistemaDriveAdapter mantiene version_download=false.');
+} else {
+    fail('EcosistemaDriveAdapter no mantiene version_download=false.', $criticalFailures);
+}
+
+$versionsViewContent = @file_get_contents($versionsViewPath);
+if ($versionsViewContent !== false && !str_contains($versionsViewContent, "['s3_key']")) {
+    ok('La vista de versiones no imprime s3_key.');
+} else {
+    fail('La vista de versiones imprime o podría imprimir s3_key.', $criticalFailures);
+}
+
+if ($versionsViewContent !== false && !str_contains($versionsViewContent, "['s3_version_id']")) {
+    ok('La vista de versiones no imprime s3_version_id crudo.');
+} else {
+    fail('La vista de versiones imprime o podría imprimir s3_version_id crudo.', $criticalFailures);
 }

@@ -74,7 +74,7 @@ Limitaciones vigentes de autenticación:
 - Cloud: `/cloud`
 - Ecosistema Drive: `/cloud/drive`, `/cloud/drive/summary`, `/cloud/drive/files`, `/cloud/drive/files/{id}, /cloud/drive/files/{id}/s3-key-validation`, `/cloud/drive/folders`, `/cloud/drive/folders/{id}`, `/cloud/drive/browse`, `/cloud/drive/root`, `/cloud/drive/buckets`
 - Onboarding: `/onboarding`
-- URL Locator (read-only): `/url/locator`, `/url/locator/links`, `/url/locator/clicks`, `/url/locator/links/{id}`, `/url/locator/links/{id}/clicks`
+- URL Locator (read-only): `/url/locator`, `/url/locator/links`, `/url/locator/clicks`, `/url/locator/links/{id}`, `/url/locator/links/{id}/clicks`, `/url/locator/links/{id}/redirect-dry-run`
 - Health técnico DB: `/health/db`
 
 ## Módulos implementados
@@ -172,6 +172,7 @@ Limitaciones vigentes de autenticación:
 - `docs/MAILIT_CLICK_TECHNICAL_INVENTORY.md` (inventario documental de referencia para Mailit.click / futuro Ecosistema URL Locator).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md` (inventario canónico del esquema URL Locator sobre `adbbmis1_eco`, previo a implementación funcional).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_CLICKS_READ_ONLY.md` (consulta read-only de clicks existentes con privacidad y sin escrituras).
+- `docs/project/ECOSISTEMA_URL_LOCATOR_REDIRECT_DRY_RUN.md` (simulación protegida de resolución de redirect sin redirección ni escrituras).
 
 ## Smoke checks básicos (PR #22)
 Ejecutar:

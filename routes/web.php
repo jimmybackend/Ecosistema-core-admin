@@ -89,6 +89,7 @@ use App\Core\UrlLocator\EcosistemaUrlLocatorClickService;
 use App\Core\UrlLocator\EcosistemaUrlLocatorClickRepository;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteRepository;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteService;
+use App\Core\UrlLocator\EcosistemaUrlLocatorRedirectDryRunService;
 
 
 function startAuthSession(array $config): void
@@ -854,6 +855,40 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'URL Locator Link Clicks | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-clicks','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('id','summary','clicks','capabilities','errorMessage')]);
+    },
+
+
+    'GET /url/locator/links/{id}/redirect-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $id = (int)($params['id'] ?? 0);
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $context = [
+            'accept_language_header' => (string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''),
+            'requested_language' => isset($_GET['requested_language']) ? (string) $_GET['requested_language'] : null,
+        ];
+        if (isset($_GET['preview_now']) && (string) $_GET['preview_now'] !== '') {
+            $context['preview_now'] = (string) $_GET['preview_now'];
+        }
+
+        $result = null;
+        $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaUrlLocatorRedirectDryRunService(new EcosistemaUrlLocatorLinkRepository($pdo));
+            $result = $service->resolveByLinkId($tenantId, $id, $context);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo simular la resolución del short link.';
+        }
+
+        if ($result === null) { renderError($config, 500); return; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'URL Locator Redirect Dry Run | Ecosistema Core Admin','contentView'=>'pages/url-locator/redirect-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
     },
 
     'GET /url/locator/links/{id}' => static function (array $config, array $params): void {

@@ -7,6 +7,7 @@ use App\Support\Env;
 return [
     'enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
     'admin_write_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_ADMIN_WRITE_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+    'redirect_dry_run_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_REDIRECT_DRY_RUN_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
     'public_redirects_enabled' => false,
     'tracking_enabled' => false,
     'slug_min_length' => 3,

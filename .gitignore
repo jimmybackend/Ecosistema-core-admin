@@ -2,6 +2,8 @@
 /.env
 /.env.*
 !.env.example
+!.env.vm.example
+!.env.production.example
 /storage/logs/*.log
 /storage/logs/*.txt
 .DS_Store

@@ -85,10 +85,6 @@ function startAuthSession(array $config): void
     );
 
     if (!AuthSession::enforceIdleTimeout((int) ($config['app']['session']['idle_timeout'] ?? 1800))) {
-        return;
-    }
-
-    if (AuthSession::isAuthenticated()) {
         try {
             $pdo = PdoFactory::make($config['database']);
             $authService = new AuthService(new UserRepository($pdo), new SessionRepository($pdo));
@@ -1606,8 +1602,10 @@ return [
             return;
         }
 
-        AuthSession::setAuth($result);
+        $auth = $result;
+        AuthSession::setAuth($auth);
         header('Location: /dashboard');
+        return;
     },
 
     'POST /logout' => static function (array $config): void {

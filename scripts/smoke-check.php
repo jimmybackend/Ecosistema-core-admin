@@ -295,6 +295,43 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/drive/aws-config en routes/web.php.', $criticalFailures);
     }
 
+    if ($routesContent !== false && str_contains($routesContent, 'AuthSession::setAuth($auth)')) {
+        ok('POST /login mantiene AuthSession::setAuth($auth) antes de redirigir.');
+    } else {
+        fail('No se encontró AuthSession::setAuth($auth) en POST /login.', $criticalFailures);
+    }
+
+    if ($routesContent !== false && str_contains($routesContent, 'if (!AuthSession::enforceIdleTimeout') && str_contains($routesContent, "header('Location: /login');")) {
+        ok('startAuthSession redirige a /login cuando expira idle timeout.');
+    } else {
+        fail('No se encontró redirección a /login al expirar idle timeout.', $criticalFailures);
+    }
+
+    $invalidAuthDestroyPattern = "/if\\s*\\(\\s*AuthSession::isAuthenticated\\(\\)\\s*\\)\\s*\\{[\\s\\S]{0,600}?AuthSession::destroy\\(\\);/m";
+    if ($routesContent !== false && preg_match($invalidAuthDestroyPattern, $routesContent) === 1) {
+        fail('Se detectó destrucción de sesión sólo por AuthSession::isAuthenticated().', $criticalFailures);
+    } else {
+        ok('No se detecta destrucción de sesión por AuthSession::isAuthenticated().');
+    }
+
+    if ($routesContent !== false && str_contains($routesContent, 'AuthSession::start(')) {
+        ok('routes/web.php mantiene AuthSession::start().');
+    } else {
+        fail('routes/web.php no contiene AuthSession::start().', $criticalFailures);
+    }
+
+    if ($routesContent !== false && str_contains($routesContent, 'ensureValidCsrfToken')) {
+        ok('routes/web.php mantiene validación CSRF.');
+    } else {
+        fail('routes/web.php no contiene validación CSRF.', $criticalFailures);
+    }
+
+    if ($routesContent !== false && str_contains($routesContent, 'new AuthService') && str_contains($routesContent, 'new SessionRepository')) {
+        ok('routes/web.php mantiene integración AuthService/SessionRepository.');
+    } else {
+        fail('routes/web.php no mantiene integración AuthService/SessionRepository.', $criticalFailures);
+    }
+
     if ($adapterContent !== false && str_contains($adapterContent, "'aws_s3_config_prepared' => true")) { ok('EcosistemaDriveAdapter marca aws_s3_config_prepared=true.'); } else { fail('EcosistemaDriveAdapter no marca aws_s3_config_prepared=true.', $criticalFailures); }
     if ($adapterContent !== false && str_contains($adapterContent, "'aws_connection' => false")) { ok('EcosistemaDriveAdapter mantiene aws_connection=false.'); } else { fail('EcosistemaDriveAdapter no mantiene aws_connection=false.', $criticalFailures); }
     if ($adapterContent !== false && str_contains($adapterContent, "'signed_urls' => false")) { ok('EcosistemaDriveAdapter mantiene signed_urls=false.'); } else { fail('EcosistemaDriveAdapter no mantiene signed_urls=false.', $criticalFailures); }

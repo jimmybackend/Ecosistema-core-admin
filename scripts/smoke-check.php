@@ -1260,6 +1260,41 @@ if (is_string($gitDiff) && preg_match('/^\+\+\+ b\/.*(migrations?|seeds?)\//mi',
     ok('No se detectaron cambios en migraciones o seeds.');
 }
 
+$landingInventoryPath = $root . '/docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md';
+if (is_file($landingInventoryPath)) {
+    ok('Existe inventario Landing Pages.');
+} else {
+    fail('No existe docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md', $criticalFailures);
+}
+
+$readmeContent = is_file($root . '/README.md') ? file_get_contents($root . '/README.md') : false;
+if ($readmeContent !== false && str_contains($readmeContent, 'ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md')) {
+    ok('README.md referencia inventario Landing Pages.');
+} else {
+    fail('README.md no referencia ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md', $criticalFailures);
+}
+
+$landingInventoryContent = is_file($landingInventoryPath) ? file_get_contents($landingInventoryPath) : false;
+foreach (['landing_pages', 'landing_visits', 'landing_forms', 'landing_form_submissions', 'adbbmis1_eco', 'mailit-click'] as $requiredMention) {
+    if ($landingInventoryContent !== false && str_contains($landingInventoryContent, $requiredMention)) {
+        ok('Inventario Landing menciona: ' . $requiredMention);
+    } else {
+        fail('Inventario Landing no menciona: ' . $requiredMention, $criticalFailures);
+    }
+}
+
+if (is_string($gitDiff) && preg_match('#^\+.*(/landing|GET /landing|POST /landing)#mi', $gitDiff) === 1) {
+    fail('Se detectó posible ruta funcional /landing en cambios del PR.', $criticalFailures);
+} else {
+    ok('No se detectaron rutas funcionales /landing en cambios del PR.');
+}
+
+if (is_string($gitDiff) && preg_match('/^\+.*\b(INSERT|UPDATE|DELETE)\b.*\blanding_/mi', $gitDiff) === 1) {
+    fail('Se detectó escritura SQL sobre tablas landing_* en cambios del PR.', $criticalFailures);
+} else {
+    ok('Sin escrituras SQL sobre tablas landing_* en cambios del PR.');
+}
+
 if ($criticalFailures > 0) {
     report('RESULT', 'SMOKE CHECK FAILURES=' . $criticalFailures . ' WARNINGS=' . $warnings);
     exit(1);

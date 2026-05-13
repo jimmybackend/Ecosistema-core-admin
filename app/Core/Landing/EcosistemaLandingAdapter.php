@@ -11,7 +11,7 @@ final class EcosistemaLandingAdapter
         return [
             'pages_read' => true,
             'page_detail_read' => true,
-            'visits_read' => false,
+            'visits_read' => true,
             'forms_read' => false,
             'submissions_read' => false,
             'pages_write' => false,

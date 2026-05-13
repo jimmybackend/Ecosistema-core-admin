@@ -94,6 +94,8 @@ use App\Core\UrlLocator\EcosistemaUrlLocatorPublicRedirectService;
 use App\Core\Landing\EcosistemaLandingAdapter;
 use App\Core\Landing\EcosistemaLandingPageRepository;
 use App\Core\Landing\EcosistemaLandingPageService;
+use App\Core\Landing\EcosistemaLandingVisitRepository;
+use App\Core\Landing\EcosistemaLandingVisitService;
 
 
 function startAuthSession(array $config): void
@@ -1053,6 +1055,57 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Landing Page Detail | Ecosistema Core Admin','contentView'=>'pages/landing/page-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('page','errorMessage')]);
+    },
+
+
+
+    'GET /landing/visits' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'by_country' => [], 'by_device_type' => [], 'by_campaign' => []];
+        $visits = [];
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaLandingVisitService(new EcosistemaLandingVisitRepository($pdo), new EcosistemaLandingAdapter());
+            $data = $service->listVisits($tenantId);
+            $summary = (array) ($data['summary'] ?? []);
+            $visits = (array) ($data['visits'] ?? []);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Visits | Ecosistema Core Admin','contentView'=>'pages/landing/visits','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','visits')]);
+    },
+
+    'GET /landing/pages/{id}/visits' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'by_country' => [], 'by_device_type' => [], 'by_campaign' => []];
+        $visits = [];
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaLandingVisitService(new EcosistemaLandingVisitRepository($pdo), new EcosistemaLandingAdapter());
+            $data = $service->listVisitsForPage($tenantId, $id);
+            $summary = (array) ($data['summary'] ?? []);
+            $visits = (array) ($data['visits'] ?? []);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Page Visits | Ecosistema Core Admin','contentView'=>'pages/landing/page-visits','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','visits','id')]);
     },
 
     'GET /cloud' => static function (array $config): void {

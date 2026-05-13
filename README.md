@@ -445,3 +445,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 
 
 - Landing Pages (read-only admin): `docs/project/ECOSISTEMA_LANDING_PAGES_READ_ONLY.md`.
+
+- docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md

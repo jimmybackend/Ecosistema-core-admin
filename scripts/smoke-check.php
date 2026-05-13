@@ -183,6 +183,11 @@ $requiredFiles = [
     'app/Core/Landing/EcosistemaLandingAdapter.php',
     'app/Core/Landing/EcosistemaLandingPageRepository.php',
     'app/Core/Landing/EcosistemaLandingPageService.php',
+    'app/Core/Landing/EcosistemaLandingVisitRepository.php',
+    'app/Core/Landing/EcosistemaLandingVisitService.php',
+    'resources/views/pages/landing/visits.php',
+    'resources/views/pages/landing/page-visits.php',
+    'docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md',
     'resources/views/pages/landing/index.php',
     'resources/views/pages/landing/pages.php',
     'resources/views/pages/landing/page-detail.php',
@@ -1292,16 +1297,41 @@ foreach (['landing_pages', 'landing_visits', 'landing_forms', 'landing_form_subm
     }
 }
 
-if (is_string($gitDiff) && preg_match('#^\+.*(/landing|GET /landing|POST /landing)#mi', $gitDiff) === 1) {
-    fail('Se detectó posible ruta funcional /landing en cambios del PR.', $criticalFailures);
-} else {
-    ok('No se detectaron rutas funcionales /landing en cambios del PR.');
+$routesContent = is_file($root . '/routes/web.php') ? file_get_contents($root . '/routes/web.php') : false;
+foreach (['GET /landing/visits', 'GET /landing/pages/{id}/visits'] as $requiredRoute) {
+    if ($routesContent !== false && str_contains($routesContent, $requiredRoute)) {
+        ok('routes/web.php contiene ruta: ' . $requiredRoute);
+    } else {
+        fail('routes/web.php no contiene ruta: ' . $requiredRoute, $criticalFailures);
+    }
 }
 
+$adapterContent = is_file($root . '/app/Core/Landing/EcosistemaLandingAdapter.php') ? file_get_contents($root . '/app/Core/Landing/EcosistemaLandingAdapter.php') : false;
+if ($adapterContent !== false && str_contains($adapterContent, "'visits_read' => true")) {
+    ok('Adapter Landing habilita visits_read=true.');
+} else {
+    fail('Adapter Landing no habilita visits_read=true.', $criticalFailures);
+}
+if ($adapterContent !== false && str_contains($adapterContent, "'visit_tracking_write' => false")) {
+    ok('Adapter Landing mantiene visit_tracking_write=false.');
+} else {
+    fail('Adapter Landing no mantiene visit_tracking_write=false.', $criticalFailures);
+}
 if (is_string($gitDiff) && preg_match('/^\+.*\b(INSERT|UPDATE|DELETE)\b.*\blanding_/mi', $gitDiff) === 1) {
     fail('Se detectó escritura SQL sobre tablas landing_* en cambios del PR.', $criticalFailures);
 } else {
     ok('Sin escrituras SQL sobre tablas landing_* en cambios del PR.');
+}
+
+
+$landingVisitsView = is_file($root . '/resources/views/pages/landing/visits.php') ? file_get_contents($root . '/resources/views/pages/landing/visits.php') : false;
+$pageVisitsView = is_file($root . '/resources/views/pages/landing/page-visits.php') ? file_get_contents($root . '/resources/views/pages/landing/page-visits.php') : false;
+$combinedVisitsViews = ($landingVisitsView ?: '') . "
+" . ($pageVisitsView ?: '');
+if (str_contains($combinedVisitsViews, "['ip_address']") || str_contains($combinedVisitsViews, "['visitor_uuid']") || str_contains($combinedVisitsViews, "['session_uuid']")) {
+    fail('Vistas Landing Visits exponen campos sensibles crudos (ip/uuid).', $criticalFailures);
+} else {
+    ok('Vistas Landing Visits no exponen ip/visitor_uuid/session_uuid crudos.');
 }
 
 if ($criticalFailures > 0) {
@@ -1468,6 +1498,17 @@ if ($viewDetail !== false && str_contains($viewDetail, 'access_token_hash')) { w
 if ($viewDetail !== false && str_contains($viewDetail, 'media_s3_key')) { warn('Vista detalle contiene texto media_s3_key (validar que no expone valor).', $warnings); } else { ok('Vista detalle no imprime media_s3_key'); }
 if ($viewDetail !== false && str_contains($viewDetail, "['body_html']")) { fail('Vista detalle imprime body_html crudo', $criticalFailures); } else { ok('Vista detalle no imprime body_html crudo'); }
 if ($viewDetail !== false && str_contains($viewDetail, "['ad_html']")) { fail('Vista detalle imprime ad_html crudo', $criticalFailures); } else { ok('Vista detalle no imprime ad_html crudo'); }
+
+
+$landingVisitsView = is_file($root . '/resources/views/pages/landing/visits.php') ? file_get_contents($root . '/resources/views/pages/landing/visits.php') : false;
+$pageVisitsView = is_file($root . '/resources/views/pages/landing/page-visits.php') ? file_get_contents($root . '/resources/views/pages/landing/page-visits.php') : false;
+$combinedVisitsViews = ($landingVisitsView ?: '') . "
+" . ($pageVisitsView ?: '');
+if (str_contains($combinedVisitsViews, "['ip_address']") || str_contains($combinedVisitsViews, "['visitor_uuid']") || str_contains($combinedVisitsViews, "['session_uuid']")) {
+    fail('Vistas Landing Visits exponen campos sensibles crudos (ip/uuid).', $criticalFailures);
+} else {
+    ok('Vistas Landing Visits no exponen ip/visitor_uuid/session_uuid crudos.');
+}
 
 if ($criticalFailures > 0) {
     report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");

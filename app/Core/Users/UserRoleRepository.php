@@ -25,10 +25,16 @@ final readonly class UserRoleRepository
     /** @return array<int,array<string,mixed>> */
     public function listRolesForTenant(int $tenantId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, tenant_id, code, name, status FROM core_roles WHERE tenant_id = :tenant_id ORDER BY name ASC, id ASC');
+        $stmt = $this->pdo->prepare('SELECT id, tenant_id, name, slug, description, is_system, created_at, updated_at FROM core_roles WHERE tenant_id = :tenant_id ORDER BY name ASC, id ASC');
         $stmt->execute([':tenant_id' => $tenantId]);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        return array_map(static function (array $row): array {
+            $row['code'] = $row['slug'] ?? '';
+            $row['status'] = 'active';
+            return $row;
+        }, $rows);
     }
 
     /** @return array<int,int> */

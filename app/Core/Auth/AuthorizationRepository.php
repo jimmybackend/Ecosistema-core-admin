@@ -15,27 +15,26 @@ final class AuthorizationRepository
 
     public function userHasPermission(int $userId, int $tenantId, string $permissionCode): bool
     {
-        $sql = 'SELECT 1
+        $sql = 'SELECT COUNT(*)
             FROM core_user_roles ur
-            INNER JOIN core_roles r ON r.id = ur.role_id
-            INNER JOIN core_role_permissions rp ON rp.role_id = r.id
-            INNER JOIN core_permissions p ON p.id = rp.permission_id
-            WHERE ur.user_id = :user_id
-              AND ur.tenant_id = :tenant_id
-              AND r.tenant_id = :tenant_id
-              AND rp.tenant_id = :tenant_id
-              AND p.code = :permission_code
-            LIMIT 1';
+            INNER JOIN core_role_permissions rp
+                ON rp.tenant_id = ur.tenant_id
+               AND rp.role_id = ur.role_id
+            INNER JOIN core_permissions p
+                ON p.id = rp.permission_id
+            WHERE ur.tenant_id = :tenant_id
+              AND ur.user_id = :user_id
+              AND p.code = :permission_code';
 
         try {
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
-                ':user_id' => $userId,
                 ':tenant_id' => $tenantId,
+                ':user_id' => $userId,
                 ':permission_code' => $permissionCode,
             ]);
 
-            return $stmt->fetchColumn() !== false;
+            return (int) $stmt->fetchColumn() > 0;
         } catch (Throwable) {
             return false;
         }

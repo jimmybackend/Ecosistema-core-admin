@@ -947,6 +947,22 @@ if ($versionsViewContent !== false && !str_contains($versionsViewContent, "['s3_
     fail('La vista de versiones imprime o podría imprimir s3_version_id crudo.', $criticalFailures);
 }
 
+
+$authorizationRepositoryPath = $root . '/app/Core/Auth/AuthorizationRepository.php';
+$authorizationRepositoryContent = is_file($authorizationRepositoryPath) ? file_get_contents($authorizationRepositoryPath) : false;
+if ($authorizationRepositoryContent !== false && str_contains($authorizationRepositoryContent, 'core_user_roles') && str_contains($authorizationRepositoryContent, 'core_role_permissions') && str_contains($authorizationRepositoryContent, 'p.code = :permission_code')) { ok('requirePermission valida permisos con core_user_roles/core_role_permissions/core_permissions.code.'); } else { fail('requirePermission no valida permisos contra las tablas/código esperados.', $criticalFailures); }
+foreach (['core_roles.status', 'core_permissions.status'] as $forbiddenDependency) { if ($authorizationRepositoryContent !== false && str_contains($authorizationRepositoryContent, $forbiddenDependency)) { fail('AuthorizationRepository depende de columna no canónica: ' . $forbiddenDependency, $criticalFailures); } else { ok('AuthorizationRepository no depende de ' . $forbiddenDependency . '.'); } }
+
+$userRoleRepositoryPath = $root . '/app/Core/Users/UserRoleRepository.php';
+$userRoleRepositoryContent = is_file($userRoleRepositoryPath) ? file_get_contents($userRoleRepositoryPath) : false;
+if ($userRoleRepositoryContent !== false && str_contains($userRoleRepositoryContent, 'slug') && str_contains($userRoleRepositoryContent, "\$row['code'] =")) { ok('UserRoleRepository usa slug y mapea code defensivamente.'); } else { fail('UserRoleRepository no aplica fallback code=>slug.', $criticalFailures); }
+if ($userRoleRepositoryContent !== false && str_contains($userRoleRepositoryContent, "\$row['status'] = 'active'")) { ok('UserRoleRepository mapea status=active defensivamente.'); } else { fail('UserRoleRepository no mapea status defensivo.', $criticalFailures); }
+
+$permissionRepositoryPath = $root . '/app/Core/Permissions/PermissionRepository.php';
+$permissionRepositoryContent = is_file($permissionRepositoryPath) ? file_get_contents($permissionRepositoryPath) : false;
+if ($permissionRepositoryContent !== false && str_contains($permissionRepositoryContent, "\$row['status'] = 'active';") && str_contains($permissionRepositoryContent, "\$row['action'] = '';") && str_contains($permissionRepositoryContent, "\$row['resource'] = '';")) { ok('PermissionRepository aplica fallback status/action/resource.'); } else { fail('PermissionRepository no aplica fallback status/action/resource.', $criticalFailures); }
+foreach (['user_id = 1', 'role_id = 1', 'jimmybackend@gmail.com'] as $forbiddenBypass) { if (($authorizationRepositoryContent !== false && str_contains($authorizationRepositoryContent, $forbiddenBypass)) || ($permissionRepositoryContent !== false && str_contains($permissionRepositoryContent, $forbiddenBypass))) { fail('Patrón de bypass hardcodeado detectado: ' . $forbiddenBypass, $criticalFailures); } else { ok('Sin bypass hardcodeado: ' . $forbiddenBypass); } }
+
 warn('Checks HTTP opcionales (manuales): php -S 127.0.0.1:8000 -t public && curl -I /login /dashboard /health/db', $warnings);
 
 echo PHP_EOL;

@@ -20,7 +20,7 @@ final class EcosistemaUrlLocatorAdapter
             'link_detail_read' => true,
             'clicks_read' => true,
             'links_write' => $enabled && $adminWrite,
-            'redirects_dry_run' => false,
+            'redirects_dry_run' => true,
             'public_redirects' => false,
             'click_tracking_write' => false,
             'redirect_real_enabled' => false,

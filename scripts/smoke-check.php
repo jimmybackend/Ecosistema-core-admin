@@ -171,6 +171,9 @@ $requiredFiles = [
     'resources/views/pages/url-locator/link-form.php',
     'app/Core/UrlLocator/EcosistemaUrlLocatorLinkWriteRepository.php',
     'app/Core/UrlLocator/EcosistemaUrlLocatorLinkWriteService.php',
+    'docs/project/ECOSISTEMA_URL_LOCATOR_REDIRECT_DRY_RUN.md',
+    'resources/views/pages/url-locator/redirect-dry-run.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorRedirectDryRunService.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -1400,6 +1403,18 @@ if ($viewLinks !== false && str_contains($viewLinks, "target_url_preview")) { ok
 
 $viewDetail = @file_get_contents($root . '/resources/views/pages/url-locator/link-detail.php');
 if ($routesContent !== false && str_contains($routesContent, '/url/locator/links/{id}')) { ok('routes/web.php contiene /url/locator/links/{id}'); } else { fail('routes/web.php no contiene /url/locator/links/{id}', $criticalFailures); }
+
+if ($routesContent !== false && str_contains($routesContent, '/url/locator/links/{id}/redirect-dry-run')) { ok('routes/web.php contiene /url/locator/links/{id}/redirect-dry-run'); } else { fail('routes/web.php no contiene /url/locator/links/{id}/redirect-dry-run', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'redirects_dry_run' => true")) { ok('Adapter define redirects_dry_run true'); } else { fail('Adapter no define redirects_dry_run true', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'public_redirects' => false")) { ok('Adapter mantiene public_redirects false'); } else { fail('Adapter no mantiene public_redirects false', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'click_tracking_write' => false")) { ok('Adapter mantiene click_tracking_write false'); } else { fail('Adapter no mantiene click_tracking_write false', $criticalFailures); }
+$dryRunServiceContent = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorRedirectDryRunService.php');
+if ($dryRunServiceContent !== false && preg_match('/\bINSERT\s+INTO\s+url_clicks\b/i', $dryRunServiceContent) !== 1) { ok('Dry-run service sin INSERT INTO url_clicks'); } else { fail('Dry-run service no debe insertar en url_clicks', $criticalFailures); }
+if ($dryRunServiceContent !== false && preg_match('/\bUPDATE\s+url_short_links\s+SET\s+click_count\b/i', $dryRunServiceContent) !== 1) { ok('Dry-run service sin UPDATE click_count'); } else { fail('Dry-run service no debe actualizar click_count', $criticalFailures); }
+if ($dryRunServiceContent !== false && !str_contains($dryRunServiceContent, "header('Location')")) { ok('Dry-run service sin redirección real'); } else { fail('Dry-run service contiene redirección real', $criticalFailures); }
+$dryRunViewContent = @file_get_contents($root . '/resources/views/pages/url-locator/redirect-dry-run.php');
+if ($dryRunViewContent !== false && !str_contains($dryRunViewContent, 'access_token_hash')) { ok('Vista dry-run no imprime access_token_hash'); } else { fail('Vista dry-run no debe imprimir access_token_hash', $criticalFailures); }
+if ($dryRunViewContent !== false && !str_contains($dryRunViewContent, "['target_url']")) { ok('Vista dry-run no imprime target_url crudo'); } else { fail('Vista dry-run no debe imprimir target_url crudo', $criticalFailures); }
 if ($adapterContent !== false && str_contains($adapterContent, "'link_detail_read' => true") || ($adapterContent !== false && str_contains($adapterContent, "'link_detail_read'=>true"))) { ok('Adapter define link_detail_read true'); } else { fail('Adapter no define link_detail_read true', $criticalFailures); }
 if ($repoContent !== false && preg_match('/\b(INSERT|UPDATE|DELETE)\b\s+.*url_clicks/i', $repoContent) === 1) { fail('Repository contiene escrituras SQL sobre url_clicks', $criticalFailures); } else { ok('Repository sin INSERT/UPDATE/DELETE sobre url_clicks'); }
 if ($viewDetail !== false && str_contains($viewDetail, 'access_token_hash')) { warn('Vista detalle contiene texto access_token_hash (validar que no expone valor).', $warnings); } else { ok('Vista detalle no imprime access_token_hash'); }

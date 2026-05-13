@@ -1383,3 +1383,20 @@ if ($repoContent !== false && preg_match('/\b(INSERT|UPDATE|DELETE)\b\s+.*url_sh
 $viewLinks = @file_get_contents($root . '/resources/views/pages/url-locator/links.php');
 if ($viewLinks !== false && str_contains($viewLinks, 'access_token_hash')) { warn('Vista links contiene texto access_token_hash (validar que no expone valores).', $warnings); } else { ok('Vista links no imprime access_token_hash'); }
 if ($viewLinks !== false && str_contains($viewLinks, "target_url_preview")) { ok('Vista links usa preview seguro para target_url'); } else { warn('No se detectó target_url_preview en vista links.', $warnings); }
+
+$viewDetail = @file_get_contents($root . '/resources/views/pages/url-locator/link-detail.php');
+if ($routesContent !== false && str_contains($routesContent, '/url/locator/links/{id}')) { ok('routes/web.php contiene /url/locator/links/{id}'); } else { fail('routes/web.php no contiene /url/locator/links/{id}', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'link_detail_read' => true") || ($adapterContent !== false && str_contains($adapterContent, "'link_detail_read'=>true"))) { ok('Adapter define link_detail_read true'); } else { fail('Adapter no define link_detail_read true', $criticalFailures); }
+if ($repoContent !== false && preg_match('/\b(INSERT|UPDATE|DELETE)\b\s+.*url_clicks/i', $repoContent) === 1) { fail('Repository contiene escrituras SQL sobre url_clicks', $criticalFailures); } else { ok('Repository sin INSERT/UPDATE/DELETE sobre url_clicks'); }
+if ($viewDetail !== false && str_contains($viewDetail, 'access_token_hash')) { warn('Vista detalle contiene texto access_token_hash (validar que no expone valor).', $warnings); } else { ok('Vista detalle no imprime access_token_hash'); }
+if ($viewDetail !== false && str_contains($viewDetail, 'media_s3_key')) { warn('Vista detalle contiene texto media_s3_key (validar que no expone valor).', $warnings); } else { ok('Vista detalle no imprime media_s3_key'); }
+if ($viewDetail !== false && str_contains($viewDetail, "['body_html']")) { fail('Vista detalle imprime body_html crudo', $criticalFailures); } else { ok('Vista detalle no imprime body_html crudo'); }
+if ($viewDetail !== false && str_contains($viewDetail, "['ad_html']")) { fail('Vista detalle imprime ad_html crudo', $criticalFailures); } else { ok('Vista detalle no imprime ad_html crudo'); }
+
+if ($criticalFailures > 0) {
+    report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");
+    exit(1);
+}
+
+report('RESULT', "Smoke check OK con {$warnings} advertencias.");
+exit(0);

@@ -430,3 +430,4 @@ Estado actual:
 
 
 - URL Locator (read-only links): ver `docs/project/ECOSISTEMA_URL_LOCATOR_READ_ONLY_LINKS.md`.
+- URL Locator (read-only link detail): ver `docs/project/ECOSISTEMA_URL_LOCATOR_LINK_DETAIL.md`.

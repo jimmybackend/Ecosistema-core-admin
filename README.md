@@ -134,6 +134,7 @@ Limitaciones vigentes de autenticación:
 ## Configuración segura Ecosistema Drive
 - Adaptador dry-run/contract-only: `docs/project/ECOSISTEMA_DRIVE_DRY_RUN_ADAPTER.md`.
 - Configuración base segura: `docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md`.
+- Panel operativo central: `docs/project/ECOSISTEMA_DRIVE_OPERATIONAL_COCKPIT.md`.
 - Modo por defecto `contract`, sin AWS/S3 real, sin llamadas remotas y con `s3` como repositorio de referencia técnica.
 - Listado read-only de Drive (`/cloud/drive/files`) usando metadata de `cloud_files`, sin listar bucket/key real, sin signed URLs y sin operaciones remotas.
 - Listado read-only de carpetas (`/cloud/drive/folders`) usando metadata de `cloud_folders`, sin exponer `prefix` ni rutas internas, y sin crear/editar/borrar carpetas.

@@ -87,6 +87,8 @@ use App\Core\UrlLocator\EcosistemaUrlLocatorLinkRepository;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkService;
 use App\Core\UrlLocator\EcosistemaUrlLocatorClickService;
 use App\Core\UrlLocator\EcosistemaUrlLocatorClickRepository;
+use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteRepository;
+use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteService;
 
 
 function startAuthSession(array $config): void
@@ -879,6 +881,53 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'URL Locator Link Detail | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('link','errorMessage')]);
     },
+
+    'GET /url/locator/links/new' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        $auth = AuthSession::getAuth();
+        $urlConfig = (array)($config['url_locator'] ?? []);
+        $writeEnabled = (bool)($urlConfig['enabled'] ?? false) && (bool)($urlConfig['admin_write_enabled'] ?? false);
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Nuevo short link | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-form','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['mode'=>'create','writeEnabled'=>$writeEnabled,'link'=>[],'errors'=>[]]]);
+    },
+
+    'POST /url/locator/links' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        try { $pdo=PdoFactory::make($config['database']); $svc=new EcosistemaUrlLocatorLinkWriteService(new EcosistemaUrlLocatorLinkWriteRepository($pdo),(array)($config['url_locator']??[])); if(!$svc->writeEnabled()){ header('Location: /url/locator/links?error=write-disabled'); return; } $res=$svc->create($tenantId,$userId,$_POST);} catch (\Throwable) { $res=['errors'=>['No se pudo crear.']]; }
+        if (($res['errors'] ?? []) === []) { header('Location: /url/locator/links/'.(int)$res['id'].'?ok=created'); return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Nuevo short link | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-form','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['mode'=>'create','writeEnabled'=>true,'link'=>$_POST,'errors'=>$res['errors']]]);
+    },
+
+    'GET /url/locator/links/{id}/edit' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        $auth = AuthSession::getAuth(); $id=(int)($params['id']??0); if($id<=0){ renderError($config,404); return; }
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $writeEnabled = (bool)(($config['url_locator']['enabled'] ?? false) && ($config['url_locator']['admin_write_enabled'] ?? false));
+        try { $pdo=PdoFactory::make($config['database']); $repo=new EcosistemaUrlLocatorLinkRepository($pdo); $link=$repo->findLink($tenantId,$id);} catch (\Throwable) { $link=null; }
+        if($link===null){ renderError($config,404); return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Editar short link | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-form','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['mode'=>'edit','writeEnabled'=>$writeEnabled,'link'=>$link,'errors'=>[]]]);
+    },
+
+    'POST /url/locator/links/{id}/edit' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+        $auth = AuthSession::getAuth(); $id=(int)($params['id']??0); $tenantId=(int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        try { $pdo=PdoFactory::make($config['database']); $svc=new EcosistemaUrlLocatorLinkWriteService(new EcosistemaUrlLocatorLinkWriteRepository($pdo),(array)($config['url_locator']??[])); if(!$svc->writeEnabled()){ header('Location: /url/locator/links?error=write-disabled'); return; } $res=$svc->update($tenantId,$id,$_POST);} catch (\Throwable) { $res=['errors'=>['No se pudo actualizar.']]; }
+        if (($res['errors'] ?? []) === []) { header('Location: /url/locator/links/'.$id.'?ok=updated'); return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Editar short link | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-form','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['mode'=>'edit','writeEnabled'=>true,'link'=>array_merge($_POST,['id'=>$id]),'errors'=>$res['errors']]]);
+    },
+
     'GET /cloud' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }

@@ -166,6 +166,11 @@ $requiredFiles = [
     'app/Core/Onboarding/OnboardingRunner.php',
     'app/Core/Onboarding/OnboardingStepExecutor.php',
     'resources/views/pages/onboarding/show-run.php',
+    'config/url_locator.php',
+    'docs/project/ECOSISTEMA_URL_LOCATOR_CREATE_EDIT_CONTROLLED.md',
+    'resources/views/pages/url-locator/link-form.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorLinkWriteRepository.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorLinkWriteService.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -195,7 +200,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS=', 'MAIL_MAX_ATTACHMENTS=', 'MAIL_MAX_ATTACHMENT_MB=', 'MAIL_MAX_TOTAL_ATTACHMENT_MB=', 'S3_DRIVE_ENABLED=', 'S3_DRIVE_MODE=', 'S3_DRIVE_BASE_URL=', 'S3_DRIVE_API_TIMEOUT=', 'S3_DRIVE_ALLOW_REMOTE_CALLS=', 'S3_DRIVE_ALLOW_SIGNED_URLS=', 'S3_DRIVE_ALLOW_REMOTE_UPLOADS=', 'S3_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'ECOSISTEMA_DRIVE_ENABLED=', 'ECOSISTEMA_DRIVE_MODE=', 'ECOSISTEMA_DRIVE_REFERENCE_REPO=', 'ECOSISTEMA_DRIVE_AWS_ENABLED=', 'ECOSISTEMA_DRIVE_AWS_REGION=', 'ECOSISTEMA_DRIVE_AWS_BUCKET=', 'ECOSISTEMA_DRIVE_AWS_ENDPOINT=', 'ECOSISTEMA_DRIVE_AWS_ACCESS_KEY_ID=', 'ECOSISTEMA_DRIVE_AWS_SECRET_ACCESS_KEY=', 'ECOSISTEMA_DRIVE_AWS_SESSION_TOKEN=', 'ECOSISTEMA_DRIVE_API_TIMEOUT=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=', 'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'CORE_REGISTRATION_ENABLED=', 'CORE_REGISTRATION_MODE=', 'CORE_REGISTRATION_INVITE_CODE=', 'CORE_REGISTRATION_DEFAULT_TENANT_ID=', 'CORE_REGISTRATION_DEFAULT_ROLE_ID='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS=', 'MAIL_MAX_ATTACHMENTS=', 'MAIL_MAX_ATTACHMENT_MB=', 'MAIL_MAX_TOTAL_ATTACHMENT_MB=', 'S3_DRIVE_ENABLED=', 'S3_DRIVE_MODE=', 'S3_DRIVE_BASE_URL=', 'S3_DRIVE_API_TIMEOUT=', 'S3_DRIVE_ALLOW_REMOTE_CALLS=', 'S3_DRIVE_ALLOW_SIGNED_URLS=', 'S3_DRIVE_ALLOW_REMOTE_UPLOADS=', 'S3_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'ECOSISTEMA_DRIVE_ENABLED=', 'ECOSISTEMA_DRIVE_MODE=', 'ECOSISTEMA_DRIVE_REFERENCE_REPO=', 'ECOSISTEMA_DRIVE_AWS_ENABLED=', 'ECOSISTEMA_DRIVE_AWS_REGION=', 'ECOSISTEMA_DRIVE_AWS_BUCKET=', 'ECOSISTEMA_DRIVE_AWS_ENDPOINT=', 'ECOSISTEMA_DRIVE_AWS_ACCESS_KEY_ID=', 'ECOSISTEMA_DRIVE_AWS_SECRET_ACCESS_KEY=', 'ECOSISTEMA_DRIVE_AWS_SESSION_TOKEN=', 'ECOSISTEMA_DRIVE_API_TIMEOUT=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=', 'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'CORE_REGISTRATION_ENABLED=', 'CORE_REGISTRATION_MODE=', 'CORE_REGISTRATION_INVITE_CODE=', 'CORE_REGISTRATION_DEFAULT_TENANT_ID=', 'CORE_REGISTRATION_DEFAULT_ROLE_ID=', 'ECOSISTEMA_URL_LOCATOR_ENABLED=', 'ECOSISTEMA_URL_LOCATOR_ADMIN_WRITE_ENABLED=', 'ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECTS=', 'ECOSISTEMA_URL_LOCATOR_TRACKING_ENABLED='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
@@ -1418,3 +1423,10 @@ if ($viewClicks !== false && !str_contains($viewClicks, "['ip_address']")) { ok(
 if ($viewClicks !== false && !str_contains($viewClicks, "['visitor_uuid']")) { ok('Vista clicks no imprime visitor_uuid crudo'); } else { fail('Vista clicks podría imprimir visitor_uuid crudo', $criticalFailures); }
 if ($viewLinkClicks !== false && !str_contains($viewLinkClicks, "['ip_address']")) { ok('Vista link-clicks no imprime ip_address crudo'); } else { fail('Vista link-clicks podría imprimir ip_address crudo', $criticalFailures); }
 if ($viewLinkClicks !== false && !str_contains($viewLinkClicks, "['visitor_uuid']")) { ok('Vista link-clicks no imprime visitor_uuid crudo'); } else { fail('Vista link-clicks podría imprimir visitor_uuid crudo', $criticalFailures); }
+
+
+$routesContent = is_file($root . '/routes/web.php') ? (string) file_get_contents($root . '/routes/web.php') : '';
+foreach (['GET /url/locator/links/new', 'POST /url/locator/links', 'GET /url/locator/links/{id}/edit', 'POST /url/locator/links/{id}/edit'] as $routeNeedle) {
+    if (str_contains($routesContent, $routeNeedle)) { ok('Ruta URL Locator presente: ' . $routeNeedle); } else { fail('Falta ruta URL Locator: ' . $routeNeedle, $criticalFailures); }
+}
+if (!str_contains($routesContent, "tenant_id'] ??") && !str_contains($routesContent, 'auth_tenant_id')) { fail('No se detecta tenant de sesión en rutas URL Locator.', $criticalFailures); }

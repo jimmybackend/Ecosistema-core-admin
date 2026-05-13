@@ -449,3 +449,9 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md
 
 - Landing forms read-only admin views (`/landing/forms`, `/landing/pages/{id}/forms`, `/landing/forms/{id}`) con ocultamiento de JSON sensible. Ver `docs/project/ECOSISTEMA_LANDING_FORMS_READ_ONLY.md`.
+
+
+## Landing Submissions (read-only)
+- Rutas admin: `/landing/submissions`, `/landing/forms/{id}/submissions`, `/landing/pages/{id}/submissions`, `/landing/submissions/{id}`.
+- Consulta segura de submissions con protección de PII y sin exponer adjuntos internos.
+- Ver: `docs/project/ECOSISTEMA_LANDING_SUBMISSIONS_READ_ONLY.md`.

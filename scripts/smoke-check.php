@@ -1576,3 +1576,48 @@ foreach (['resources/views/pages/landing/forms.php','resources/views/pages/landi
         if (str_contains($content, 'options_json') || str_contains($content, 'validation_json')) { warn('Verifica exposición controlada en ' . $viewFile, $warnings); } else { ok('Vista sin impresión directa options_json/validation_json: ' . $viewFile); }
     }
 }
+
+// PR #92 landing submissions read-only checks
+$landingSubFiles = [
+    'app/Core/Landing/EcosistemaLandingSubmissionRepository.php',
+    'app/Core/Landing/EcosistemaLandingSubmissionService.php',
+    'resources/views/pages/landing/submissions.php',
+    'resources/views/pages/landing/form-submissions.php',
+    'resources/views/pages/landing/page-submissions.php',
+    'resources/views/pages/landing/submission-detail.php',
+    'docs/project/ECOSISTEMA_LANDING_SUBMISSIONS_READ_ONLY.md',
+];
+foreach ($landingSubFiles as $file) { checkFile($root, $file, $criticalFailures); }
+
+$routesContent = @file_get_contents($root . '/routes/web.php') ?: '';
+foreach (['/landing/submissions', '/landing/forms/{id}/submissions', '/landing/pages/{id}/submissions', '/landing/submissions/{id}'] as $requiredRoute) {
+    if (str_contains($routesContent, $requiredRoute)) { ok('Ruta landing submissions presente: ' . $requiredRoute); }
+    else { fail('Ruta landing submissions faltante: ' . $requiredRoute, $criticalFailures); }
+}
+if (str_contains($routesContent, "'submissions_read' => true")) { ok('Adapter habilita submissions_read=true.'); }
+else { fail('Adapter no habilita submissions_read=true.', $criticalFailures); }
+foreach (["'form_submit_write' => false", "'crm_lead_write' => false"] as $flag) {
+    if (str_contains($routesContent . (@file_get_contents($root . '/app/Core/Landing/EcosistemaLandingAdapter.php') ?: ''), $flag)) { ok('Bandera preservada: ' . $flag); }
+    else { fail('Bandera faltante: ' . $flag, $criticalFailures); }
+}
+
+$submissionRepoContent = @file_get_contents($root . '/app/Core/Landing/EcosistemaLandingSubmissionRepository.php') ?: '';
+foreach (['INSERT INTO landing_form_submissions', 'UPDATE landing_form_submissions', 'DELETE FROM landing_form_submissions', 'INSERT INTO landing_form_submission_values', 'UPDATE landing_form_submission_values', 'DELETE FROM landing_form_submission_values'] as $forbiddenSql) {
+    if (stripos($submissionRepoContent, $forbiddenSql) === false) { ok('Sin escritura SQL prohibida: ' . $forbiddenSql); }
+    else { fail('Se encontró SQL prohibido: ' . $forbiddenSql, $criticalFailures); }
+}
+
+$viewsSensitive = [
+    'resources/views/pages/landing/submissions.php',
+    'resources/views/pages/landing/form-submissions.php',
+    'resources/views/pages/landing/page-submissions.php',
+    'resources/views/pages/landing/submission-detail.php',
+];
+foreach ($viewsSensitive as $viewFile) {
+    $content = @file_get_contents($root . '/' . $viewFile) ?: '';
+    foreach (['raw_data_json', 'value_json', 's3_key', 'file_path'] as $sensitive) {
+        if (str_contains($content, $sensitive) && !str_contains($content, 'hidden')) {
+            warn('Revisar uso de campo sensible en vista: ' . $viewFile . ' -> ' . $sensitive, $warnings);
+        }
+    }
+}

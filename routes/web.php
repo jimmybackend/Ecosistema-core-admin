@@ -98,6 +98,8 @@ use App\Core\Landing\EcosistemaLandingVisitRepository;
 use App\Core\Landing\EcosistemaLandingVisitService;
 use App\Core\Landing\EcosistemaLandingFormRepository;
 use App\Core\Landing\EcosistemaLandingFormService;
+use App\Core\Landing\EcosistemaLandingSubmissionService;
+use App\Core\Landing\EcosistemaLandingSubmissionRepository;
 
 
 function startAuthSession(array $config): void
@@ -1146,6 +1148,51 @@ return [
         try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaLandingFormService(new EcosistemaLandingFormRepository($pdo), new EcosistemaLandingAdapter()); $data = $service->getFormDetail($tenantId, $id); $form=$data['form']??null; $fields=(array)($data['fields']??[]);} catch (\Throwable) {}
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Landing Form Detail | Ecosistema Core Admin','contentView'=>'pages/landing/form-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('form','fields')]);
+    },
+
+
+
+    'GET /landing/submissions' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary=['total'=>0,'by_status'=>[],'spam_score'=>['scored'=>0,'high'=>0]]; $submissions=[];
+        try { $pdo=PdoFactory::make($config['database']); $service=new EcosistemaLandingSubmissionService(new EcosistemaLandingSubmissionRepository($pdo), new EcosistemaLandingAdapter()); $data=$service->listRecentSubmissions($tenantId); $summary=(array)($data['summary']??[]); $submissions=(array)($data['submissions']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Submissions | Ecosistema Core Admin','contentView'=>'pages/landing/submissions','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','submissions')]);
+    },
+
+    'GET /landing/forms/{id}/submissions' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary=['total'=>0,'by_status'=>[],'spam_score'=>['scored'=>0,'high'=>0]]; $submissions=[];
+        try { $pdo=PdoFactory::make($config['database']); $service=new EcosistemaLandingSubmissionService(new EcosistemaLandingSubmissionRepository($pdo), new EcosistemaLandingAdapter()); $data=$service->listSubmissionsForForm($tenantId, $id); $summary=(array)($data['summary']??[]); $submissions=(array)($data['submissions']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Form Submissions | Ecosistema Core Admin','contentView'=>'pages/landing/form-submissions','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','submissions','id')]);
+    },
+
+    'GET /landing/pages/{id}/submissions' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary=['total'=>0,'by_status'=>[],'spam_score'=>['scored'=>0,'high'=>0]]; $submissions=[];
+        try { $pdo=PdoFactory::make($config['database']); $service=new EcosistemaLandingSubmissionService(new EcosistemaLandingSubmissionRepository($pdo), new EcosistemaLandingAdapter()); $data=$service->listSubmissionsForPage($tenantId, $id); $summary=(array)($data['summary']??[]); $submissions=(array)($data['submissions']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Page Submissions | Ecosistema Core Admin','contentView'=>'pages/landing/page-submissions','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','submissions','id')]);
+    },
+
+    'GET /landing/submissions/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $submission=null; $values=[];
+        try { $pdo=PdoFactory::make($config['database']); $service=new EcosistemaLandingSubmissionService(new EcosistemaLandingSubmissionRepository($pdo), new EcosistemaLandingAdapter()); $data=$service->getSubmissionDetail($tenantId, $id); $submission=$data['submission']??null; $values=(array)($data['values']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Submission Detail | Ecosistema Core Admin','contentView'=>'pages/landing/submission-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('submission','values')]);
     },
 
     'GET /cloud' => static function (array $config): void {

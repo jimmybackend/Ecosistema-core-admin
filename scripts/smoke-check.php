@@ -94,6 +94,9 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-signed-url-dry-run.php',
     'app/Core/Cloud/EcosistemaDriveSignedUrlDryRunService.php',
     'app/Core/Cloud/EcosistemaDriveSignedUrlDryRun.php',
+    'docs/project/ECOSISTEMA_DRIVE_AWS_S3_CONFIG.md',
+    'resources/views/pages/cloud/drive-aws-config.php',
+    'app/Core/Cloud/EcosistemaDriveAwsS3Config.php',
     'docs/project/ECOSISTEMA_DRIVE_S3_KEY_VALIDATION.md',
     'resources/views/pages/cloud/drive-folder-detail.php',
     'resources/views/pages/cloud/drive-browse.php',
@@ -167,7 +170,7 @@ if (is_file($envExample)) {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }
 
-    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS=', 'MAIL_MAX_ATTACHMENTS=', 'MAIL_MAX_ATTACHMENT_MB=', 'MAIL_MAX_TOTAL_ATTACHMENT_MB=', 'S3_DRIVE_ENABLED=', 'S3_DRIVE_MODE=', 'S3_DRIVE_BASE_URL=', 'S3_DRIVE_API_TIMEOUT=', 'S3_DRIVE_ALLOW_REMOTE_CALLS=', 'S3_DRIVE_ALLOW_SIGNED_URLS=', 'S3_DRIVE_ALLOW_REMOTE_UPLOADS=', 'S3_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'ECOSISTEMA_DRIVE_ENABLED=', 'ECOSISTEMA_DRIVE_MODE=', 'ECOSISTEMA_DRIVE_REFERENCE_REPO=', 'ECOSISTEMA_DRIVE_API_TIMEOUT=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=', 'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'CORE_REGISTRATION_ENABLED=', 'CORE_REGISTRATION_MODE=', 'CORE_REGISTRATION_INVITE_CODE=', 'CORE_REGISTRATION_DEFAULT_TENANT_ID=', 'CORE_REGISTRATION_DEFAULT_ROLE_ID='];
+    $requiredEnvKeys = ['APP_DEBUG=', 'SESSION_SECURE=', 'DB_DATABASE=', 'MAIL_HOST=', 'MAIL_SEND_ENABLED=', 'MAIL_ALLOW_TEST_SEND=', 'AWS_BUCKET=', 'CLOUD_S3_ENABLED=', 'CLOUD_ALLOW_DOWNLOADS=', 'CLOUD_ALLOW_UPLOADS=', 'CLOUD_MAX_UPLOAD_MB=', 'CLOUD_ALLOWED_EXTENSIONS=', 'MAIL_MAX_ATTACHMENTS=', 'MAIL_MAX_ATTACHMENT_MB=', 'MAIL_MAX_TOTAL_ATTACHMENT_MB=', 'S3_DRIVE_ENABLED=', 'S3_DRIVE_MODE=', 'S3_DRIVE_BASE_URL=', 'S3_DRIVE_API_TIMEOUT=', 'S3_DRIVE_ALLOW_REMOTE_CALLS=', 'S3_DRIVE_ALLOW_SIGNED_URLS=', 'S3_DRIVE_ALLOW_REMOTE_UPLOADS=', 'S3_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'ECOSISTEMA_DRIVE_ENABLED=', 'ECOSISTEMA_DRIVE_MODE=', 'ECOSISTEMA_DRIVE_REFERENCE_REPO=', 'ECOSISTEMA_DRIVE_AWS_ENABLED=', 'ECOSISTEMA_DRIVE_AWS_REGION=', 'ECOSISTEMA_DRIVE_AWS_BUCKET=', 'ECOSISTEMA_DRIVE_AWS_ENDPOINT=', 'ECOSISTEMA_DRIVE_AWS_ACCESS_KEY_ID=', 'ECOSISTEMA_DRIVE_AWS_SECRET_ACCESS_KEY=', 'ECOSISTEMA_DRIVE_AWS_SESSION_TOKEN=', 'ECOSISTEMA_DRIVE_API_TIMEOUT=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=', 'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS=', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS=', 'CORE_REGISTRATION_ENABLED=', 'CORE_REGISTRATION_MODE=', 'CORE_REGISTRATION_INVITE_CODE=', 'CORE_REGISTRATION_DEFAULT_TENANT_ID=', 'CORE_REGISTRATION_DEFAULT_ROLE_ID='];
     foreach ($requiredEnvKeys as $requiredEnvKey) {
         if ($envContent !== false && str_contains($envContent, $requiredEnvKey)) {
             ok('.env.example contiene variable clave: ' . rtrim($requiredEnvKey, '='));
@@ -254,6 +257,19 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/drive/summary en routes/web.php.', $criticalFailures);
     }
 
+
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/aws-config")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/aws-config informativa.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/aws-config en routes/web.php.', $criticalFailures);
+    }
+
+    if ($adapterContent !== false && str_contains($adapterContent, "'aws_s3_config_prepared' => true")) { ok('EcosistemaDriveAdapter marca aws_s3_config_prepared=true.'); } else { fail('EcosistemaDriveAdapter no marca aws_s3_config_prepared=true.', $criticalFailures); }
+    if ($adapterContent !== false && str_contains($adapterContent, "'aws_connection' => false")) { ok('EcosistemaDriveAdapter mantiene aws_connection=false.'); } else { fail('EcosistemaDriveAdapter no mantiene aws_connection=false.', $criticalFailures); }
+    if ($adapterContent !== false && str_contains($adapterContent, "'signed_urls' => false")) { ok('EcosistemaDriveAdapter mantiene signed_urls=false.'); } else { fail('EcosistemaDriveAdapter no mantiene signed_urls=false.', $criticalFailures); }
+    if ($adapterContent !== false && str_contains($adapterContent, "'remote_downloads' => false")) { ok('EcosistemaDriveAdapter mantiene remote_downloads=false.'); } else { fail('EcosistemaDriveAdapter no mantiene remote_downloads=false.', $criticalFailures); }
+    if ($adapterContent !== false && str_contains($adapterContent, "'remote_uploads' => false")) { ok('EcosistemaDriveAdapter mantiene remote_uploads=false.'); } else { fail('EcosistemaDriveAdapter no mantiene remote_uploads=false.', $criticalFailures); }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/download-contract")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/download-contract para contrato informativo de descarga futura.');
@@ -729,3 +745,10 @@ if ($validationView !== false && !str_contains($validationView, "\$validation['s
 } else {
     fail('La vista de validación parece exponer s3_key cruda.', $criticalFailures);
 }
+
+$forbiddenPatterns = ['Aws\\S3\\S3Client', 'createPresignedRequest', '->getObject(', '->putObject('];
+$scanFiles = ['routes/web.php', 'app/Core/Cloud/EcosistemaDriveAwsS3Config.php', 'app/Core/Cloud/EcosistemaDriveSignedUrlDryRun.php'];
+foreach ($scanFiles as $scanFile) { $content = is_file($root . '/' . $scanFile) ? file_get_contents($root . '/' . $scanFile) : ''; foreach ($forbiddenPatterns as $pattern) { if ($content !== false && str_contains((string)$content, $pattern)) { fail('Patrón prohibido detectado: ' . $pattern . ' en ' . $scanFile, $criticalFailures); } } }
+$viewPath = $root . '/resources/views/pages/cloud/drive-aws-config.php';
+$viewContent = is_file($viewPath) ? file_get_contents($viewPath) : '';
+foreach (['ACCESS_KEY','AWS_SECRET_ACCESS_KEY','AWS_SESSION_TOKEN','s3_key'] as $forbiddenViewToken) { if ($viewContent !== false && str_contains((string)$viewContent, $forbiddenViewToken)) { fail('Vista AWS config contiene token sensible: ' . $forbiddenViewToken, $criticalFailures); } }

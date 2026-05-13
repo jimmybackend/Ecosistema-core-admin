@@ -61,6 +61,7 @@ use App\Core\Cloud\EcosistemaDriveS3KeyValidationService;
 use App\Core\Cloud\EcosistemaDriveS3KeyValidator;
 use App\Core\Cloud\EcosistemaDriveSignedUrlDryRunService;
 use App\Core\Cloud\EcosistemaDriveSignedUrlDryRun;
+use App\Core\Cloud\EcosistemaDriveAwsS3Config;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -766,6 +767,20 @@ return [
         View::render('layouts.admin',['title'=>'Política de acceso Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-access','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('policyDescription')]);
     },
 
+
+    'GET /cloud/drive/aws-config' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $awsConfig = (new EcosistemaDriveAwsS3Config($config['ecosistema_drive'] ?? []))->summary();
+
+        try { $pdo = PdoFactory::make($config['database']); driveAuditLog($pdo, 'drive.aws_config.viewed', 'drive_aws_config', null, '/cloud/drive/aws-config', 'view'); } catch (\Throwable) {}
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'AWS/S3 Drive config | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-aws-config','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('awsConfig')]);
+    },
 
     'GET /cloud/drive/download-contract' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

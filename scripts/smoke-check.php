@@ -1206,6 +1206,49 @@ foreach ($cloudPhpFiles as $phpFile) {
     }
 }
 
+
+$urlLocatorInventoryPath = $root . '/docs/project/ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md';
+if (is_file($urlLocatorInventoryPath)) {
+    ok('Existe inventario URL Locator canónico.');
+} else {
+    fail('No existe docs/project/ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md.', $criticalFailures);
+}
+
+$readmeContent = is_file($root . '/README.md') ? file_get_contents($root . '/README.md') : false;
+if ($readmeContent !== false && str_contains($readmeContent, 'ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md')) {
+    ok('README.md referencia inventario URL Locator.');
+} else {
+    fail('README.md no referencia inventario URL Locator.', $criticalFailures);
+}
+
+$urlLocatorContent = is_file($urlLocatorInventoryPath) ? file_get_contents($urlLocatorInventoryPath) : false;
+foreach (['url_short_links', 'url_clicks', 'mailit-click', 'adbbmis1_eco'] as $requiredMention) {
+    if ($urlLocatorContent !== false && str_contains($urlLocatorContent, $requiredMention)) {
+        ok('Inventario URL Locator menciona: ' . $requiredMention);
+    } else {
+        fail('Inventario URL Locator no menciona: ' . $requiredMention, $criticalFailures);
+    }
+}
+
+$gitDiff = shell_exec('git diff -- .');
+if (is_string($gitDiff) && preg_match('#^\+.*(/u/\{slug\}|/url/locator)#mi', $gitDiff) === 1) {
+    fail('Se detectó posible ruta funcional URL Locator en cambios del PR.', $criticalFailures);
+} else {
+    ok('No se detectaron rutas funcionales URL Locator en cambios del PR.');
+}
+
+if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*(url_short_links|url_clicks)/mi', $gitDiff) === 1) {
+    fail('Se detectó escritura SQL sobre url_short_links/url_clicks en cambios del PR.', $criticalFailures);
+} else {
+    ok('Sin escrituras SQL sobre url_short_links/url_clicks en cambios del PR.');
+}
+
+if (is_string($gitDiff) && preg_match('/^\+\+\+ b\/.*(migrations?|seeds?)\//mi', $gitDiff) === 1) {
+    fail('Se detectó creación/modificación en rutas de migraciones o seeds.', $criticalFailures);
+} else {
+    ok('No se detectaron cambios en migraciones o seeds.');
+}
+
 if ($criticalFailures > 0) {
     report('RESULT', 'SMOKE CHECK FAILURES=' . $criticalFailures . ' WARNINGS=' . $warnings);
     exit(1);

@@ -1355,3 +1355,31 @@ if ($baseBranch !== '') {
         ok('Sin nuevas escrituras SQL sobre cloud_* en este PR.');
     }
 }
+
+$urlLocatorFiles = [
+    'app/Core/UrlLocator/EcosistemaUrlLocatorAdapter.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorLinkRepository.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorLinkService.php',
+    'resources/views/pages/url-locator/index.php',
+    'resources/views/pages/url-locator/links.php',
+    'docs/project/ECOSISTEMA_URL_LOCATOR_READ_ONLY_LINKS.md',
+];
+foreach ($urlLocatorFiles as $file) {
+    checkFile($root, $file, $criticalFailures);
+}
+
+$routesContent = @file_get_contents($root . '/routes/web.php');
+if ($routesContent !== false && str_contains($routesContent, '/url/locator')) { ok('routes/web.php contiene /url/locator'); } else { fail('routes/web.php no contiene /url/locator', $criticalFailures); }
+if ($routesContent !== false && str_contains($routesContent, '/url/locator/links')) { ok('routes/web.php contiene /url/locator/links'); } else { fail('routes/web.php no contiene /url/locator/links', $criticalFailures); }
+
+$adapterContent = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorAdapter.php');
+if ($adapterContent !== false && str_contains($adapterContent, "'links_read'=>true")) { ok('Adapter define links_read true'); } else { fail('Adapter no define links_read true', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'links_write'=>false")) { ok('Adapter mantiene links_write false'); } else { fail('Adapter no mantiene links_write false', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'public_redirects'=>false")) { ok('Adapter mantiene public_redirects false'); } else { fail('Adapter no mantiene public_redirects false', $criticalFailures); }
+
+$repoContent = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorLinkRepository.php');
+if ($repoContent !== false && preg_match('/\b(INSERT|UPDATE|DELETE)\b\s+.*url_short_links/i', $repoContent) === 1) { fail('Repository contiene escrituras SQL sobre url_short_links', $criticalFailures); } else { ok('Repository sin INSERT/UPDATE/DELETE sobre url_short_links'); }
+
+$viewLinks = @file_get_contents($root . '/resources/views/pages/url-locator/links.php');
+if ($viewLinks !== false && str_contains($viewLinks, 'access_token_hash')) { warn('Vista links contiene texto access_token_hash (validar que no expone valores).', $warnings); } else { ok('Vista links no imprime access_token_hash'); }
+if ($viewLinks !== false && str_contains($viewLinks, "target_url_preview")) { ok('Vista links usa preview seguro para target_url'); } else { warn('No se detectó target_url_preview en vista links.', $warnings); }

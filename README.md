@@ -422,3 +422,5 @@ Estado actual:
 - Ver también: \/docs\/project\/ECOSISTEMA_DRIVE_CONTROLLED_S3_UPLOAD.md y ruta controlada `/cloud/drive/upload`.
 
 - Uso de almacenamiento Drive read-only disponible en `/cloud/drive/storage-usage` (cloud_files + cloud_storage_usage_daily), sin snapshots write ni escaneo S3. Ver `docs/project/ECOSISTEMA_DRIVE_STORAGE_USAGE.md`.
+
+- Drive repair jobs (read-only): `docs/project/ECOSISTEMA_DRIVE_REPAIR_JOBS.md`.

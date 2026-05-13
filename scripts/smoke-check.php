@@ -1137,3 +1137,39 @@ if (!str_contains($viewUploadContent, 's3_key') && !str_contains($viewUploadCont
 } else {
     fail('Vistas de upload exponen s3_key o stored_name.', $criticalFailures);
 }
+
+$repairRepoPath = $root . '/app/Core/Cloud/EcosistemaDriveRepairJobRepository.php';
+$repairServicePath = $root . '/app/Core/Cloud/EcosistemaDriveRepairJobService.php';
+$repairListViewPath = $root . '/resources/views/pages/cloud/drive-repair-jobs.php';
+$repairDetailViewPath = $root . '/resources/views/pages/cloud/drive-repair-job-detail.php';
+$repairDocPath = $root . '/docs/project/ECOSISTEMA_DRIVE_REPAIR_JOBS.md';
+
+foreach ([$repairRepoPath, $repairServicePath, $repairListViewPath, $repairDetailViewPath, $repairDocPath] as $requiredPath) {
+    if (is_file($requiredPath)) { ok('Existe recurso repair jobs: ' . str_replace($root . '/', '', $requiredPath)); }
+    else { fail('No existe recurso repair jobs: ' . str_replace($root . '/', '', $requiredPath), $criticalFailures); }
+}
+
+$routesWebContent = @file_get_contents($root . '/routes/web.php') ?: '';
+if (str_contains($routesWebContent, 'GET /cloud/drive/repair-jobs')) { ok('routes/web.php contiene /cloud/drive/repair-jobs.'); }
+else { fail('routes/web.php no contiene /cloud/drive/repair-jobs.', $criticalFailures); }
+
+$adapterContentRepair = @file_get_contents($root . '/app/Core/Cloud/EcosistemaDriveAdapter.php') ?: '';
+if (str_contains($adapterContentRepair, "'repair_jobs_read' => true")) { ok('Adapter contiene repair_jobs_read=true.'); }
+else { fail('Adapter no contiene repair_jobs_read=true.', $criticalFailures); }
+if (str_contains($adapterContentRepair, "'repair_jobs_execute' => false")) { ok('Adapter mantiene repair_jobs_execute=false.'); }
+else { fail('Adapter no mantiene repair_jobs_execute=false.', $criticalFailures); }
+
+$repairRepoContent = @file_get_contents($repairRepoPath) ?: '';
+foreach (['INSERT INTO cloud_repair_jobs', 'UPDATE cloud_repair_jobs', 'DELETE FROM cloud_repair_jobs', 'INSERT INTO cloud_repair_logs', 'UPDATE cloud_repair_logs', 'DELETE FROM cloud_repair_logs'] as $forbiddenSql) {
+    if (stripos($repairRepoContent, $forbiddenSql) === false) { ok('Repair repository no contiene: ' . $forbiddenSql); }
+    else { fail('Repair repository contiene SQL prohibido: ' . $forbiddenSql, $criticalFailures); }
+}
+
+$repairListView = @file_get_contents($repairListViewPath) ?: '';
+$repairDetailView = @file_get_contents($repairDetailViewPath) ?: '';
+if (!str_contains($repairListView, "['prefix']") && !str_contains($repairDetailView, "['prefix']")) { ok('Vistas repair no imprimen prefix crudo.'); }
+else { fail('Vistas repair podrían imprimir prefix crudo.', $criticalFailures); }
+if (!str_contains($repairListView, "old_s3_key") && !str_contains($repairDetailView, "['old_s3_key']") && !str_contains($repairDetailView, "['new_s3_key']")) { ok('Vistas repair no imprimen old/new s3_key crudos.'); }
+else { fail('Vistas repair podrían imprimir old/new s3_key crudos.', $criticalFailures); }
+if (!str_contains($repairListView, "['s3_key']") && !str_contains($repairDetailView, "['s3_key']")) { ok('Vistas repair no imprimen s3_key.'); }
+else { fail('Vistas repair podrían imprimir s3_key.', $criticalFailures); }

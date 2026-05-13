@@ -56,6 +56,10 @@ final class EcosistemaDriveAdapter
             'storage_usage_read' => true,
             'storage_usage_snapshots_write' => false,
             's3_scan' => false,
+            'repair_jobs_read' => true,
+            'repair_jobs_execute' => false,
+            'repair_logs_read' => true,
+            'repair_logs_write' => false,
         ];
     }
 
@@ -180,6 +184,22 @@ final class EcosistemaDriveAdapter
             's3_scan' => [
                 'enabled' => false,
                 'description' => 'Escaneo directo de S3/AWS deshabilitado en este PR.',
+            ],
+            'repair_jobs_read' => [
+                'enabled' => true,
+                'description' => 'Consulta read-only de cloud_repair_jobs y resumen por status para observabilidad administrativa.',
+            ],
+            'repair_jobs_execute' => [
+                'enabled' => false,
+                'description' => 'Ejecución/creación de jobs de reparación deshabilitada en este PR.',
+            ],
+            'repair_logs_read' => [
+                'enabled' => true,
+                'description' => 'Consulta read-only de cloud_repair_logs con ocultamiento de old/new s3_key.',
+            ],
+            'repair_logs_write' => [
+                'enabled' => false,
+                'description' => 'Escritura/creación de logs de reparación deshabilitada en este PR.',
             ],
             's3_reference_only' => [
                 'enabled' => true,

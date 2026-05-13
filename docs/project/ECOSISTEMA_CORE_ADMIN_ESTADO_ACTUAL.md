@@ -107,3 +107,5 @@ Listado de referencia de etapa (macro-hitos):
 5. Mejorar auditoría automática en acciones críticas.
 6. Incorporar suite de tests automatizados.
 7. Hardening para producción, deploy y monitoreo externo.
+
+- Jobs de reparación Drive (read-only): ver `ECOSISTEMA_DRIVE_REPAIR_JOBS.md`.

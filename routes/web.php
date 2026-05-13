@@ -74,6 +74,8 @@ use App\Core\Cloud\EcosistemaDriveAccessLogService;
 use App\Core\Cloud\EcosistemaDriveAccessLogRepository;
 use App\Core\Cloud\EcosistemaDriveStorageUsageService;
 use App\Core\Cloud\EcosistemaDriveStorageUsageRepository;
+use App\Core\Cloud\EcosistemaDriveRepairJobRepository;
+use App\Core\Cloud\EcosistemaDriveRepairJobService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -889,6 +891,62 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Uso almacenamiento Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-storage-usage','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('usage','errorMessage')]);
+    },
+
+
+    'GET /cloud/drive/repair-jobs' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['auth_tenant_id'] ?? 0);
+        $summary = [];
+        $jobs = [];
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveRepairJobService(new EcosistemaDriveRepairJobRepository($pdo));
+            $result = $service->listRecentForTenant($tenantId, 100);
+            $summary = $result['summary'];
+            $jobs = $result['jobs'];
+            driveAuditLog($pdo, 'drive.repair_jobs.viewed', 'drive_repair_job', null, '/cloud/drive/repair-jobs', 'list');
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudieron consultar los jobs de reparación de Drive.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Jobs de reparación Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-repair-jobs','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','jobs','errorMessage')]);
+    },
+
+    'GET /cloud/drive/repair-jobs/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['auth_tenant_id'] ?? 0);
+        $jobId = (int)($params['id'] ?? 0);
+        if ($jobId <= 0) { renderError($config, 404); return; }
+
+        $job = null;
+        $logs = [];
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaDriveRepairJobService(new EcosistemaDriveRepairJobRepository($pdo));
+            $result = $service->getJobDetail($tenantId, $jobId, 200);
+            $job = $result['job'];
+            $logs = $result['logs'];
+            driveAuditLog($pdo, 'drive.repair_job.detail.viewed', 'drive_repair_job', $jobId, '/cloud/drive/repair-jobs/{id}', 'view');
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo consultar el job de reparación de Drive.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Detalle job reparación Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-repair-job-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('job','logs','errorMessage')]);
     },
 
     'GET /cloud/drive/access-logs' => static function (array $config): void {

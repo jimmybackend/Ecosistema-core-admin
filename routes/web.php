@@ -793,6 +793,33 @@ return [
         View::render('layouts.admin',['title'=>'URL Locator Links | Ecosistema Core Admin','contentView'=>'pages/url-locator/links','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','links','capabilities','statusMessage','errorMessage')]);
     },
 
+
+
+    'GET /url/locator/links/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $id = (int)($params['id'] ?? 0);
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $errorMessage = null;
+        $link = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaUrlLocatorLinkService(new EcosistemaUrlLocatorLinkRepository($pdo), new EcosistemaUrlLocatorAdapter());
+            $link = $service->getLinkDetail($tenantId, $id);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo cargar detalle del short link.';
+        }
+
+        if ($link === null) { renderError($config, 404); return; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'URL Locator Link Detail | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('link','errorMessage')]);
+    },
     'GET /cloud' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }

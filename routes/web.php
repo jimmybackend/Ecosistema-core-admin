@@ -46,6 +46,8 @@ use App\Core\Cloud\EcosistemaDriveConfig;
 use App\Core\Cloud\EcosistemaDriveAdapter;
 use App\Core\Cloud\EcosistemaDriveFileRepository;
 use App\Core\Cloud\EcosistemaDriveFileService;
+use App\Core\Cloud\EcosistemaDriveFileVersionService;
+use App\Core\Cloud\EcosistemaDriveFileVersionRepository;
 use App\Core\Cloud\EcosistemaDriveFolderService;
 use App\Core\Cloud\EcosistemaDriveFolderRepository;
 use App\Core\Cloud\EcosistemaDriveRootRepository;
@@ -1038,6 +1040,59 @@ return [
 
 
 
+
+
+
+    'GET /cloud/drive/files/{id}/versions' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? 0);
+        $idRaw = (string)($params['id'] ?? '');
+        $versions = [];
+        $fileId = null;
+        $errorMessage = null;
+
+        if (!preg_match('/^[1-9][0-9]*$/', $idRaw)) {
+            http_response_code(404);
+            $errorMessage = 'Archivo no encontrado.';
+        } else {
+            $fileId = (int)$idRaw;
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $service = new EcosistemaDriveFileVersionService(
+                    new EcosistemaDriveFileRepository($pdo),
+                    new EcosistemaDriveFileVersionRepository($pdo),
+                    new EcosistemaDriveAccessPolicy(),
+                    new EcosistemaDriveS3KeyValidator(),
+                );
+                $versionsResult = $service->listFileVersions($tenantId, $userId, $fileId);
+                if ($versionsResult === null) {
+                    http_response_code(404);
+                    $errorMessage = 'Archivo no encontrado.';
+                } else {
+                    $versions = $versionsResult;
+                    (new EcosistemaDriveAuditLogger($pdo))->logReadOnlyView(
+                        'drive.file.versions.viewed',
+                        'drive_file',
+                        $fileId,
+                        '/cloud/drive/files/{id}/versions',
+                        'view',
+                        $tenantId,
+                        $userId,
+                    );
+                }
+            } catch (\Throwable) {
+                http_response_code(404);
+                $errorMessage = 'Archivo no encontrado.';
+            }
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Versiones archivo Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-file-versions','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('versions','fileId','errorMessage')]);
+    },
 
     'GET /cloud/drive/files/{id}/download' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

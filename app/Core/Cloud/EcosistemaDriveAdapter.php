@@ -41,6 +41,9 @@ final class EcosistemaDriveAdapter
             'controlled_download_available' => false,
             'db_writes' => false,
             'upload_dry_run' => true,
+            'read_file_versions' => true,
+            'version_restore' => false,
+            'version_download' => false,
         ];
     }
 
@@ -65,6 +68,18 @@ final class EcosistemaDriveAdapter
             'upload_dry_run' => [
                 'enabled' => true,
                 'description' => 'Simulación informativa de subida S3 en modo dry-run, sin procesar archivos ni escribir en DB/storage.',
+            ],
+            'read_file_versions' => [
+                'enabled' => true,
+                'description' => 'Lectura read-only de metadata de versiones por archivo desde cloud_file_versions, sin exponer s3_key/s3_version_id ni habilitar restore/download.',
+            ],
+            'version_restore' => [
+                'enabled' => false,
+                'description' => 'Restauración de versiones deshabilitada en este PR.',
+            ],
+            'version_download' => [
+                'enabled' => false,
+                'description' => 'Descarga de versiones deshabilitada en este PR.',
             ],
             'signed_urls' => [
                 'enabled' => false,

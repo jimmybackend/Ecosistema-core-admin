@@ -42,3 +42,5 @@ Para habilitación futura (en otro PR):
 
 ## Siguiente paso
 Subida S3 real controlada queda para PR futuro.
+
+- Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.

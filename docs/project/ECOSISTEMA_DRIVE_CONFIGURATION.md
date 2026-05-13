@@ -109,3 +109,6 @@ Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md` para reglas de tenant/user 
 
 
 - Referencia de contrato de descarga futura: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.
+
+
+- Ruta informativa adicional: `GET /cloud/drive/files/{id}/s3-key-validation` (sin descarga real).

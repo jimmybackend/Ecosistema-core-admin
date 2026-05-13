@@ -88,6 +88,9 @@ $requiredFiles = [
     'resources/views/pages/cloud/settings.php',
     'resources/views/pages/cloud/drive-files.php',
     'resources/views/pages/cloud/drive-file-detail.php',
+    'resources/views/pages/cloud/drive-s3-key-validation.php',
+    'app/Core/Cloud/EcosistemaDriveS3KeyValidator.php',
+    'docs/project/ECOSISTEMA_DRIVE_S3_KEY_VALIDATION.md',
     'resources/views/pages/cloud/drive-folder-detail.php',
     'resources/views/pages/cloud/drive-browse.php',
     'app/Core/Cloud/CloudStorageService.php',
@@ -605,4 +608,20 @@ if (is_file($readmePath)) {
     } else {
         fail('README no referencia la política de acceso Drive.', $criticalFailures);
     }
+}
+
+$driveAdapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+$driveAdapterContent = is_file($driveAdapterFile) ? file_get_contents($driveAdapterFile) : false;
+if ($driveAdapterContent !== false && str_contains($driveAdapterContent, "'safe_s3_key_validation'") && str_contains($driveAdapterContent, "'signed_urls' => [\n                'enabled' => false") && str_contains($driveAdapterContent, "'remote_downloads' => [\n                'enabled' => false") && str_contains($driveAdapterContent, "'remote_uploads' => [\n                'enabled' => false")) {
+    ok('EcosistemaDriveAdapter declara safe_s3_key_validation y mantiene signed_urls/remote_downloads/remote_uploads deshabilitados.');
+} else {
+    fail('EcosistemaDriveAdapter no cumple capability safe_s3_key_validation o activó capacidades remotas.', $criticalFailures);
+}
+
+$validationViewPath = $root . '/resources/views/pages/cloud/drive-s3-key-validation.php';
+$validationView = is_file($validationViewPath) ? file_get_contents($validationViewPath) : false;
+if ($validationView !== false && !str_contains($validationView, "\$validation['s3_key']") && !str_contains($validationView, "\$file['s3_key']")) {
+    ok('La vista de validación no imprime s3_key cruda.');
+} else {
+    fail('La vista de validación parece exponer s3_key cruda.', $criticalFailures);
 }

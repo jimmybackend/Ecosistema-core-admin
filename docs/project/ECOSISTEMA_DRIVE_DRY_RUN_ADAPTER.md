@@ -75,3 +75,6 @@ En PRs siguientes se podrá:
 
 
 - Referencia de contrato de descarga futura: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.
+
+
+- Capability adicional: `safe_s3_key_validation=true` para validar forma de key sin exponer su valor.

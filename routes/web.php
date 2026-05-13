@@ -90,6 +90,7 @@ use App\Core\UrlLocator\EcosistemaUrlLocatorClickRepository;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteRepository;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkWriteService;
 use App\Core\UrlLocator\EcosistemaUrlLocatorRedirectDryRunService;
+use App\Core\UrlLocator\EcosistemaUrlLocatorPublicRedirectService;
 
 
 function startAuthSession(array $config): void
@@ -145,6 +146,31 @@ function auditLog(PDO $pdo, array $payload): void
 }
 
 return [
+
+    'GET /u/{slug}' => static function (array $config, array $params): void {
+        $slug = (string) ($params['slug'] ?? '');
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaUrlLocatorPublicRedirectService($pdo, (array) ($config['url_locator'] ?? []));
+            $resolved = $service->resolvePublicSlug($slug, [
+                'accept_language_header' => (string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? ''),
+                'user_agent' => (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
+                'referer' => (string) ($_SERVER['HTTP_REFERER'] ?? ''),
+                'ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+                'public_url' => '/u/' . rawurlencode($slug),
+            ]);
+            if (($resolved['allowed'] ?? false) === true) {
+                $service->executeRedirect($resolved);
+            }
+            http_response_code(404);
+        } catch (\Throwable) {
+            http_response_code(404);
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('pages/url-locator/public-redirect-blocked', ['reason' => 'blocked']);
+    },
+
     'GET /' => static function (array $config): void {
         startAuthSession($config);
 

@@ -174,6 +174,9 @@ $requiredFiles = [
     'docs/project/ECOSISTEMA_URL_LOCATOR_REDIRECT_DRY_RUN.md',
     'resources/views/pages/url-locator/redirect-dry-run.php',
     'app/Core/UrlLocator/EcosistemaUrlLocatorRedirectDryRunService.php',
+    'docs/project/ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECT.md',
+    'resources/views/pages/url-locator/public-redirect-blocked.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorPublicRedirectService.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -1445,3 +1448,11 @@ foreach (['GET /url/locator/links/new', 'POST /url/locator/links', 'GET /url/loc
     if (str_contains($routesContent, $routeNeedle)) { ok('Ruta URL Locator presente: ' . $routeNeedle); } else { fail('Falta ruta URL Locator: ' . $routeNeedle, $criticalFailures); }
 }
 if (!str_contains($routesContent, "tenant_id'] ??") && !str_contains($routesContent, 'auth_tenant_id')) { fail('No se detecta tenant de sesión en rutas URL Locator.', $criticalFailures); }
+
+
+$routesContent = @file_get_contents($root . '/routes/web.php') ?: '';
+if (str_contains($routesContent, "GET /u/{slug}")) { ok('routes/web.php contiene ruta pública /u/{slug}.'); } else { fail('routes/web.php no contiene ruta pública /u/{slug}.', $criticalFailures); }
+
+$publicService = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorPublicRedirectService.php') ?: '';
+if (!str_contains($publicService, "target_url'] ??") && !str_contains($publicService, '$_GET[\'target_url\']')) { ok('PublicRedirectService no acepta target_url desde request.'); } else { fail('PublicRedirectService acepta target_url desde request.', $criticalFailures); }
+if (!str_contains($publicService, "tenant_id'] ??") && !str_contains($publicService, '$_GET[\'tenant_id\']')) { ok('PublicRedirectService no acepta tenant_id desde request.'); } else { fail('PublicRedirectService acepta tenant_id desde request.', $criticalFailures); }

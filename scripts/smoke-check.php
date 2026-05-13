@@ -1173,3 +1173,42 @@ if (!str_contains($repairListView, "old_s3_key") && !str_contains($repairDetailV
 else { fail('Vistas repair podrían imprimir old/new s3_key crudos.', $criticalFailures); }
 if (!str_contains($repairListView, "['s3_key']") && !str_contains($repairDetailView, "['s3_key']")) { ok('Vistas repair no imprimen s3_key.'); }
 else { fail('Vistas repair podrían imprimir s3_key.', $criticalFailures); }
+
+$cockpitDoc = $root . '/docs/project/ECOSISTEMA_DRIVE_OPERATIONAL_COCKPIT.md';
+if (is_file($cockpitDoc)) { ok('Existe docs/project/ECOSISTEMA_DRIVE_OPERATIONAL_COCKPIT.md.'); }
+else { fail('No existe docs/project/ECOSISTEMA_DRIVE_OPERATIONAL_COCKPIT.md.', $criticalFailures); }
+
+$driveView = $root . '/resources/views/pages/cloud/drive.php';
+$driveViewContent = @file_get_contents($driveView) ?: '';
+foreach (['/cloud/drive/files','/cloud/drive/folders','/cloud/drive/buckets','/cloud/drive/summary','/cloud/drive/upload','/cloud/drive/access-logs','/cloud/drive/storage-usage','/cloud/drive/repair-jobs'] as $requiredLink) {
+    if (str_contains($driveViewContent, $requiredLink)) { ok('drive.php contiene enlace: ' . $requiredLink); }
+    else { fail('drive.php no contiene enlace: ' . $requiredLink, $criticalFailures); }
+}
+
+foreach (['read_metadata','read_drive_summary','read_access_policy','safe_s3_key_validation','controlled_download','controlled_upload','repair_jobs_read','repair_logs_read'] as $capability) {
+    if (str_contains($adapterContent, $capability)) { ok('Adapter contiene capability principal: ' . $capability); }
+    else { fail('Adapter no contiene capability principal: ' . $capability, $criticalFailures); }
+}
+
+foreach (['s3_key','stored_name','prefix','config_json','metadata_json'] as $forbiddenPrint) {
+    if (!str_contains($driveViewContent, $forbiddenPrint)) { ok('Panel Drive no imprime campo sensible: ' . $forbiddenPrint); }
+    else { fail('Panel Drive contiene referencia sensible: ' . $forbiddenPrint, $criticalFailures); }
+}
+
+$cloudCoreDir = $root . '/app/Core/Cloud';
+$cloudPhpFiles = glob($cloudCoreDir . '/*.php') ?: [];
+foreach ($cloudPhpFiles as $phpFile) {
+    $relative = str_replace($root . '/', '', $phpFile);
+    $content = (string) file_get_contents($phpFile);
+    if ($relative !== 'app/Core/Cloud/EcosistemaDriveS3UploadService.php' && str_contains($content, 'putObject')) {
+        fail('putObject detectado fuera de EcosistemaDriveS3UploadService.php en ' . $relative, $criticalFailures);
+    }
+}
+
+if ($criticalFailures > 0) {
+    report('RESULT', 'SMOKE CHECK FAILURES=' . $criticalFailures . ' WARNINGS=' . $warnings);
+    exit(1);
+}
+
+report('RESULT', 'SMOKE CHECK OK WARNINGS=' . $warnings);
+exit(0);

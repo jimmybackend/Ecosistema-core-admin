@@ -1,0 +1,8 @@
+<?php $form=$contentData['form']??null; $fields=(array)($contentData['fields']??[]); ?>
+<section class="eco-card"><h1>Landing Form Detail</h1><p><strong>Aviso:</strong> modo read-only. Sin submissions, sin CRM leads.</p>
+<?php if(!is_array($form)): ?><p>Formulario no encontrado para tenant actual.</p><?php else: ?>
+<ul><li>ID: <?= (int)$form['id'] ?></li><li>Nombre: <?= htmlspecialchars((string)$form['name']) ?></li><li>Landing: <?= htmlspecialchars((string)($form['landing_page_title']??'')) ?></li><li>Success message present: <?= !empty($form['success_message_present'])?'true':'false' ?></li><li>Redirect URL present: <?= !empty($form['redirect_url_present'])?'true':'false' ?> (exposed=false)</li><li>public_submit=false | crm_lead_write=false</li></ul>
+<table class="eco-table"><thead><tr><th>ID</th><th>Key</th><th>Label</th><th>Type</th><th>Required</th><th>Default</th><th>Options</th><th>Validation</th></tr></thead><tbody>
+<?php foreach($fields as $field): ?><tr><td><?= (int)$field['id'] ?></td><td><?= htmlspecialchars((string)$field['field_key']) ?></td><td><?= htmlspecialchars((string)$field['label']) ?></td><td><?= htmlspecialchars((string)$field['field_type']) ?></td><td><?= !empty($field['is_required'])?'true':'false' ?></td><td><?= !empty($field['default_value_present'])?'present (hidden)':'-' ?></td><td><?= !empty($field['options_json_present'])?'present (hidden)':'-' ?></td><td><?= !empty($field['validation_json_present'])?'present (hidden)':'-' ?></td></tr><?php endforeach; ?>
+</tbody></table>
+<?php endif; ?></section>

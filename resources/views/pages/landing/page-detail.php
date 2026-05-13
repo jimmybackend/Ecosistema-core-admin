@@ -10,7 +10,7 @@ $errorMessage = $contentData['errorMessage'] ?? null;
   <?php if (!is_array($page)): ?>
     <p>No se encontró la landing page solicitada.</p>
   <?php else: ?>
-    <p><a href="/landing/pages/<?= (int)$page['id'] ?>/visits">Ver visitas</a></p>
+    <p><a href="/landing/pages/<?= (int)$page['id'] ?>/visits">Ver visitas</a> | <a href="/landing/pages/<?= (int)$page['id'] ?>/forms">Ver formularios</a></p>
     <h2>Metadata segura</h2>
     <ul>
       <li>ID: <?= (int)$page['id'] ?></li><li>Title: <?= htmlspecialchars((string)$page['title']) ?></li><li>Slug: <?= htmlspecialchars((string)$page['slug']) ?></li><li>Status: <?= htmlspecialchars((string)$page['status']) ?></li><li>Page type: <?= htmlspecialchars((string)$page['page_type']) ?></li>

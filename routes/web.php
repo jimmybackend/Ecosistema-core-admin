@@ -96,6 +96,8 @@ use App\Core\Landing\EcosistemaLandingPageRepository;
 use App\Core\Landing\EcosistemaLandingPageService;
 use App\Core\Landing\EcosistemaLandingVisitRepository;
 use App\Core\Landing\EcosistemaLandingVisitService;
+use App\Core\Landing\EcosistemaLandingFormRepository;
+use App\Core\Landing\EcosistemaLandingFormService;
 
 
 function startAuthSession(array $config): void
@@ -1106,6 +1108,44 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Landing Page Visits | Ecosistema Core Admin','contentView'=>'pages/landing/page-visits','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','visits','id')]);
+    },
+
+
+
+    'GET /landing/forms' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'active' => 0, 'inactive' => 0]; $forms = [];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaLandingFormService(new EcosistemaLandingFormRepository($pdo), new EcosistemaLandingAdapter()); $data = $service->listForms($tenantId); $summary=(array)($data['summary']??[]); $forms=(array)($data['forms']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Forms | Ecosistema Core Admin','contentView'=>'pages/landing/forms','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','forms')]);
+    },
+
+    'GET /landing/pages/{id}/forms' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'active' => 0, 'inactive' => 0]; $forms = [];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaLandingFormService(new EcosistemaLandingFormRepository($pdo), new EcosistemaLandingAdapter()); $data = $service->listFormsForPage($tenantId, $id); $summary=(array)($data['summary']??[]); $forms=(array)($data['forms']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Page Forms | Ecosistema Core Admin','contentView'=>'pages/landing/page-forms','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','forms','id')]);
+    },
+
+    'GET /landing/forms/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $form = null; $fields=[];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaLandingFormService(new EcosistemaLandingFormRepository($pdo), new EcosistemaLandingAdapter()); $data = $service->getFormDetail($tenantId, $id); $form=$data['form']??null; $fields=(array)($data['fields']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Form Detail | Ecosistema Core Admin','contentView'=>'pages/landing/form-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('form','fields')]);
     },
 
     'GET /cloud' => static function (array $config): void {

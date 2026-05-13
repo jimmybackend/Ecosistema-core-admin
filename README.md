@@ -420,3 +420,5 @@ Estado actual:
 - Logs de acceso Drive read-only disponibles en `/cloud/drive/access-logs` y `/cloud/drive/files/{id}/access-logs`. Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_LOGS.md`.
 
 - Ver también: \/docs\/project\/ECOSISTEMA_DRIVE_CONTROLLED_S3_UPLOAD.md y ruta controlada `/cloud/drive/upload`.
+
+- Uso de almacenamiento Drive read-only disponible en `/cloud/drive/storage-usage` (cloud_files + cloud_storage_usage_daily), sin snapshots write ni escaneo S3. Ver `docs/project/ECOSISTEMA_DRIVE_STORAGE_USAGE.md`.

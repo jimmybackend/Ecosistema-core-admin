@@ -53,6 +53,9 @@ final class EcosistemaDriveAdapter
             'version_download' => false,
             'access_logs_read' => true,
             'access_logs_write' => false,
+            'storage_usage_read' => true,
+            'storage_usage_snapshots_write' => false,
+            's3_scan' => false,
         ];
     }
 
@@ -165,6 +168,18 @@ final class EcosistemaDriveAdapter
             'access_logs_write' => [
                 'enabled' => false,
                 'description' => 'Creación/modificación de logs de acceso deshabilitada en este PR.',
+            ],
+            'storage_usage_read' => [
+                'enabled' => true,
+                'description' => 'Consulta read-only de uso de almacenamiento Drive por tenant/bucket/usuario/extensión e histórico diario sin escribir snapshots.',
+            ],
+            'storage_usage_snapshots_write' => [
+                'enabled' => false,
+                'description' => 'Escritura/re-cálculo de snapshots en cloud_storage_usage_daily deshabilitado en este PR.',
+            ],
+            's3_scan' => [
+                'enabled' => false,
+                'description' => 'Escaneo directo de S3/AWS deshabilitado en este PR.',
             ],
             's3_reference_only' => [
                 'enabled' => true,

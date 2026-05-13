@@ -72,6 +72,8 @@ use App\Core\Cloud\EcosistemaDriveShareContractService;
 use App\Core\Cloud\EcosistemaDriveShareContract;
 use App\Core\Cloud\EcosistemaDriveAccessLogService;
 use App\Core\Cloud\EcosistemaDriveAccessLogRepository;
+use App\Core\Cloud\EcosistemaDriveStorageUsageService;
+use App\Core\Cloud\EcosistemaDriveStorageUsageRepository;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -864,6 +866,30 @@ return [
         View::render('layouts.admin',['title'=>'Resultado subida S3 | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-upload-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('uploadResult')]);
     },
 
+
+
+    'GET /cloud/drive/storage-usage' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $usage = [];
+        $errorMessage = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaDriveStorageUsageService(new EcosistemaDriveStorageUsageRepository($pdo));
+            $usage = $service->buildUsage($tenantId);
+            driveAuditLog($pdo, 'drive.storage_usage.viewed', 'drive_storage_usage', null, '/cloud/drive/storage-usage', 'view');
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo consultar el uso de almacenamiento Drive.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Uso almacenamiento Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-storage-usage','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('usage','errorMessage')]);
+    },
 
     'GET /cloud/drive/access-logs' => static function (array $config): void {
         startAuthSession($config);

@@ -45,6 +45,9 @@ final class EcosistemaDriveAdapter
             'share_tokens' => false,
             'email_notifications' => false,
             'upload_dry_run' => true,
+            'controlled_upload' => true,
+            'controlled_upload_available' => false,
+            'upload_real_enabled' => false,
             'read_file_versions' => true,
             'version_restore' => false,
             'version_download' => false,
@@ -88,6 +91,10 @@ final class EcosistemaDriveAdapter
             'signed_urls' => [
                 'enabled' => false,
                 'description' => 'Generación de URLs firmadas deshabilitada en este PR.',
+            ],
+            'controlled_upload' => [
+                'enabled' => true,
+                'description' => 'Ruta de subida S3 real controlada por banderas explícitas; permanece bloqueada por defecto.',
             ],
             'remote_uploads' => [
                 'enabled' => false,

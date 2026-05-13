@@ -67,6 +67,7 @@ use App\Core\Cloud\EcosistemaDriveAwsS3Config;
 use App\Core\Cloud\EcosistemaDriveS3DownloadService;
 use App\Core\Cloud\EcosistemaDriveS3UploadDryRun;
 use App\Core\Cloud\EcosistemaDriveS3UploadDryRunService;
+use App\Core\Cloud\EcosistemaDriveS3UploadService;
 use App\Core\Cloud\EcosistemaDriveShareContractService;
 use App\Core\Cloud\EcosistemaDriveShareContract;
 use App\Http\View\View;
@@ -816,6 +817,49 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Subida S3 dry-run | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-upload-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('uploadDryRun')]);
+    },
+
+
+
+    'GET /cloud/drive/upload' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $auth = AuthSession::getAuth();
+        $service = new EcosistemaDriveS3UploadService(
+            PdoFactory::make($config['database']),
+            new EcosistemaDriveAwsS3Config((array)($config['ecosistema_drive'] ?? [])),
+            new EcosistemaDriveS3KeyValidator(),
+        );
+        $uploadStatus = $service->describeAvailability();
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Subida S3 controlada | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-upload','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('uploadStatus')]);
+    },
+
+    'POST /cloud/drive/upload' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $sessionContext = [
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
+            'permissions' => (array)($auth['permissions'] ?? []),
+        ];
+
+        $pdo = PdoFactory::make($config['database']);
+        $service = new EcosistemaDriveS3UploadService(
+            $pdo,
+            new EcosistemaDriveAwsS3Config((array)($config['ecosistema_drive'] ?? [])),
+            new EcosistemaDriveS3KeyValidator(),
+        );
+        $uploadResult = $service->upload($sessionContext, $_FILES);
+        (new EcosistemaDriveAuditLogger($pdo))->logReadOnlyView('drive.upload.controlled.attempted', 'drive_upload', isset($uploadResult['created_file_id']) ? (int)$uploadResult['created_file_id'] : null, '/cloud/drive/upload', 'upload_attempt');
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Resultado subida S3 | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-upload-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('uploadResult')]);
     },
 
     'GET /cloud/drive/summary' => static function (array $config): void {

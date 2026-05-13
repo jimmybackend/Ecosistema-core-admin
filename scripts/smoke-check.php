@@ -112,6 +112,11 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-share-contract.php',
     'docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md',
     'app/Core/Cloud/EcosistemaDriveS3DownloadService.php',
+    'docs/project/ECOSISTEMA_DRIVE_ACCESS_LOGS.md',
+    'resources/views/pages/cloud/drive-file-access-logs.php',
+    'resources/views/pages/cloud/drive-access-logs.php',
+    'app/Core/Cloud/EcosistemaDriveAccessLogService.php',
+    'app/Core/Cloud/EcosistemaDriveAccessLogRepository.php',
     'docs/project/ECOSISTEMA_DRIVE_S3_KEY_VALIDATION.md',
     'resources/views/pages/cloud/drive-folder-detail.php',
     'resources/views/pages/cloud/drive-browse.php',
@@ -973,6 +978,21 @@ echo PHP_EOL;
 echo 'Resumen: ' . PHP_EOL;
 echo "- Críticos fallidos: {$criticalFailures}" . PHP_EOL;
 echo "- Warnings: {$warnings}" . PHP_EOL;
+
+$routesSmoke = @file_get_contents($root . '/routes/web.php') ?: '';
+if (str_contains($routesSmoke, 'GET /cloud/drive/access-logs')) { ok('routes/web.php contiene /cloud/drive/access-logs.'); } else { fail('Falta ruta /cloud/drive/access-logs.', $criticalFailures); }
+if (str_contains($routesSmoke, 'GET /cloud/drive/files/{id}/access-logs')) { ok('routes/web.php contiene /cloud/drive/files/{id}/access-logs.'); } else { fail('Falta ruta /cloud/drive/files/{id}/access-logs.', $criticalFailures); }
+$adapterSmoke = @file_get_contents($root . '/app/Core/Cloud/EcosistemaDriveAdapter.php') ?: '';
+if (str_contains($adapterSmoke, "'access_logs_read'")) { ok('Adapter contiene access_logs_read.'); } else { fail('Adapter no contiene access_logs_read.', $criticalFailures); }
+if (str_contains($adapterSmoke, "'access_logs_write' => false")) { ok('Adapter mantiene access_logs_write=false.'); } else { fail('Adapter no mantiene access_logs_write=false.', $criticalFailures); }
+$accessView = @file_get_contents($root . '/resources/views/pages/cloud/drive-access-logs.php') ?: '';
+$fileAccessView = @file_get_contents($root . '/resources/views/pages/cloud/drive-file-access-logs.php') ?: '';
+if (!str_contains($accessView, 's3_key') && !str_contains($fileAccessView, 's3_key')) { ok('Vistas access logs no imprimen s3_key.'); } else { fail('Vistas access logs exponen s3_key.', $criticalFailures); }
+if (!str_contains($accessView, 'metadata_json') && !str_contains($fileAccessView, 'metadata_json')) { ok('Vistas access logs no imprimen metadata_json crudo.'); } else { fail('Vistas access logs exponen metadata_json crudo.', $criticalFailures); }
+$repoAccessLog = @file_get_contents($root . '/app/Core/Cloud/EcosistemaDriveAccessLogRepository.php') ?: '';
+if (!str_contains($repoAccessLog, 'INSERT INTO cloud_file_access_logs') && !str_contains($repoAccessLog, 'UPDATE cloud_file_access_logs') && !str_contains($repoAccessLog, 'DELETE FROM cloud_file_access_logs')) { ok('Repository access logs sin escrituras sobre cloud_file_access_logs.'); } else { fail('Repository access logs contiene escrituras prohibidas.', $criticalFailures); }
+
+
 
 exit($criticalFailures === 0 ? 0 : 1);
 

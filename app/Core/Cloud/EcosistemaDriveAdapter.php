@@ -26,7 +26,16 @@ final class EcosistemaDriveAdapter
             'remote_downloads_blocked' => !$this->config->allowsRemoteDownloads(),
             'database_required' => false,
             'external_http_allowed' => false,
+            'aws_s3_config_prepared' => true,
+            'aws_connection' => false,
             'aws_connected' => false,
+            'signed_urls' => false,
+            'signed_url_dry_run' => true,
+            'remote_downloads' => false,
+            'remote_uploads' => false,
+            'remote_calls' => false,
+            'storage_reads' => false,
+            'storage_writes' => false,
             'contract_only' => true,
         ];
     }

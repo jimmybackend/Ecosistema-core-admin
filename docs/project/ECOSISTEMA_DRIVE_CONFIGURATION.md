@@ -114,3 +114,4 @@ Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md` para reglas de tenant/user 
 - Ruta informativa adicional: `GET /cloud/drive/files/{id}/s3-key-validation` (sin descarga real).
 
 - Referencia: `docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md`.
+\n- AWS/S3 config preparada y apagada: ver docs/project/ECOSISTEMA_DRIVE_AWS_S3_CONFIG.md

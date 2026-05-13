@@ -44,3 +44,5 @@ Para habilitación futura (en otro PR):
 Subida S3 real controlada queda para PR futuro.
 
 - Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.
+
+- Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.

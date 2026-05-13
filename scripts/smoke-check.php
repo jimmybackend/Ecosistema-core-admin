@@ -103,6 +103,10 @@ $requiredFiles = [
     'app/Core/Cloud/EcosistemaDriveS3UploadDryRunService.php',
     'app/Core/Cloud/EcosistemaDriveS3UploadDryRun.php',
     'resources/views/pages/cloud/drive-download-blocked.php',
+    'app/Core/Cloud/EcosistemaDriveShareContract.php',
+    'app/Core/Cloud/EcosistemaDriveShareContractService.php',
+    'resources/views/pages/cloud/drive-share-contract.php',
+    'docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md',
     'app/Core/Cloud/EcosistemaDriveS3DownloadService.php',
     'docs/project/ECOSISTEMA_DRIVE_S3_KEY_VALIDATION.md',
     'resources/views/pages/cloud/drive-folder-detail.php',
@@ -244,6 +248,36 @@ if (is_file($routesFile)) {
         fail('No se encontró ruta GET /cloud/drive/files en routes/web.php.', $criticalFailures);
     }
 
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}/share-contract")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/files/{id}/share-contract.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/files/{id}/share-contract en routes/web.php.', $criticalFailures);
+    }
+
+    if ($adapterContent !== false && str_contains($adapterContent, "'share_contract' => [")) {
+        ok('EcosistemaDriveAdapter contiene capability share_contract.');
+    } else {
+        fail('EcosistemaDriveAdapter no contiene capability share_contract.', $criticalFailures);
+    }
+
+    foreach (["'public_links' => false", "'share_tokens' => false", "'db_writes' => false"] as $expectedDisabled) {
+        if ($adapterContent !== false && str_contains($adapterContent, $expectedDisabled)) {
+            ok('EcosistemaDriveAdapter mantiene deshabilitado: ' . $expectedDisabled);
+        } else {
+            fail('EcosistemaDriveAdapter no mantiene deshabilitado: ' . $expectedDisabled, $criticalFailures);
+        }
+    }
+
+    $shareContractViewPath = $root . '/resources/views/pages/cloud/drive-share-contract.php';
+    $shareContractView = is_file($shareContractViewPath) ? file_get_contents($shareContractViewPath) : false;
+    foreach (['s3_key', 'token', 'signed URL'] as $forbiddenText) {
+        if ($shareContractView !== false && stripos($shareContractView, $forbiddenText) !== false) {
+            warn('La vista share-contract contiene referencia textual: ' . $forbiddenText, $warnings);
+        } else {
+            ok('La vista share-contract no imprime: ' . $forbiddenText);
+        }
+    }
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}/download")) {
         ok('routes/web.php contiene ruta GET /cloud/drive/files/{id}/download para descarga controlada.');
     } else {

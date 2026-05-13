@@ -121,3 +121,5 @@ Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md` para reglas de tenant/user 
 Variables usadas en previsualización segura: `CLOUD_MAX_UPLOAD_MB`, `CLOUD_ALLOWED_EXTENSIONS`, `ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS`, `ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS`, `ECOSISTEMA_DRIVE_AWS_ENABLED`.
 
 - Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.
+
+- Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.

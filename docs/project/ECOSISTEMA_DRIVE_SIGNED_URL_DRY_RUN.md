@@ -31,3 +31,4 @@ Agregar una capa informativa/protegida para simular elegibilidad de generación 
 ## Próximo paso (PR futuro)
 Configurar integración AWS/S3 real (hoy apagada) para signed URLs reales bajo controles de seguridad/auditoría adicionales.
 \n- AWS/S3 config preparada y apagada: ver docs/project/ECOSISTEMA_DRIVE_AWS_S3_CONFIG.md
+\n- Controlled download S3 backend route añadida: /cloud/drive/files/{id}/download (bloqueada por defecto).

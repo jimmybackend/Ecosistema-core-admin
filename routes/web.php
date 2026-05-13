@@ -62,6 +62,7 @@ use App\Core\Cloud\EcosistemaDriveS3KeyValidator;
 use App\Core\Cloud\EcosistemaDriveSignedUrlDryRunService;
 use App\Core\Cloud\EcosistemaDriveSignedUrlDryRun;
 use App\Core\Cloud\EcosistemaDriveAwsS3Config;
+use App\Core\Cloud\EcosistemaDriveS3DownloadService;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -1014,6 +1015,48 @@ return [
 
 
 
+
+
+    'GET /cloud/drive/files/{id}/download' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? 0);
+        $idRaw = (string)($params['id'] ?? '');
+        $result = null;
+        $errorMessage = null;
+
+        if (!preg_match('/^[1-9][0-9]*$/', $idRaw)) {
+            http_response_code(404);
+            $errorMessage = 'Archivo no encontrado.';
+        } else {
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $driveConfig = (array)($config['ecosistema_drive'] ?? []);
+                $result = (new EcosistemaDriveS3DownloadService(
+                    $pdo,
+                    new EcosistemaDriveS3KeyValidator(),
+                    new EcosistemaDriveAwsS3Config($driveConfig),
+                ))->attempt($tenantId, $userId, (int)$idRaw);
+                driveAuditLog($pdo, 'drive.file.download.attempted', 'drive_file', (int)$idRaw, '/cloud/drive/files/{id}/download', 'download_attempt');
+            } catch (\Throwable) {
+                $result = null;
+                $errorMessage = 'No se pudo procesar la descarga.';
+            }
+        }
+
+        if ($result !== null && ($result['allowed'] ?? false) === true) {
+            http_response_code(501);
+            header('Content-Type: text/plain; charset=UTF-8');
+            echo 'Descarga controlada aún no implementada en este entorno.';
+            return;
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Descarga Drive bloqueada | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-download-blocked','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
 
     'GET /cloud/drive/files/{id}/signed-url-dry-run' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

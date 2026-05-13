@@ -37,6 +37,8 @@ final class EcosistemaDriveAdapter
             'storage_reads' => false,
             'storage_writes' => false,
             'contract_only' => true,
+            'controlled_download' => true,
+            'controlled_download_available' => false,
         ];
     }
 
@@ -69,6 +71,10 @@ final class EcosistemaDriveAdapter
             'remote_downloads' => [
                 'enabled' => false,
                 'description' => 'Descargas remotas desde S3/AWS no permitidas.',
+            ],
+            'controlled_download' => [
+                'enabled' => true,
+                'description' => 'Flujo de descarga controlada por backend con bloqueo por defecto y múltiples banderas de seguridad.',
             ],
             'read_user_root' => [
                 'enabled' => true,

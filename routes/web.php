@@ -85,6 +85,8 @@ use App\Core\Onboarding\OnboardingStepExecutor;
 use App\Core\UrlLocator\EcosistemaUrlLocatorAdapter;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkRepository;
 use App\Core\UrlLocator\EcosistemaUrlLocatorLinkService;
+use App\Core\UrlLocator\EcosistemaUrlLocatorClickService;
+use App\Core\UrlLocator\EcosistemaUrlLocatorClickRepository;
 
 
 function startAuthSession(array $config): void
@@ -794,6 +796,63 @@ return [
     },
 
 
+
+
+
+    'GET /url/locator/clicks' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'by_device_type' => [], 'by_detected_language' => [], 'by_country' => []];
+        $clicks = [];
+        $errorMessage = null;
+        $capabilities = (new EcosistemaUrlLocatorAdapter())->capabilities();
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaUrlLocatorClickService(new EcosistemaUrlLocatorClickRepository($pdo), new EcosistemaUrlLocatorAdapter());
+            $data = $service->listClicks($tenantId, 100);
+            $summary = $data['summary'];
+            $clicks = $data['clicks'];
+            $capabilities = $data['capabilities'];
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo cargar clicks URL Locator en modo read-only.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'URL Locator Clicks | Ecosistema Core Admin','contentView'=>'pages/url-locator/clicks','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','clicks','capabilities','errorMessage')]);
+    },
+
+    'GET /url/locator/links/{id}/clicks' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $id = (int)($params['id'] ?? 0);
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $summary = ['total' => 0, 'by_device_type' => [], 'by_detected_language' => [], 'by_country' => []];
+        $clicks = [];
+        $errorMessage = null;
+        $capabilities = (new EcosistemaUrlLocatorAdapter())->capabilities();
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaUrlLocatorClickService(new EcosistemaUrlLocatorClickRepository($pdo), new EcosistemaUrlLocatorAdapter());
+            $data = $service->listClicksByLink($tenantId, $id, 100);
+            $summary = $data['summary'];
+            $clicks = $data['clicks'];
+            $capabilities = $data['capabilities'];
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo cargar clicks del short link.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'URL Locator Link Clicks | Ecosistema Core Admin','contentView'=>'pages/url-locator/link-clicks','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('id','summary','clicks','capabilities','errorMessage')]);
+    },
 
     'GET /url/locator/links/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

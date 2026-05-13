@@ -1360,8 +1360,12 @@ $urlLocatorFiles = [
     'app/Core/UrlLocator/EcosistemaUrlLocatorAdapter.php',
     'app/Core/UrlLocator/EcosistemaUrlLocatorLinkRepository.php',
     'app/Core/UrlLocator/EcosistemaUrlLocatorLinkService.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorClickRepository.php',
+    'app/Core/UrlLocator/EcosistemaUrlLocatorClickService.php',
     'resources/views/pages/url-locator/index.php',
     'resources/views/pages/url-locator/links.php',
+    'resources/views/pages/url-locator/clicks.php',
+    'resources/views/pages/url-locator/link-clicks.php',
     'docs/project/ECOSISTEMA_URL_LOCATOR_READ_ONLY_LINKS.md',
 ];
 foreach ($urlLocatorFiles as $file) {
@@ -1370,12 +1374,17 @@ foreach ($urlLocatorFiles as $file) {
 
 $routesContent = @file_get_contents($root . '/routes/web.php');
 if ($routesContent !== false && str_contains($routesContent, '/url/locator')) { ok('routes/web.php contiene /url/locator'); } else { fail('routes/web.php no contiene /url/locator', $criticalFailures); }
+$routesNormalized = $routesContent !== false ? str_replace(' ', '', $routesContent) : '';
 if ($routesContent !== false && str_contains($routesContent, '/url/locator/links')) { ok('routes/web.php contiene /url/locator/links'); } else { fail('routes/web.php no contiene /url/locator/links', $criticalFailures); }
+if ($routesContent !== false && str_contains($routesContent, '/url/locator/clicks')) { ok('routes/web.php contiene /url/locator/clicks'); } else { fail('routes/web.php no contiene /url/locator/clicks', $criticalFailures); }
+if ($routesContent !== false && str_contains($routesContent, '/url/locator/links/{id}/clicks')) { ok('routes/web.php contiene /url/locator/links/{id}/clicks'); } else { fail('routes/web.php no contiene /url/locator/links/{id}/clicks', $criticalFailures); }
 
 $adapterContent = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorAdapter.php');
 if ($adapterContent !== false && str_contains($adapterContent, "'links_read'=>true")) { ok('Adapter define links_read true'); } else { fail('Adapter no define links_read true', $criticalFailures); }
 if ($adapterContent !== false && str_contains($adapterContent, "'links_write'=>false")) { ok('Adapter mantiene links_write false'); } else { fail('Adapter no mantiene links_write false', $criticalFailures); }
-if ($adapterContent !== false && str_contains($adapterContent, "'public_redirects'=>false")) { ok('Adapter mantiene public_redirects false'); } else { fail('Adapter no mantiene public_redirects false', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'public_redirects' => false")) { ok('Adapter mantiene public_redirects false'); } else { fail('Adapter no mantiene public_redirects false', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'clicks_read' => true")) { ok('Adapter define clicks_read true'); } else { fail('Adapter no define clicks_read true', $criticalFailures); }
+if ($adapterContent !== false && str_contains($adapterContent, "'click_tracking_write' => false")) { ok('Adapter mantiene click_tracking_write false'); } else { fail('Adapter no mantiene click_tracking_write false', $criticalFailures); }
 
 $repoContent = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorLinkRepository.php');
 if ($repoContent !== false && preg_match('/\b(INSERT|UPDATE|DELETE)\b\s+.*url_short_links/i', $repoContent) === 1) { fail('Repository contiene escrituras SQL sobre url_short_links', $criticalFailures); } else { ok('Repository sin INSERT/UPDATE/DELETE sobre url_short_links'); }
@@ -1400,3 +1409,12 @@ if ($criticalFailures > 0) {
 
 report('RESULT', "Smoke check OK con {$warnings} advertencias.");
 exit(0);
+
+$clickRepoContent = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorClickRepository.php');
+if ($clickRepoContent !== false && preg_match('/\b(INSERT|UPDATE|DELETE)\b\s+.*url_clicks/i', $clickRepoContent) === 1) { fail('Click repository contiene escrituras SQL sobre url_clicks', $criticalFailures); } else { ok('Click repository sin INSERT/UPDATE/DELETE sobre url_clicks'); }
+$viewClicks = @file_get_contents($root . '/resources/views/pages/url-locator/clicks.php');
+$viewLinkClicks = @file_get_contents($root . '/resources/views/pages/url-locator/link-clicks.php');
+if ($viewClicks !== false && !str_contains($viewClicks, "['ip_address']")) { ok('Vista clicks no imprime ip_address crudo'); } else { fail('Vista clicks podría imprimir ip_address crudo', $criticalFailures); }
+if ($viewClicks !== false && !str_contains($viewClicks, "['visitor_uuid']")) { ok('Vista clicks no imprime visitor_uuid crudo'); } else { fail('Vista clicks podría imprimir visitor_uuid crudo', $criticalFailures); }
+if ($viewLinkClicks !== false && !str_contains($viewLinkClicks, "['ip_address']")) { ok('Vista link-clicks no imprime ip_address crudo'); } else { fail('Vista link-clicks podría imprimir ip_address crudo', $criticalFailures); }
+if ($viewLinkClicks !== false && !str_contains($viewLinkClicks, "['visitor_uuid']")) { ok('Vista link-clicks no imprime visitor_uuid crudo'); } else { fail('Vista link-clicks podría imprimir visitor_uuid crudo', $criticalFailures); }

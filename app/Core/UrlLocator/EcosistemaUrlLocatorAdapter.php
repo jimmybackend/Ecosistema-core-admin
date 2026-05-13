@@ -11,7 +11,7 @@ final class EcosistemaUrlLocatorAdapter
         return [
             'links_read' => true,
             'link_detail_read' => true,
-            'clicks_read' => false,
+            'clicks_read' => true,
             'links_write' => false,
             'redirects_dry_run' => false,
             'public_redirects' => false,

@@ -185,6 +185,12 @@ $requiredFiles = [
     'app/Core/Landing/EcosistemaLandingPageService.php',
     'app/Core/Landing/EcosistemaLandingVisitRepository.php',
     'app/Core/Landing/EcosistemaLandingVisitService.php',
+    'docs/project/ECOSISTEMA_LANDING_FORMS_READ_ONLY.md',
+    'resources/views/pages/landing/form-detail.php',
+    'resources/views/pages/landing/page-forms.php',
+    'resources/views/pages/landing/forms.php',
+    'app/Core/Landing/EcosistemaLandingFormService.php',
+    'app/Core/Landing/EcosistemaLandingFormRepository.php',
     'resources/views/pages/landing/visits.php',
     'resources/views/pages/landing/page-visits.php',
     'docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md',
@@ -1541,3 +1547,32 @@ if (str_contains($routesContent, "GET /u/{slug}")) { ok('routes/web.php contiene
 $publicService = @file_get_contents($root . '/app/Core/UrlLocator/EcosistemaUrlLocatorPublicRedirectService.php') ?: '';
 if (!str_contains($publicService, "target_url'] ??") && !str_contains($publicService, '$_GET[\'target_url\']')) { ok('PublicRedirectService no acepta target_url desde request.'); } else { fail('PublicRedirectService acepta target_url desde request.', $criticalFailures); }
 if (!str_contains($publicService, "tenant_id'] ??") && !str_contains($publicService, '$_GET[\'tenant_id\']')) { ok('PublicRedirectService no acepta tenant_id desde request.'); } else { fail('PublicRedirectService acepta tenant_id desde request.', $criticalFailures); }
+
+
+$routesFile = $root . '/routes/web.php';
+if (is_file($routesFile)) {
+    $routesContent = (string) file_get_contents($routesFile);
+    foreach (['GET /landing/forms', 'GET /landing/pages/{id}/forms', 'GET /landing/forms/{id}'] as $routeNeedle) {
+        if (str_contains($routesContent, $routeNeedle)) { ok('Ruta landing forms detectada: ' . $routeNeedle); } else { fail('Falta ruta landing forms: ' . $routeNeedle, $criticalFailures); }
+    }
+}
+$adapterFile = $root . '/app/Core/Landing/EcosistemaLandingAdapter.php';
+if (is_file($adapterFile)) {
+    $adapterContent = (string) file_get_contents($adapterFile);
+    if (str_contains($adapterContent, "'forms_read' => true")) { ok('Adapter habilita forms_read=true.'); } else { fail('Adapter no tiene forms_read=true.', $criticalFailures); }
+    if (str_contains($adapterContent, "'form_submit_write' => false")) { ok('Adapter mantiene form_submit_write=false.'); } else { fail('Adapter no mantiene form_submit_write=false.', $criticalFailures); }
+}
+foreach (['app/Core/Landing/EcosistemaLandingFormRepository.php','app/Core/Landing/EcosistemaLandingFormService.php'] as $landingFile) {
+    $full = $root . '/' . $landingFile;
+    if (is_file($full)) {
+        $content = (string) file_get_contents($full);
+        if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $content) === 1) { fail('Se detectó SQL de escritura en ' . $landingFile, $criticalFailures); } else { ok('Sin SQL de escritura en ' . $landingFile); }
+    }
+}
+foreach (['resources/views/pages/landing/forms.php','resources/views/pages/landing/page-forms.php','resources/views/pages/landing/form-detail.php'] as $viewFile) {
+    $full = $root . '/' . $viewFile;
+    if (is_file($full)) {
+        $content = (string) file_get_contents($full);
+        if (str_contains($content, 'options_json') || str_contains($content, 'validation_json')) { warn('Verifica exposición controlada en ' . $viewFile, $warnings); } else { ok('Vista sin impresión directa options_json/validation_json: ' . $viewFile); }
+    }
+}

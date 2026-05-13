@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 $statusMessage = $statusMessage ?? null;
 $csrfToken = $csrfToken ?? '';
-$registrationEnabled = (bool) ($registrationEnabled ?? false);
 ?>
 <?php if ($statusMessage !== null): ?>
   <div class="eco-card" style="margin-bottom: 1rem; border-left: 4px solid #2f7cf6;">
@@ -27,8 +26,9 @@ $registrationEnabled = (bool) ($registrationEnabled ?? false);
 
   <button type="submit" class="btn">Entrar</button>
 </form>
-<?php if ($registrationEnabled): ?>
-  <p style="margin-top: 1rem; margin-bottom: 0;">
-    <a href="/register">Crear cuenta inicial</a>
-  </p>
-<?php endif; ?>
+
+<div class="eco-card" style="margin-top: 1rem; border-left: 4px solid #2f7cf6;">
+  <p style="margin: 0 0 0.5rem 0; font-weight: 600;">¿Primera vez en esta VM?</p>
+  <p style="margin: 0 0 0.75rem 0;">Usa el registro inicial controlado para crear la primera cuenta administrativa.</p>
+  <p style="margin: 0;"><a href="/register">Crear cuenta inicial</a></p>
+</div>

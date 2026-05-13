@@ -1173,7 +1173,7 @@ return [
             'contentView' => 'pages/auth/login',
             'contentData' => [
                 'csrfToken' => AuthSession::getCsrfToken(),
-                'registrationEnabled' => filter_var((string) ($config['app']['core_registration']['enabled'] ?? 'false'), FILTER_VALIDATE_BOOLEAN),
+                'registrationEnabled' => (bool) ($config['app']['core_registration']['enabled'] ?? false),
                 'statusMessage' => isset($_GET['registered']) && $_GET['registered'] === '1'
                     ? ((isset($_GET['message']) && is_string($_GET['message']) && $_GET['message'] !== '') ? (string) $_GET['message'] : 'Cuenta creada. Ahora puedes iniciar sesión.')
                     : null,
@@ -1189,11 +1189,7 @@ return [
             return;
         }
 
-        $registrationEnabled = filter_var((string) ($config['app']['core_registration']['enabled'] ?? 'false'), FILTER_VALIDATE_BOOLEAN);
-        if (!$registrationEnabled) {
-            renderError($config, 404);
-            return;
-        }
+        $registrationEnabled = (bool) ($config['app']['core_registration']['enabled'] ?? false);
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.auth', [
@@ -1201,6 +1197,10 @@ return [
             'contentView' => 'pages/auth/register',
             'contentData' => [
                 'csrfToken' => AuthSession::getCsrfToken(),
+                'registrationEnabled' => $registrationEnabled,
+                'statusMessage' => !$registrationEnabled
+                    ? 'El registro inicial está deshabilitado por configuración.'
+                    : null,
             ],
         ]);
     },
@@ -1210,11 +1210,7 @@ return [
         $csrfToken = $_POST['_csrf'] ?? null;
         if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
 
-        $registrationEnabled = filter_var((string) ($config['app']['core_registration']['enabled'] ?? 'false'), FILTER_VALIDATE_BOOLEAN);
-        if (!$registrationEnabled) {
-            renderError($config, 404);
-            return;
-        }
+        $registrationEnabled = (bool) ($config['app']['core_registration']['enabled'] ?? false);
 
         $inviteCode = (string) ($_POST['invite_code'] ?? '');
         $expectedInviteCode = (string) ($config['app']['core_registration']['invite_code'] ?? '');
@@ -1250,7 +1246,7 @@ return [
             View::render('layouts.auth', [
                 'title' => 'Registro inicial | Ecosistema Core Admin',
                 'contentView' => 'pages/auth/register',
-                'contentData' => ['csrfToken' => AuthSession::getCsrfToken(), 'statusMessage' => $errorMessage, 'old' => ['name' => $name, 'email' => $email]],
+                'contentData' => ['csrfToken' => AuthSession::getCsrfToken(), 'registrationEnabled' => true, 'statusMessage' => $errorMessage, 'old' => ['name' => $name, 'email' => $email]],
             ]);
             return;
         }
@@ -1339,7 +1335,7 @@ return [
         View::render('layouts.auth', [
             'title' => 'Registro inicial | Ecosistema Core Admin',
             'contentView' => 'pages/auth/register',
-            'contentData' => ['csrfToken' => AuthSession::getCsrfToken(), 'statusMessage' => $message, 'old' => ['name' => $name, 'email' => $email]],
+            'contentData' => ['csrfToken' => AuthSession::getCsrfToken(), 'registrationEnabled' => true, 'statusMessage' => $message, 'old' => ['name' => $name, 'email' => $email]],
         ]);
     },
 

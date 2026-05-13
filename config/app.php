@@ -18,7 +18,7 @@ return [
         'idle_timeout' => (int) Env::get('SESSION_IDLE_TIMEOUT', 1800),
     ],
     'core_registration' => [
-        'enabled' => Env::get('CORE_REGISTRATION_ENABLED', 'false'),
+        'enabled' => filter_var(Env::get('CORE_REGISTRATION_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'mode' => Env::get('CORE_REGISTRATION_MODE', 'first_user'),
         'invite_code' => Env::get('CORE_REGISTRATION_INVITE_CODE', ''),
         'default_tenant_id' => Env::get('CORE_REGISTRATION_DEFAULT_TENANT_ID', ''),

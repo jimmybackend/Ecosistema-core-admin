@@ -289,7 +289,47 @@ if (is_file($routesFile)) {
     } else {
         fail('No se encontró ruta GET /register en routes/web.php.', $criticalFailures);
     }
-    if ($routesContent !== false && str_contains($routesContent, "POST /register")) {
+    
+
+$loginViewFile = $root . '/resources/views/pages/auth/login.php';
+if (is_file($loginViewFile)) {
+    $loginViewContent = file_get_contents($loginViewFile);
+    if ($loginViewContent !== false && str_contains($loginViewContent, '/register') && str_contains($loginViewContent, 'Crear cuenta inicial')) {
+        ok('login.php contiene acceso visible a /register para onboarding inicial controlado.');
+    } else {
+        fail('login.php no contiene acceso visible a /register para onboarding inicial controlado.', $criticalFailures);
+    }
+}
+
+$registerViewFile = $root . '/resources/views/pages/auth/register.php';
+if (is_file($registerViewFile)) {
+    $registerViewContent = file_get_contents($registerViewFile);
+    if ($registerViewContent !== false && str_contains($registerViewContent, 'El registro inicial está deshabilitado por configuración.')) {
+        ok('register.php contiene mensaje seguro para registro deshabilitado.');
+    } else {
+        fail('register.php no contiene mensaje seguro para registro deshabilitado.', $criticalFailures);
+    }
+}
+
+if (is_file($envExample)) {
+    $envContent = file_get_contents($envExample);
+    if ($envContent !== false && str_contains($envContent, 'CORE_REGISTRATION_ENABLED=false')) {
+        ok('.env.example mantiene CORE_REGISTRATION_ENABLED=false por defecto.');
+    } else {
+        fail('.env.example no mantiene CORE_REGISTRATION_ENABLED=false por defecto.', $criticalFailures);
+    }
+}
+
+$registrationDoc = $root . '/docs/auth/CONTROLLED_INITIAL_REGISTRATION.md';
+if (is_file($registrationDoc)) {
+    $registrationDocContent = file_get_contents($registrationDoc);
+    if ($registrationDocContent !== false && str_contains($registrationDocContent, 'Después apagar registro') && str_contains($registrationDocContent, 'CORE_REGISTRATION_ENABLED=false')) {
+        ok('La documentación de registro inicial indica apagar el registro después de crear usuario.');
+    } else {
+        fail('La documentación de registro inicial no indica claramente apagar el registro después de crear usuario.', $criticalFailures);
+    }
+}
+if ($routesContent !== false && str_contains($routesContent, "POST /register")) {
         ok('routes/web.php contiene ruta POST /register para registro inicial controlado.');
     } else {
         fail('No se encontró ruta POST /register en routes/web.php.', $criticalFailures);

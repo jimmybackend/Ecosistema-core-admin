@@ -33,3 +33,5 @@ Este documento extiende el contrato de `ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md` c
 
 ## Siguiente paso (PR #65)
 Implementar contrato de signed URLs **dry-run** (sin AWS real).
+
+- Referencia: `docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md`.

@@ -90,6 +90,10 @@ $requiredFiles = [
     'resources/views/pages/cloud/drive-file-detail.php',
     'resources/views/pages/cloud/drive-s3-key-validation.php',
     'app/Core/Cloud/EcosistemaDriveS3KeyValidator.php',
+    'docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md',
+    'resources/views/pages/cloud/drive-signed-url-dry-run.php',
+    'app/Core/Cloud/EcosistemaDriveSignedUrlDryRunService.php',
+    'app/Core/Cloud/EcosistemaDriveSignedUrlDryRun.php',
     'docs/project/ECOSISTEMA_DRIVE_S3_KEY_VALIDATION.md',
     'resources/views/pages/cloud/drive-folder-detail.php',
     'resources/views/pages/cloud/drive-browse.php',
@@ -202,6 +206,8 @@ if (is_file($root . '/' . $vmRunbookPath)) {
 $routesFile = $root . '/routes/web.php';
 if (is_file($routesFile)) {
     $routesContent = file_get_contents($routesFile);
+    $adapterFile = $root . '/app/Core/Cloud/EcosistemaDriveAdapter.php';
+    $adapterContent = is_file($adapterFile) ? file_get_contents($adapterFile) : false;
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive")) {
         ok('routes/web.php contiene ruta GET /cloud/drive para estado de Ecosistema Drive.');
     } else {
@@ -259,6 +265,64 @@ if (is_file($routesFile)) {
         ok('routes/web.php contiene ruta GET /cloud/drive/access para política read-only de acceso Drive.');
     } else {
         fail('No se encontró ruta GET /cloud/drive/access en routes/web.php.', $criticalFailures);
+    }
+
+
+    if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/files/{id}/signed-url-dry-run")) {
+        ok('routes/web.php contiene ruta GET /cloud/drive/files/{id}/signed-url-dry-run.');
+    } else {
+        fail('No se encontró ruta GET /cloud/drive/files/{id}/signed-url-dry-run en routes/web.php.', $criticalFailures);
+    }
+
+    if ($adapterContent !== false && str_contains($adapterContent, "'signed_url_dry_run'")) {
+        ok('EcosistemaDriveAdapter contiene capability signed_url_dry_run.');
+    } else {
+        fail('No se encontró capability signed_url_dry_run en EcosistemaDriveAdapter.', $criticalFailures);
+    }
+
+    if ($adapterContent !== false && str_contains($adapterContent, "'signed_urls' => [") && str_contains($adapterContent, "'enabled' => false")) {
+        ok('EcosistemaDriveAdapter mantiene signed_urls=false.');
+    } else {
+        fail('EcosistemaDriveAdapter no mantiene signed_urls=false.', $criticalFailures);
+    }
+
+    if ($adapterContent !== false && str_contains($adapterContent, "'aws_connected' => false")) {
+        ok('EcosistemaDriveAdapter mantiene aws_connection/aws_connected en false.');
+    } else {
+        fail('EcosistemaDriveAdapter no mantiene aws_connection/aws_connected en false.', $criticalFailures);
+    }
+
+    $signedViewFile = $root . '/resources/views/pages/cloud/drive-signed-url-dry-run.php';
+    $signedViewContent = is_file($signedViewFile) ? file_get_contents($signedViewFile) : false;
+    if ($signedViewContent !== false && !str_contains($signedViewContent, "s3_key']")) {
+        ok('La vista signed-url dry-run no imprime s3_key.');
+    } else {
+        fail('La vista signed-url dry-run imprime o podría imprimir s3_key.', $criticalFailures);
+    }
+
+    if ($signedViewContent !== false && !str_contains(strtolower($signedViewContent), 'http://') && !str_contains(strtolower($signedViewContent), 'https://')) {
+        ok('La vista signed-url dry-run no imprime URLs firmadas reales.');
+    } else {
+        fail('La vista signed-url dry-run parece incluir URLs reales.', $criticalFailures);
+    }
+
+    $projectFiles = [
+        $root . '/app/Core/Cloud/EcosistemaDriveSignedUrlDryRun.php',
+        $root . '/app/Core/Cloud/EcosistemaDriveSignedUrlDryRunService.php',
+    ];
+    $awsSdkDetected = false;
+    foreach ($projectFiles as $projectFile) {
+        if (!is_file($projectFile)) { continue; }
+        $content = (string)file_get_contents($projectFile);
+        if (str_contains($content, 'Aws\S3\S3Client') || str_contains($content, 'aws/aws-sdk-php')) {
+            $awsSdkDetected = true;
+            break;
+        }
+    }
+    if (!$awsSdkDetected) {
+        ok('No aparece AWS SDK nuevo ni llamadas reales a S3 en artefactos signed-url dry-run.');
+    } else {
+        fail('Se detectó AWS SDK o llamadas reales a S3 en artefactos signed-url dry-run.', $criticalFailures);
     }
 
     if ($routesContent !== false && str_contains($routesContent, "GET /cloud/drive/browse")) {

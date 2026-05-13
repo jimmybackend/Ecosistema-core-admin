@@ -78,3 +78,5 @@ En PRs siguientes se podrá:
 
 
 - Capability adicional: `safe_s3_key_validation=true` para validar forma de key sin exponer su valor.
+
+- Referencia: `docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md`.

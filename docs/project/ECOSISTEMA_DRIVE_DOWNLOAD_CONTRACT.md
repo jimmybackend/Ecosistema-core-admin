@@ -93,3 +93,5 @@ Definir el contrato documental y técnico para una **descarga controlada futura*
 
 
 - PR #64 añade validación segura de s3_key (dry-run) previa a signed URLs dry-run de PR #65.
+
+- Referencia: `docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md`.

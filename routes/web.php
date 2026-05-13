@@ -59,6 +59,8 @@ use App\Core\Cloud\EcosistemaDriveDownloadContract;
 use App\Core\Cloud\EcosistemaDriveS3KeyValidationRepository;
 use App\Core\Cloud\EcosistemaDriveS3KeyValidationService;
 use App\Core\Cloud\EcosistemaDriveS3KeyValidator;
+use App\Core\Cloud\EcosistemaDriveSignedUrlDryRunService;
+use App\Core\Cloud\EcosistemaDriveSignedUrlDryRun;
 use App\Http\View\View;
 use App\Core\Onboarding\OnboardingFlowRepository;
 use App\Core\Onboarding\OnboardingRunRepository;
@@ -996,6 +998,47 @@ return [
 
 
 
+
+
+    'GET /cloud/drive/files/{id}/signed-url-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? 0);
+        $idRaw = (string)($params['id'] ?? '');
+        $dryRun = null;
+        $errorMessage = null;
+
+        if (!preg_match('/^[1-9][0-9]*$/', $idRaw)) {
+            http_response_code(404);
+            $errorMessage = 'Archivo no encontrado.';
+        } else {
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $service = new EcosistemaDriveSignedUrlDryRunService(
+                    new EcosistemaDriveS3KeyValidationService(
+                        new EcosistemaDriveS3KeyValidationRepository($pdo),
+                        new EcosistemaDriveS3KeyValidator(),
+                    ),
+                    new EcosistemaDriveSignedUrlDryRun(),
+                );
+                $dryRun = $service->evaluate($tenantId, $userId, (int)$idRaw);
+                driveAuditLog($pdo, 'drive.file.signed_url_dry_run.viewed', 'drive_file', (int)$idRaw, '/cloud/drive/files/{id}/signed-url-dry-run', 'view');
+                if ($dryRun === null) {
+                    http_response_code(404);
+                    $errorMessage = 'Archivo no encontrado.';
+                }
+            } catch (\Throwable) {
+                http_response_code(404);
+                $errorMessage = 'Archivo no encontrado.';
+            }
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Signed URL dry-run Drive | Ecosistema Core Admin','contentView'=>'pages/cloud/drive-signed-url-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('dryRun','errorMessage')]);
+    },
     'GET /cloud/drive/files/{id}/s3-key-validation' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }

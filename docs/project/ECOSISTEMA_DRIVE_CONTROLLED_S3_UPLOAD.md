@@ -27,3 +27,6 @@ Objetivo: habilitar infraestructura de subida S3 real **solo** con flags explíc
 - No se acepta `bucket`, `s3_key`, `path` desde request.
 - No se exponen secretos, claves AWS ni `.env`.
 - Rollback: apagar flags anteriores.
+
+## Referencia de preparación
+- Checklist de producción: `docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md`.

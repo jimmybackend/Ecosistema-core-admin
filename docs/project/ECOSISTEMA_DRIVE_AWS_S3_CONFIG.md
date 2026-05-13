@@ -36,3 +36,6 @@ Queda pendiente activar conexión controlada para descarga S3, manteniendo valid
 La vista `/cloud/drive/upload-dry-run` consume esta configuración de forma segura y mantiene AWS/S3 apagado para subida real.
 
 - Ver también: \/docs\/project\/ECOSISTEMA_DRIVE_CONTROLLED_S3_UPLOAD.md y ruta controlada `/cloud/drive/upload`.
+
+## Referencia de preparación
+- Checklist de producción: `docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md`.

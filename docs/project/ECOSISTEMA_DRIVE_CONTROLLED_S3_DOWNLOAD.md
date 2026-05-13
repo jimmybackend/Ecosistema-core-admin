@@ -43,3 +43,6 @@ Además del flujo de descarga controlada, existe ruta separada `/cloud/drive/upl
 - Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.
 
 - Ver también: \/docs\/project\/ECOSISTEMA_DRIVE_CONTROLLED_S3_UPLOAD.md y ruta controlada `/cloud/drive/upload`.
+
+## Referencia de preparación
+- Checklist de producción: `docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md`.

@@ -69,3 +69,6 @@ APP_URL=https://dominio-real
 - Nunca pegar passwords en PRs, issues, logs o chats.
 - Nunca publicar tokens, AWS keys o secrets SMTP.
 - Si un secreto se expuso, rotar credenciales inmediatamente.
+
+## Referencia de validación Drive
+- Validación operativa/rollback de Drive: `docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md`.

@@ -45,6 +45,10 @@ final class EcosistemaDriveAdapter
                 'enabled' => false,
                 'description' => 'Bloqueadas en modo contract/dry-run.',
             ],
+            'signed_url_dry_run' => [
+                'enabled' => true,
+                'description' => 'Simulación segura de elegibilidad para signed URL futura, sin generar URL real ni conectar AWS/S3.',
+            ],
             'signed_urls' => [
                 'enabled' => false,
                 'description' => 'Generación de URLs firmadas deshabilitada en este PR.',

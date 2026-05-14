@@ -17,6 +17,14 @@ $actions = (array) ($detail['actions'] ?? []);
     <tr><td>Conditions present</td><td><?= (($rule['conditions_json_present'] ?? false) ? 'Sí' : 'No') ?></td></tr>
     <tr><td>Conditions exposed</td><td>No</td></tr>
   </tbody></table>
+  
+  <form method="post" action="/workflow/rules/<?= e((string) ($rule['id'] ?? 0)) ?>/execute" style="margin:10px 0;">
+    <input type="hidden" name="_csrf" value="<?= e((string) ($csrfToken ?? '')) ?>">
+    <input type="hidden" name="source_module" value="workflow_admin">
+    <button type="submit">Ejecutar workflow</button>
+    <small>Se recomienda usar dry-run antes de ejecutar.</small>
+  </form>
+
   <h2>Acciones (read-only)</h2>
   <table class="eco-table"><thead><tr><th>ID</th><th>Sort</th><th>Action type</th><th>Label</th><th>Target module</th><th>Config present</th><th>Config exposed</th><th>Is active</th><th>Created at</th></tr></thead><tbody>
   <?php if ($actions === []): ?><tr><td colspan="9">Sin acciones para esta regla.</td></tr><?php else: foreach ($actions as $action): ?>

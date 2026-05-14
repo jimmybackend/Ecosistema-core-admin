@@ -2157,3 +2157,26 @@ if (preg_match('/\b(eval|mail\s*\(|curl_|webhook_called\s*=\s*true)\b/i', $dryRu
 } else {
     ok('Dry-run sin ejecución prohibida (eval/mail/curl/webhook real).');
 }
+
+$executionFiles = [
+    'app/Core/Workflow/EcosistemaWorkflowExecutionRepository.php',
+    'app/Core/Workflow/EcosistemaWorkflowExecutionService.php',
+    'resources/views/pages/workflow/execution-result.php',
+    'docs/project/ECOSISTEMA_WORKFLOW_EXECUTION_CONTROLLED.md',
+];
+foreach ($executionFiles as $file) { checkFile($root, $file, $criticalFailures); }
+
+$routesContent = (string) file_get_contents($root . '/routes/web.php');
+if (!str_contains($routesContent, "POST /workflow/rules/{id}/execute") || !str_contains($routesContent, "POST /workflow/events/execute")) {
+    fail('No están las rutas POST de workflow execution.', $criticalFailures);
+} else { ok('Rutas POST de workflow execution presentes.'); }
+
+$envContent = (string) file_get_contents($root . '/.env.example');
+foreach (['ECOSISTEMA_WORKFLOW_ACTION_CREATE_NOTIFICATION=false','ECOSISTEMA_WORKFLOW_ACTION_SEND_EMAIL=false','ECOSISTEMA_WORKFLOW_ACTION_WEBHOOK=false','ECOSISTEMA_WORKFLOW_ACTION_UPDATE_RECORD=false','ECOSISTEMA_WORKFLOW_ACTION_CREATE_TASK=false','ECOSISTEMA_WORKFLOW_ACTION_CREATE_TICKET=false','ECOSISTEMA_WORKFLOW_ACTION_CREATE_AGENDA_EVENT=false','ECOSISTEMA_WORKFLOW_ACTION_CUSTOM=false'] as $flagLine) {
+    if (!str_contains($envContent, $flagLine)) { fail('Falta flag default false: ' . $flagLine, $criticalFailures); }
+}
+
+$repoContent = (string) file_get_contents($root . '/app/Core/Workflow/EcosistemaWorkflowExecutionRepository.php');
+if (substr_count($repoContent, 'INSERT INTO workflow_runs') !== 1 || substr_count($repoContent, 'INSERT INTO workflow_run_logs') !== 1 || substr_count($repoContent, 'UPDATE workflow_runs') !== 1) {
+    fail('Queries workflow_runs/logs deben existir sólo en ExecutionRepository.', $criticalFailures);
+} else { ok('Queries de escritura workflow centralizadas en ExecutionRepository.'); }

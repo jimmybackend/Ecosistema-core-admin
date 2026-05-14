@@ -113,6 +113,7 @@ use App\Core\Landing\EcosistemaLandingFormRepository;
 use App\Core\Landing\EcosistemaLandingFormService;
 use App\Core\Landing\EcosistemaLandingSubmissionService;
 use App\Core\Landing\EcosistemaLandingSubmissionRepository;
+use App\Core\Landing\EcosistemaLandingFormSubmitDryRunService;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsAdapter;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardService;
@@ -1594,6 +1595,33 @@ return [
     },
 
 
+
+
+    'GET /landing/forms/{id}/submit-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $enabled = (bool) (($config['app']['ecosistema_landing']['form_submit_dry_run'] ?? false) === true);
+        $result = ['allowed' => false, 'errors' => ['feature_flag' => 'Dry-run deshabilitado por configuración.']];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaLandingFormSubmitDryRunService(new EcosistemaLandingFormRepository($pdo)); $result = $service->buildForm($tenantId, $id, $enabled); } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Form Submit Dry-run | Ecosistema Core Admin','contentView'=>'pages/landing/form-submit-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id')]);
+    },
+
+    'POST /landing/forms/{id}/submit-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $enabled = (bool) (($config['app']['ecosistema_landing']['form_submit_dry_run'] ?? false) === true);
+        $payload = $_POST; unset($payload['_csrf']);
+        $result = ['allowed' => false, 'errors' => ['form' => 'No se pudo simular el envío.']];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaLandingFormSubmitDryRunService(new EcosistemaLandingFormRepository($pdo)); $result = $service->simulateSubmit($tenantId, $id, $enabled, is_array($payload) ? $payload : []); } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Form Submit Dry-run | Ecosistema Core Admin','contentView'=>'pages/landing/form-submit-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id')]);
+    },
 
     'GET /landing/submissions' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

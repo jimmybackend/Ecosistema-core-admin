@@ -482,4 +482,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Documento técnico: `docs/project/ECOSISTEMA_PERMISSIONS_AUDIT.md`.
 
 - Landing public render dry-run (`/landing/pages/{id}/public-render-dry-run`) bloqueado por flag `ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN.md`.
+- Landing form submit dry-run (`/landing/forms/{id}/submit-dry-run` GET/POST) valida campos requeridos/tipos/longitudes y spam básico sin escribir DB ni crear leads. Ver `docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN.md`.
 - Landing public render (`/l/{slug}`) bloqueado por flag `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false`, sin tracking de visitas en este PR. Ver `docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_CONTROLLED.md`.

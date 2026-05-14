@@ -37,6 +37,8 @@ use App\Core\Mail\MailOutgoingAttachmentService;
 use App\Core\MailNotifications\EcosistemaMailNotificationsAdapter;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateRepository;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateService;
+use App\Core\MailNotifications\EcosistemaUrlMessageTemplateRepository;
+use App\Core\MailNotifications\EcosistemaUrlMessageTemplateService;
 use App\Core\Cloud\CloudFileRepository;
 use App\Core\Cloud\CloudFolderRepository;
 use App\Core\Cloud\CloudRootRepository;
@@ -814,6 +816,49 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title' => 'Notification Template Detail | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/template-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('template', 'errorMessage')]);
+    },
+    'GET /mail-notifications/url-message-templates' => static function (array $config): void {
+        startAuthSession($config);
+        if (!requirePermission($config, 'mail.view')) {
+            return;
+        }
+
+        $auth = AuthSession::getAuth();
+        $templates = [];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaUrlMessageTemplateService(new EcosistemaUrlMessageTemplateRepository($pdo), new EcosistemaMailNotificationsAdapter());
+            $result = $service->listTemplates($tenantId, 100);
+            $templates = (array) ($result['templates'] ?? []);
+        } catch (\Throwable) {
+            $templates = [];
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'URL Message Templates | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/url-message-templates', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('templates')]);
+    },
+    'GET /mail-notifications/url-message-templates/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!requirePermission($config, 'mail.view')) {
+            return;
+        }
+
+        $auth = AuthSession::getAuth();
+        $id = (int) ($params['id'] ?? 0);
+        $template = null;
+        $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaUrlMessageTemplateService(new EcosistemaUrlMessageTemplateRepository($pdo), new EcosistemaMailNotificationsAdapter());
+            $template = $service->getTemplate($tenantId, $id);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo obtener el detalle de URL message template.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'URL Message Template Detail | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/url-message-template-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('template', 'errorMessage')]);
     },
     'GET /mail/compose' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

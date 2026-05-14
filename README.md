@@ -474,3 +474,9 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Workflow ejecución controlada: `docs/project/ECOSISTEMA_WORKFLOW_EXECUTION_CONTROLLED.md`.
 
 - Platform cockpit read-only disponible en `/platform` (ver `docs/project/ECOSISTEMA_PLATFORM_COCKPIT.md`).
+
+## Auditoría de permisos por módulo (PR #118)
+- Rutas read-only: `GET /security/permissions-audit` y `GET /security/permissions-audit/modules/{code}`.
+- Muestra permisos por módulo/rol para el tenant autenticado.
+- No crea ni modifica roles/permisos; sólo consultas `SELECT`.
+- Documento técnico: `docs/project/ECOSISTEMA_PERMISSIONS_AUDIT.md`.

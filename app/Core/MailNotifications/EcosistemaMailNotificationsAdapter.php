@@ -12,7 +12,7 @@ final class EcosistemaMailNotificationsAdapter
             'notification_templates_read' => true,
             'url_message_templates_read' => true,
             'queue_read' => false,
-            'preview_dry_run' => false,
+            'preview_dry_run' => true,
             'send_dry_run' => false,
             'send_write' => false,
             'smtp_connection' => false,

@@ -35,6 +35,7 @@ use App\Core\Mail\MailAttachmentService;
 use App\Core\Mail\MailSendService;
 use App\Core\Mail\MailOutgoingAttachmentService;
 use App\Core\MailNotifications\EcosistemaMailNotificationsAdapter;
+use App\Core\MailNotifications\EcosistemaMessagePreviewDryRunService;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateRepository;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateService;
 use App\Core\MailNotifications\EcosistemaUrlMessageTemplateRepository;
@@ -859,6 +860,58 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title' => 'URL Message Template Detail | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/url-message-template-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('template', 'errorMessage')]);
+    },
+    'GET /mail-notifications/templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaMessagePreviewDryRunService(new EcosistemaNotificationTemplateRepository($pdo), new EcosistemaUrlMessageTemplateRepository($pdo));
+            $preview = $service->previewNotificationTemplate($tenantId, $id, []);
+            if ($preview === null) { $errorMessage = 'Plantilla de notificación no encontrada para el tenant actual.'; }
+        } catch (\Throwable) { $errorMessage = 'No se pudo preparar el preview dry-run.'; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
+    },
+    'POST /mail-notifications/templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
+        $variables = isset($_POST['variables']) && is_array($_POST['variables']) ? $_POST['variables'] : [];
+        try {
+            $pdo = PdoFactory::make($config['database']); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaMessagePreviewDryRunService(new EcosistemaNotificationTemplateRepository($pdo), new EcosistemaUrlMessageTemplateRepository($pdo));
+            $preview = $service->previewNotificationTemplate($tenantId, $id, $variables);
+            if ($preview === null) { $errorMessage = 'Plantilla de notificación no encontrada para el tenant actual.'; }
+        } catch (\Throwable) { $errorMessage = 'No se pudo preparar el preview dry-run.'; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
+    },
+    'GET /mail-notifications/url-message-templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaMessagePreviewDryRunService(new EcosistemaNotificationTemplateRepository($pdo), new EcosistemaUrlMessageTemplateRepository($pdo));
+            $preview = $service->previewUrlMessageTemplate($tenantId, $id, []);
+            if ($preview === null) { $errorMessage = 'URL message template no encontrada para el tenant actual.'; }
+        } catch (\Throwable) { $errorMessage = 'No se pudo preparar el preview dry-run.'; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
+    },
+    'POST /mail-notifications/url-message-templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
+        $variables = isset($_POST['variables']) && is_array($_POST['variables']) ? $_POST['variables'] : [];
+        try {
+            $pdo = PdoFactory::make($config['database']); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaMessagePreviewDryRunService(new EcosistemaNotificationTemplateRepository($pdo), new EcosistemaUrlMessageTemplateRepository($pdo));
+            $preview = $service->previewUrlMessageTemplate($tenantId, $id, $variables);
+            if ($preview === null) { $errorMessage = 'URL message template no encontrada para el tenant actual.'; }
+        } catch (\Throwable) { $errorMessage = 'No se pudo preparar el preview dry-run.'; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
     },
     'GET /mail/compose' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

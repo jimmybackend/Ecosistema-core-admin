@@ -205,6 +205,11 @@ $requiredFiles = [
     'resources/views/pages/browser-analytics/pageviews.php',
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsPageviewService.php',
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsPageviewRepository.php',
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsEventRepository.php',
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsEventService.php',
+    'resources/views/pages/browser-analytics/events.php',
+    'resources/views/pages/browser-analytics/pageview-events.php',
+    'docs/project/ECOSISTEMA_BROWSER_ANALYTICS_EVENTS_READ_ONLY.md',
     'resources/views/pages/landing/index.php',
     'resources/views/pages/landing/pages.php',
     'resources/views/pages/landing/page-detail.php',
@@ -1678,8 +1683,16 @@ if ($routesContent === false || !str_contains($routesContent, "'GET /browser/ana
     ok("Existe ruta GET /browser/analytics en routes/web.php.");
 }
 
+foreach (["'GET /browser/analytics/events'", "'GET /browser/analytics/pageviews/{id}/events'"] as $route) {
+    if ($routesContent === false || !str_contains($routesContent, $route)) {
+        fail("No existe ruta {$route} en routes/web.php.", $criticalFailures);
+    } else {
+        ok("Existe ruta {$route} en routes/web.php.");
+    }
+}
+
 $adapterContent = @file_get_contents($root . '/app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsAdapter.php');
-if ($adapterContent === false || !str_contains($adapterContent, "'dashboard_read'=>true") || !str_contains($adapterContent, "'collector_write'=>false")) {
+if ($adapterContent === false || !str_contains($adapterContent, "'dashboard_read'=>true") || !str_contains($adapterContent, "'events_read'=>true") || !str_contains($adapterContent, "'collector_write'=>false")) {
     fail('Adapter Browser Analytics no declara capacidades read-only esperadas.', $criticalFailures);
 } else {
     ok('Adapter Browser Analytics declara dashboard_read=true y collector_write=false.');
@@ -1722,5 +1735,29 @@ if (is_file($viewPageviewsPath)) {
         fail('Vista pageviews expone campos sensibles crudos.', $criticalFailures);
     } else {
         ok('Vista pageviews no expone query_string/meta_json crudos.');
+    }
+}
+
+
+$eventRepoPath = $root . '/app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsEventRepository.php';
+if (is_file($eventRepoPath)) {
+    $repoContent = (string) file_get_contents($eventRepoPath);
+    if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $repoContent) === 1) {
+        fail('Repository de events contiene sentencia de escritura SQL.', $criticalFailures);
+    } else {
+        ok('Repository de events no contiene INSERT/UPDATE/DELETE.');
+    }
+}
+
+$eventViews = [
+    'resources/views/pages/browser-analytics/events.php',
+    'resources/views/pages/browser-analytics/pageview-events.php',
+];
+foreach ($eventViews as $eventViewFile) {
+    $viewContent = (string) (@file_get_contents($root . '/' . $eventViewFile) ?: '');
+    if (str_contains($viewContent, "metadata_json")) {
+        fail('Vista de events parece exponer metadata_json crudo: ' . $eventViewFile, $criticalFailures);
+    } else {
+        ok('Vista de events no expone metadata_json crudo: ' . $eventViewFile);
     }
 }

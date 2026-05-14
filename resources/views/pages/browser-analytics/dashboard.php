@@ -14,7 +14,7 @@ $capabilities = (array) ($dashboard['capabilities'] ?? []);
     <tr><td>Scroll promedio (%)</td><td><?= e((string) ($dashboard['avg_scroll_depth_percent'] ?? 0)) ?></td></tr>
   </tbody></table>
 
-  <p><a class="eco-btn eco-btn--ghost" href="/browser/analytics/pageviews">Ver pageviews read-only</a></p>
+  <p><a class="eco-btn eco-btn--ghost" href="/browser/analytics/pageviews">Ver pageviews read-only</a> · <a class="eco-btn eco-btn--ghost" href="/browser/analytics/events">Ver eventos read-only</a></p>
   <h2>Capacidades</h2>
   <ul>
     <li>dashboard_read: <?= !empty($capabilities['dashboard_read']) ? 'true' : 'false' ?></li>

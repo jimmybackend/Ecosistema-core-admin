@@ -1,0 +1,2 @@
+<?php declare(strict_types=1); $result = is_array($result ?? null) ? $result : []; ?>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Resultado de envío</title></head><body><main><h1>Formulario de landing</h1><?php if (($result['ok'] ?? false) === true): ?><p>Envío procesado correctamente.</p><?php else: ?><p>No se pudo procesar el envío.</p><?php endif; ?><p><?= htmlspecialchars((string)($result['message'] ?? '')) ?></p></main></body></html>

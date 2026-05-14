@@ -114,6 +114,8 @@ use App\Core\Landing\EcosistemaLandingFormService;
 use App\Core\Landing\EcosistemaLandingSubmissionService;
 use App\Core\Landing\EcosistemaLandingSubmissionRepository;
 use App\Core\Landing\EcosistemaLandingFormSubmitDryRunService;
+use App\Core\Landing\EcosistemaLandingFormSubmitRepository;
+use App\Core\Landing\EcosistemaLandingFormSubmitService;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsAdapter;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardService;
@@ -220,7 +222,25 @@ return [
     },
 
 
-    'GET /l/{slug}' => static function (array $config, array $params): void {
+    
+
+    'POST /l/{slug}/forms/{id}/submit' => static function (array $config, array $params): void {
+        $slug = trim((string)($params['slug'] ?? ''));
+        $id = (int)($params['id'] ?? 0);
+        $tenantId = (int) (($config['app']['default_tenant_id'] ?? ($_ENV['APP_DEFAULT_TENANT_ID'] ?? 1)));
+        $enabled = filter_var($_ENV['ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED'] ?? false, FILTER_VALIDATE_BOOL);
+        $uploadsEnabled = filter_var($_ENV['ECOSISTEMA_LANDING_FORM_FILE_UPLOADS'] ?? false, FILTER_VALIDATE_BOOL);
+        $payload = $_POST ?? [];
+        $result = ['ok'=>false,'message'=>'No disponible'];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaLandingFormSubmitService(new EcosistemaLandingFormRepository($pdo), new EcosistemaLandingFormSubmitRepository($pdo));
+            $result = $service->submit($tenantId, $slug, $id, $enabled, $uploadsEnabled, is_array($payload) ? $payload : [], ['ip_address'=>(string)($_SERVER['REMOTE_ADDR'] ?? ''), 'user_agent'=>(string)($_SERVER['HTTP_USER_AGENT'] ?? '')]);
+        } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('pages/landing/form-submit-result', ['result'=>$result]);
+    },
+'GET /l/{slug}' => static function (array $config, array $params): void {
         $slug = trim((string) ($params['slug'] ?? ''));
         $tenantId = (int) (($config['app']['default_tenant_id'] ?? ($_ENV['APP_DEFAULT_TENANT_ID'] ?? 1)));
 

@@ -192,6 +192,8 @@ $requiredFiles = [
     'app/Core/Landing/EcosistemaLandingFormService.php',
     'app/Core/Landing/EcosistemaLandingFormRepository.php',
     'app/Core/Landing/EcosistemaLandingFormSubmitDryRunService.php',
+    'app/Core/Landing/EcosistemaLandingFormSubmitRepository.php',
+    'app/Core/Landing/EcosistemaLandingFormSubmitService.php',
     'resources/views/pages/landing/form-submit-dry-run.php',
     'docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN.md',
     'resources/views/pages/landing/visits.php',
@@ -2349,3 +2351,13 @@ if (preg_match('/(layout_json|custom_css|custom_js|settings_json|content_json|r
     ok('Vista pública landing sin referencias sensibles crudas.');
 }
 
+
+
+if (is_string($routesContent) && str_contains($routesContent, 'POST /l/{slug}/forms/{id}/submit')) { ok('routes/web.php contiene POST /l/{slug}/forms/{id}/submit.'); }
+else { fail('No se encontró POST /l/{slug}/forms/{id}/submit.', $criticalFailures); }
+
+$envExampleContent = @file_get_contents($root . '/.env.example') ?: '';
+foreach (['ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false','ECOSISTEMA_LANDING_FORM_FILE_UPLOADS=false'] as $flagLine) {
+    if (str_contains($envExampleContent, $flagLine)) { ok('.env.example mantiene ' . $flagLine . '.'); }
+    else { fail('.env.example no contiene ' . $flagLine . '.', $criticalFailures); }
+}

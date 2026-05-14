@@ -1675,6 +1675,30 @@ return [
         View::render('layouts.admin',['title'=>'Attribution Rollup Dry-run | Ecosistema Core Admin','contentView'=>'pages/attribution/rollup-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
     },
 
+
+
+    'POST /attribution/rollups/generate' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $rollupDate = trim((string)($_POST['rollup_date'] ?? date('Y-m-d')));
+        $result = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new \App\Core\Attribution\EcosistemaAttributionRollupService(
+                new \App\Core\Attribution\EcosistemaAttributionRollupRepository($pdo),
+                (bool)($config['app']['ecosistema_attribution']['enabled'] ?? false),
+                (bool)($config['app']['ecosistema_attribution']['rollup_write'] ?? false),
+            );
+            $result = $service->generate($tenantId, $rollupDate);
+        } catch (\Throwable) {
+            $result = ['allowed' => false, 'db_write' => false, 'written' => false, 'blocked_reason' => 'internal_error', 'rollup_date' => $rollupDate, 'metrics_preview' => [], 'warnings' => ['internal_error_hidden']];
+        }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Attribution Rollup Generate | Ecosistema Core Admin','contentView'=>'pages/attribution/rollup-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result')]);
+    },
     'GET /attribution/campaigns' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }

@@ -2071,6 +2071,7 @@ $crmDryRunRequired = [
     'app/Core/Crm/EcosistemaCrmSubmissionToLeadDryRunService.php',
     'resources/views/pages/crm/submission-to-lead-dry-run.php',
     'docs/project/ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_DRY_RUN.md',
+    'docs/project/ECOSISTEMA_ATTRIBUTION_ROLLUP_CONTROLLED.md',
 ];
 foreach ($crmDryRunRequired as $file) { checkFile($root, $file, $criticalFailures); }
 
@@ -2429,3 +2430,8 @@ foreach (["['ip_address']","['user_agent']","['target_url']","['access_token_has
     if (!str_contains($rollupView, $forbiddenNeedle)) { ok('Vista attribution rollup dry-run no expone: ' . $forbiddenNeedle); }
     else { fail('Vista attribution rollup dry-run no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
 }
+
+$routeContent = @file_get_contents($root . '/routes/web.php');
+if ($routeContent !== false && str_contains($routeContent, "'POST /attribution/rollups/generate'")) { ok('Existe ruta POST /attribution/rollups/generate.'); } else { fail('No existe ruta POST /attribution/rollups/generate.', $criticalFailures); }
+
+if ($envContent !== false && str_contains($envContent, 'ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE=false')) { ok('Flag ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE=false presente en .env.example.'); } else { fail('Falta ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE=false en .env.example.', $criticalFailures); }

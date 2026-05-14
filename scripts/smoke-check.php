@@ -2032,3 +2032,10 @@ if ($writeInsertAllowed && !$dryRunHasInsert) { ok('INSERT INTO crm_leads aparec
 
 if ($routesContent !== false && str_contains((string) $routesContent, 'POST /crm/submission-to-lead/{id}')) { ok('Ruta CRM write detectada: POST /crm/submission-to-lead/{id}'); } else { fail('Falta ruta CRM write: POST /crm/submission-to-lead/{id}', $criticalFailures); }
 if ($routesContent !== false && str_contains((string) $routesContent, 'ensureValidCsrfToken')) { ok('Ruta write usa CSRF.'); } else { fail('Ruta write debe validar CSRF.', $criticalFailures); }
+$sendDryRunView = is_file($root . '/resources/views/pages/mail-notifications/send-dry-run.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/send-dry-run.php') : '';
+if (str_contains($sendDryRunView, "name=\"_csrf\"")) { ok('Vista send-dry-run usa CSRF.'); } else { fail('Vista send-dry-run no usa CSRF.', $criticalFailures); }
+
+$sendDryRunService = is_file($root . '/app/Core/MailNotifications/EcosistemaSendNotificationDryRunService.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaSendNotificationDryRunService.php') : '';
+if (preg_match('/\bINSERT\s+INTO\s+(notifications_queue|mail_messages)\b/i', $sendDryRunService) === 1) { fail('Servicio send dry-run contiene INSERT no permitido.', $criticalFailures); } else { ok('Servicio send dry-run sin INSERT en notifications_queue/mail_messages.'); }
+if (preg_match('/\b(mail\s*\(|smtp|curl_init)\b/i', $sendDryRunService) === 1) { fail('Servicio send dry-run detecta uso de mail()/SMTP/curl.', $criticalFailures); } else { ok('Servicio send dry-run no usa mail()/SMTP/curl.'); }
+

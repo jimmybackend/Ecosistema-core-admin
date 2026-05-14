@@ -14,4 +14,5 @@ $capabilities = (array) ($contentData['capabilities'] ?? []);
   <p><a href="/mail-notifications/templates">Ver plantillas de notificación</a></p>
   <p><a href="/mail-notifications/url-message-templates">Ver URL message templates</a></p>
   <p><a href="/mail-notifications/queue">Ver cola de notificaciones</a></p>
+  <p><a href="/mail-notifications/send-dry-run">Simular envío de notificación (dry-run)</a></p>
 </section>

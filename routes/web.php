@@ -40,6 +40,7 @@ use App\Core\MailNotifications\EcosistemaNotificationTemplateRepository;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateService;
 use App\Core\MailNotifications\EcosistemaNotificationQueueRepository;
 use App\Core\MailNotifications\EcosistemaNotificationQueueService;
+use App\Core\MailNotifications\EcosistemaSendNotificationDryRunService;
 use App\Core\MailNotifications\EcosistemaUrlMessageTemplateRepository;
 use App\Core\MailNotifications\EcosistemaUrlMessageTemplateService;
 use App\Core\Cloud\CloudFileRepository;
@@ -961,6 +962,35 @@ return [
         } catch (\Throwable) { $errorMessage = 'No se pudo preparar el preview dry-run.'; }
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
+    },
+
+    'GET /mail-notifications/send-dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $result = null;
+        $errorMessage = null;
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Send Notification Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/send-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage')]);
+    },
+    'POST /mail-notifications/send-dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth();
+        $result = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaSendNotificationDryRunService($pdo);
+            $result = $service->simulate($tenantId, $_POST);
+            if (!is_array($result) || empty($result['ok'])) {
+                $errorMessage = is_array($result) ? (string) ($result['error'] ?? 'No se pudo simular el envío.') : 'No se pudo simular el envío.';
+            }
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo simular el envío.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Send Notification Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/send-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage')]);
     },
     'GET /mail/compose' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

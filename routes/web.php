@@ -115,6 +115,7 @@ use App\Core\Crm\EcosistemaCrmCampaignRepository;
 use App\Core\Crm\EcosistemaCrmCampaignService;
 use App\Core\Crm\EcosistemaCrmLeadRepository;
 use App\Core\Crm\EcosistemaCrmLeadService;
+use App\Core\Crm\EcosistemaCrmSubmissionToLeadDryRunService;
 
 
 function startAuthSession(array $config): void
@@ -1319,6 +1320,29 @@ return [
         View::render('layouts.admin',['title'=>'Landing Submission Detail | Ecosistema Core Admin','contentView'=>'pages/landing/submission-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('submission','values')]);
     },
 
+
+
+    'GET /crm/submission-to-lead/{id}/dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $dryRun = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmSubmissionToLeadDryRunService($pdo);
+            $dryRun = $service->evaluate($tenantId, $id);
+            if ($dryRun === null) { $errorMessage = 'Submission no encontrada para el tenant actual.'; }
+        } catch (\Throwable) { $errorMessage = 'No se pudo simular la conversión submission→lead.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Submission to Lead Dry-Run | Ecosistema Core Admin','contentView'=>'pages/crm/submission-to-lead-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('dryRun','id','errorMessage')]);
+    },
 
     'GET /crm' => static function (array $config): void {
         startAuthSession($config);

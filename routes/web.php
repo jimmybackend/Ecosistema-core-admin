@@ -134,6 +134,8 @@ use App\Core\Crm\EcosistemaCrmLeadService;
 use App\Core\Crm\EcosistemaCrmSubmissionToLeadDryRunService;
 use App\Core\Crm\EcosistemaCrmLeadWriteRepository;
 use App\Core\Crm\EcosistemaCrmSubmissionToLeadService;
+use App\Core\Crm\EcosistemaCrmFollowupRepository;
+use App\Core\Crm\EcosistemaCrmFollowupService;
 use App\Core\Platform\EcosistemaPlatformAdapter;
 use App\Core\Platform\EcosistemaPlatformCockpitRepository;
 use App\Core\Platform\EcosistemaPlatformCockpitService;
@@ -1935,6 +1937,48 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'CRM Lead Detail | Ecosistema Core Admin','contentView'=>'pages/crm/lead-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('detail','errorMessage')]);
     },
+
+
+    'GET /crm/followups' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $followups = ['tasks'=>[], 'followups'=>[], 'events'=>[]];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmFollowupService(new EcosistemaCrmFollowupRepository($pdo), new EcosistemaCrmAdapter());
+            $followups = $service->listFollowups($tenantId);
+        } catch (\Throwable) {}
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Followups | Ecosistema Core Admin','contentView'=>'pages/crm/followups','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('followups')]);
+    },
+
+    'GET /crm/leads/{id}/followups' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $followups = ['tasks'=>[], 'followups'=>[], 'events'=>[]];
+        $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmFollowupService(new EcosistemaCrmFollowupRepository($pdo), new EcosistemaCrmAdapter());
+            $followups = $service->listFollowupsForLead($tenantId, $id);
+        } catch (\Throwable) { $errorMessage = 'No se pudo obtener el detalle de followups del lead.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Lead Followups | Ecosistema Core Admin','contentView'=>'pages/crm/lead-followups','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['leadId'=>$id,'followups'=>$followups,'errorMessage'=>$errorMessage]]);
+    },
+
     'GET /crm/campaigns/{id}' => static function (array $config, array $params): void {
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

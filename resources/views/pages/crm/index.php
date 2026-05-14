@@ -11,4 +11,5 @@ $capabilities = (array)($contentData['capabilities'] ?? []);
     </ul>
     <p><a href="/crm/campaigns">Ver campañas</a></p>
     <p><a href="/crm/leads">Ver leads</a></p>
+    <p><a href="/crm/followups">Ver followups</a></p>
 </section>

@@ -194,6 +194,12 @@ $requiredFiles = [
     'resources/views/pages/landing/visits.php',
     'resources/views/pages/landing/page-visits.php',
     'docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md',
+
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsAdapter.php',
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsDashboardRepository.php',
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsDashboardService.php',
+    'resources/views/pages/browser-analytics/dashboard.php',
+    'docs/project/ECOSISTEMA_BROWSER_ANALYTICS_DASHBOARD_READ_ONLY.md',
     'resources/views/pages/landing/index.php',
     'resources/views/pages/landing/pages.php',
     'resources/views/pages/landing/page-detail.php',
@@ -1656,5 +1662,39 @@ foreach ($viewsSensitive as $viewFile) {
         if (str_contains($content, $sensitive) && !str_contains($content, 'hidden')) {
             warn('Revisar uso de campo sensible en vista: ' . $viewFile . ' -> ' . $sensitive, $warnings);
         }
+    }
+}
+
+
+$routesContent = @file_get_contents($root . '/routes/web.php');
+if ($routesContent === false || !str_contains($routesContent, "'GET /browser/analytics'")) {
+    fail("No existe ruta GET /browser/analytics en routes/web.php.", $criticalFailures);
+} else {
+    ok("Existe ruta GET /browser/analytics en routes/web.php.");
+}
+
+$adapterContent = @file_get_contents($root . '/app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsAdapter.php');
+if ($adapterContent === false || !str_contains($adapterContent, "'dashboard_read'=>true") || !str_contains($adapterContent, "'collector_write'=>false")) {
+    fail('Adapter Browser Analytics no declara capacidades read-only esperadas.', $criticalFailures);
+} else {
+    ok('Adapter Browser Analytics declara dashboard_read=true y collector_write=false.');
+}
+
+$allPhpFiles = @shell_exec('find ' . escapeshellarg($root) . ' -type f -name "*.php"');
+if (is_string($allPhpFiles) && $allPhpFiles !== '') {
+    $paths = array_filter(array_map('trim', explode("
+", $allPhpFiles)));
+    $writeViolations = [];
+    foreach ($paths as $absPath) {
+        $content = @file_get_contents($absPath);
+        if (!is_string($content)) { continue; }
+        if (preg_match('/\b(INSERT|UPDATE|DELETE)\b[^;]*\bbrowser_analytics_/i', $content) === 1) {
+            $writeViolations[] = str_replace($root . '/', '', $absPath);
+        }
+    }
+    if ($writeViolations !== []) {
+        fail('Se detectaron escrituras SQL sobre browser_analytics_*: ' . implode(', ', $writeViolations), $criticalFailures);
+    } else {
+        ok('No se detectaron INSERT/UPDATE/DELETE sobre browser_analytics_* en archivos PHP.');
     }
 }

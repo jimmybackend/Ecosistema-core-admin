@@ -100,6 +100,9 @@ use App\Core\Landing\EcosistemaLandingFormRepository;
 use App\Core\Landing\EcosistemaLandingFormService;
 use App\Core\Landing\EcosistemaLandingSubmissionService;
 use App\Core\Landing\EcosistemaLandingSubmissionRepository;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsAdapter;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardRepository;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardService;
 
 
 function startAuthSession(array $config): void
@@ -999,6 +1002,29 @@ return [
     },
 
 
+
+
+
+    'GET /browser/analytics' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $dashboard = ['error' => true, 'mode' => 'read-only', 'db_write' => false, 'collector_enabled' => false];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaBrowserAnalyticsDashboardService(
+                new EcosistemaBrowserAnalyticsDashboardRepository($pdo),
+                new EcosistemaBrowserAnalyticsAdapter(),
+            );
+            $dashboard = $service->build((int) ($auth['auth_tenant_id'] ?? 0));
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Browser Analytics | Ecosistema Core Admin','contentView'=>'pages/browser-analytics/dashboard','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('dashboard')]);
+    },
 
     'GET /landing' => static function (array $config): void {
         startAuthSession($config);

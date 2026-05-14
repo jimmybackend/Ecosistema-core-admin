@@ -107,6 +107,7 @@ use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsPageviewRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsPageviewService;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsEventRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsEventService;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorDryRunService;
 
 
 function startAuthSession(array $config): void
@@ -2436,4 +2437,40 @@ return [
             echo '<h1>ERROR</h1><p>No fue posible conectar a la base de datos.</p>';
         }
     },
+    'GET /browser/analytics/collector-dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $result = null;
+        $errorMessage = null;
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Browser Analytics Collector Dry Run | Ecosistema Core Admin','contentView'=>'pages/browser-analytics/collector-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
+    'POST /browser/analytics/collector-dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+
+        $featureEnabled = filter_var((string) getenv('ECOSISTEMA_BROWSER_ANALYTICS_ENABLED'), FILTER_VALIDATE_BOOL);
+        $dryRunEnabled = filter_var((string) getenv('ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_DRY_RUN'), FILTER_VALIDATE_BOOL);
+        if (!$featureEnabled || !$dryRunEnabled) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+
+        $service = new EcosistemaBrowserAnalyticsCollectorDryRunService();
+        $result = $service->simulate($tenantId, $userId, $_POST, [
+            'ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''),
+            'user_agent' => (string) ($_SERVER['HTTP_USER_AGENT'] ?? ''),
+        ]);
+        $errorMessage = null;
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Browser Analytics Collector Dry Run | Ecosistema Core Admin','contentView'=>'pages/browser-analytics/collector-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
+
 ];

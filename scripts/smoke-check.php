@@ -210,6 +210,9 @@ $requiredFiles = [
     'resources/views/pages/browser-analytics/events.php',
     'resources/views/pages/browser-analytics/pageview-events.php',
     'docs/project/ECOSISTEMA_BROWSER_ANALYTICS_EVENTS_READ_ONLY.md',
+    'docs/project/ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_DRY_RUN.md',
+    'resources/views/pages/browser-analytics/collector-dry-run.php',
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsCollectorDryRunService.php',
     'resources/views/pages/landing/index.php',
     'resources/views/pages/landing/pages.php',
     'resources/views/pages/landing/page-detail.php',
@@ -238,6 +241,12 @@ if (is_file($envExample)) {
     $envContent = file_get_contents($envExample);
     if ($envContent !== false && str_contains($envContent, 'SESSION_IDLE_TIMEOUT=')) {
         ok('.env.example contiene SESSION_IDLE_TIMEOUT.');
+
+if ($envContent !== false && str_contains($envContent, 'ECOSISTEMA_BROWSER_ANALYTICS_ENABLED=false') && str_contains($envContent, 'ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_DRY_RUN=false') && str_contains($envContent, 'ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE=false') && str_contains($envContent, 'ECOSISTEMA_BROWSER_ANALYTICS_COLLECT_IP=false')) {
+    ok('.env.example mantiene flags Browser Analytics collector en false.');
+} else {
+    fail('.env.example no mantiene flags Browser Analytics collector esperados en false.', $criticalFailures);
+}
     } else {
         fail('.env.example no contiene SESSION_IDLE_TIMEOUT.', $criticalFailures);
     }

@@ -2634,6 +2634,45 @@ return [
     },
 
 
+
+    'GET /workflow/rules/{id}/dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0); $userId = (int) ($auth['auth_user_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.manage') || $authorization->can($userId, $tenantId, 'modules.manage'); } catch (\Throwable) { $allowed = false; }
+        if ($allowed !== true) { renderError($config, 403); return; }
+        $ruleId = isset($params['id']) ? (int) $params['id'] : 0; if ($ruleId <= 0) { renderError($config, 404); return; }
+        $context = ['source_module'=>(string)($_GET['source_module'] ?? ''),'source_table'=>(string)($_GET['source_table'] ?? ''),'source_id'=>(string)($_GET['source_id'] ?? ''),'triggered_by_user_id'=>$userId];
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowDryRunService(new \App\Core\Workflow\EcosistemaWorkflowRuleRepository($pdo), new \App\Core\Workflow\EcosistemaWorkflowAdapter(), (array) ($config['app']['ecosistema_workflow'] ?? [])); $dryRun = $service->simulateRule($tenantId, $ruleId, $context); } catch (\Throwable) { $dryRun = ['mode'=>'dry-run','matched'=>false,'actions'=>[],'blocked_reasons'=>['internal_error']]; }
+        View::render('layouts.admin', ['title' => 'Workflow dry-run | Ecosistema Core Admin', 'contentView' => 'pages/workflow/dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('dryRun')]);
+    },
+    'POST /workflow/rules/{id}/dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0); $userId = (int) ($auth['auth_user_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.manage') || $authorization->can($userId, $tenantId, 'modules.manage'); } catch (\Throwable) { $allowed = false; }
+        if ($allowed !== true) { renderError($config, 403); return; }
+        $ruleId = isset($params['id']) ? (int) $params['id'] : 0; if ($ruleId <= 0) { renderError($config, 404); return; }
+        $context = ['source_module'=>(string)($_POST['source_module'] ?? ''),'source_table'=>(string)($_POST['source_table'] ?? ''),'source_id'=>(string)($_POST['source_id'] ?? ''),'triggered_by_user_id'=>$userId];
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowDryRunService(new \App\Core\Workflow\EcosistemaWorkflowRuleRepository($pdo), new \App\Core\Workflow\EcosistemaWorkflowAdapter(), (array) ($config['app']['ecosistema_workflow'] ?? [])); $dryRun = $service->simulateRule($tenantId, $ruleId, $context); } catch (\Throwable) { $dryRun = ['mode'=>'dry-run','matched'=>false,'actions'=>[],'blocked_reasons'=>['internal_error']]; }
+        View::render('layouts.admin', ['title' => 'Workflow dry-run | Ecosistema Core Admin', 'contentView' => 'pages/workflow/dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('dryRun')]);
+    },
+    'GET /workflow/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth = AuthSession::getAuth();
+        View::render('layouts.admin', ['title' => 'Workflow dry-run | Ecosistema Core Admin', 'contentView' => 'pages/workflow/dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => ['dryRun' => ['mode'=>'dry-run','actions'=>[],'warnings'=>[],'blocked_reasons'=>[],'db_write'=>false,'external_calls'=>false,'matched'=>false,'conditions_json_exposed'=>false]]]);
+    },
+    'POST /workflow/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0); $userId = (int) ($auth['auth_user_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.manage') || $authorization->can($userId, $tenantId, 'modules.manage'); } catch (\Throwable) { $allowed = false; }
+        if ($allowed !== true) { renderError($config, 403); return; }
+        $triggerModule = (string) ($_POST['trigger_module'] ?? ''); $triggerEvent = (string) ($_POST['trigger_event'] ?? '');
+        $context = ['source_module'=>(string)($_POST['source_module'] ?? ''),'source_table'=>(string)($_POST['source_table'] ?? ''),'source_id'=>(string)($_POST['source_id'] ?? ''),'triggered_by_user_id'=>$userId];
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowDryRunService(new \App\Core\Workflow\EcosistemaWorkflowRuleRepository($pdo), new \App\Core\Workflow\EcosistemaWorkflowAdapter(), (array) ($config['app']['ecosistema_workflow'] ?? [])); $dryRun = $service->simulateEvent($tenantId, $triggerModule, $triggerEvent, $context); } catch (\Throwable) { $dryRun = ['mode'=>'dry-run','matched'=>false,'actions'=>[],'blocked_reasons'=>['internal_error']]; }
+        View::render('layouts.admin', ['title' => 'Workflow dry-run | Ecosistema Core Admin', 'contentView' => 'pages/workflow/dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('dryRun')]);
+    },
+
     'GET /workflow/runs' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         $auth = AuthSession::getAuth();

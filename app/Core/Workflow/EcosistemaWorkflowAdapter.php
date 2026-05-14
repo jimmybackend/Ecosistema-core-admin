@@ -14,12 +14,13 @@ final class EcosistemaWorkflowAdapter
             'actions_read' => true,
             'runs_read' => true,
             'run_logs_read' => true,
-            'dry_run' => false,
+            'dry_run' => true,
             'execution_write' => false,
             'action_execution' => false,
             'db_writes' => false,
             'retry_enabled' => false,
-            'mode' => 'read-only',
+            'external_calls' => false,
+            'mode' => 'dry-run',
         ];
     }
 }

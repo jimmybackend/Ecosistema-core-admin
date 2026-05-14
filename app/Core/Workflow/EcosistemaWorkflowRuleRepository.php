@@ -15,7 +15,7 @@ final readonly class EcosistemaWorkflowRuleRepository
     public function listRules(int $tenantId, int $limit = 100): array
     {
         $safeLimit = max(1, min(200, $limit));
-        $sql = 'SELECT r.id, r.name, r.description, r.trigger_module, r.trigger_event, r.conditions_json, r.is_active, r.created_by_user_id, r.created_at, r.updated_at, u.display_name AS created_by_name, u.email AS created_by_email, (SELECT COUNT(*) FROM workflow_actions a WHERE a.tenant_id = r.tenant_id AND a.rule_id = r.id) AS actions_count FROM workflow_rules r LEFT JOIN core_users u ON u.id = r.created_by_user_id AND u.tenant_id = r.tenant_id WHERE r.tenant_id = :tenant_id ORDER BY r.updated_at DESC, r.id DESC LIMIT :limit';
+        $sql = 'SELECT r.id, r.tenant_id, r.name, r.description, r.trigger_module, r.trigger_event, r.conditions_json, r.is_active, r.created_by_user_id, r.created_at, r.updated_at, u.display_name AS created_by_name, u.email AS created_by_email, (SELECT COUNT(*) FROM workflow_actions a WHERE a.tenant_id = r.tenant_id AND a.rule_id = r.id) AS actions_count FROM workflow_rules r LEFT JOIN core_users u ON u.id = r.created_by_user_id AND u.tenant_id = r.tenant_id WHERE r.tenant_id = :tenant_id ORDER BY r.updated_at DESC, r.id DESC LIMIT :limit';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $safeLimit, PDO::PARAM_INT);
@@ -30,7 +30,7 @@ final readonly class EcosistemaWorkflowRuleRepository
             return null;
         }
 
-        $sql = 'SELECT r.id, r.name, r.description, r.trigger_module, r.trigger_event, r.conditions_json, r.is_active, r.created_by_user_id, r.created_at, r.updated_at, u.display_name AS created_by_name, u.email AS created_by_email, (SELECT COUNT(*) FROM workflow_actions a WHERE a.tenant_id = r.tenant_id AND a.rule_id = r.id) AS actions_count FROM workflow_rules r LEFT JOIN core_users u ON u.id = r.created_by_user_id AND u.tenant_id = r.tenant_id WHERE r.tenant_id = :tenant_id AND r.id = :id LIMIT 1';
+        $sql = 'SELECT r.id, r.tenant_id, r.name, r.description, r.trigger_module, r.trigger_event, r.conditions_json, r.is_active, r.created_by_user_id, r.created_at, r.updated_at, u.display_name AS created_by_name, u.email AS created_by_email, (SELECT COUNT(*) FROM workflow_actions a WHERE a.tenant_id = r.tenant_id AND a.rule_id = r.id) AS actions_count FROM workflow_rules r LEFT JOIN core_users u ON u.id = r.created_by_user_id AND u.tenant_id = r.tenant_id WHERE r.tenant_id = :tenant_id AND r.id = :id LIMIT 1';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':id', $ruleId, PDO::PARAM_INT);

@@ -6,7 +6,7 @@ $actions = (array) ($detail['actions'] ?? []);
 <section class="eco-card">
   <h1>Workflow</h1>
   <p>Detalle read-only de regla y acciones asociadas.</p>
-  <p><a href="/workflow/rules">← Volver a reglas</a> · <a href="/workflow/rules/<?= e((string) ($rule['id'] ?? 0)) ?>/runs">Ver ejecuciones</a></p>
+  <p><a href="/workflow/rules">← Volver a reglas</a> · <a href="/workflow/rules/<?= e((string) ($rule['id'] ?? 0)) ?>/runs">Ver ejecuciones</a> · <a href="/workflow/rules/<?= e((string) ($rule['id'] ?? 0)) ?>/dry-run">Simular workflow</a></p>
   <table class="eco-table"><tbody>
     <tr><td>ID</td><td><?= e((string) ($rule['id'] ?? 0)) ?></td></tr>
     <tr><td>Name</td><td><?= e((string) ($rule['name'] ?? '')) ?></td></tr>

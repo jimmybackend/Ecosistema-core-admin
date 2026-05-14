@@ -77,6 +77,7 @@ Limitaciones vigentes de autenticación:
 - URL Locator (read-only): `/url/locator`, `/url/locator/links`, `/url/locator/clicks`, `/url/locator/links/{id}`, `/url/locator/links/{id}/clicks`, `/url/locator/links/{id}/redirect-dry-run`
 - Browser Analytics (read-only): `/browser/analytics`
 - Workflow runs (read-only): `/workflow/runs`, `/workflow/runs/{id}`, `/workflow/rules/{id}/runs`
+- Workflow dry-run: `/workflow/dry-run`, `/workflow/rules/{id}/dry-run`
 - Health técnico DB: `/health/db`
 
 ## Módulos implementados
@@ -175,6 +176,7 @@ Limitaciones vigentes de autenticación:
 - `docs/auth/CONTROLLED_INITIAL_REGISTRATION.md`
 - `docs/project/ECOSISTEMA_WORKFLOW_RULES_READ_ONLY.md`
 - `docs/project/ECOSISTEMA_WORKFLOW_RUNS_READ_ONLY.md`
+- `docs/project/ECOSISTEMA_WORKFLOW_DRY_RUN.md`
 - `docs/MAILIT_CLICK_TECHNICAL_INVENTORY.md` (inventario documental de referencia para Mailit.click / futuro Ecosistema URL Locator).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md` (inventario canónico del esquema URL Locator sobre `adbbmis1_eco`, previo a implementación funcional).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_CLICKS_READ_ONLY.md` (consulta read-only de clicks existentes con privacidad y sin escrituras).

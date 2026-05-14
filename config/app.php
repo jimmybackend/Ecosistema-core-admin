@@ -28,6 +28,19 @@ return [
         'send_dry_run' => filter_var(Env::get('ECOSISTEMA_MAIL_SEND_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
         'send_enabled' => filter_var(Env::get('ECOSISTEMA_MAIL_SEND_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
     ],
+
+    'ecosistema_workflow' => [
+        'enabled' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'dry_run_enabled' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_DRY_RUN_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'execution_enabled' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'action_send_email' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_SEND_EMAIL', 'false'), FILTER_VALIDATE_BOOL),
+        'action_webhook' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_WEBHOOK', 'false'), FILTER_VALIDATE_BOOL),
+        'action_update_record' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_UPDATE_RECORD', 'false'), FILTER_VALIDATE_BOOL),
+        'action_create_notification' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_CREATE_NOTIFICATION', 'false'), FILTER_VALIDATE_BOOL),
+        'action_create_task' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_CREATE_TASK', 'false'), FILTER_VALIDATE_BOOL),
+        'action_create_ticket' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_CREATE_TICKET', 'false'), FILTER_VALIDATE_BOOL),
+        'action_create_agenda_event' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_CREATE_AGENDA_EVENT', 'false'), FILTER_VALIDATE_BOOL),
+    ],
     'core_registration' => [
         'enabled' => filter_var(Env::get('CORE_REGISTRATION_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'mode' => Env::get('CORE_REGISTRATION_MODE', 'first_user'),

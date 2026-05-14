@@ -106,6 +106,7 @@ use App\Core\Landing\EcosistemaLandingAdapter;
 use App\Core\Landing\EcosistemaLandingPageRepository;
 use App\Core\Landing\EcosistemaLandingPageService;
 use App\Core\Landing\EcosistemaLandingPublicRenderDryRunService;
+use App\Core\Landing\EcosistemaLandingPublicRenderService;
 use App\Core\Landing\EcosistemaLandingVisitRepository;
 use App\Core\Landing\EcosistemaLandingVisitService;
 use App\Core\Landing\EcosistemaLandingFormRepository;
@@ -215,6 +216,28 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('pages/url-locator/public-redirect-blocked', ['reason' => 'blocked']);
+    },
+
+
+    'GET /l/{slug}' => static function (array $config, array $params): void {
+        $slug = trim((string) ($params['slug'] ?? ''));
+        $tenantId = (int) (($config['app']['default_tenant_id'] ?? ($_ENV['APP_DEFAULT_TENANT_ID'] ?? 1)));
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaLandingPublicRenderService(new EcosistemaLandingPageRepository($pdo));
+            $result = $service->renderBySlug($tenantId, $slug, filter_var($_ENV['ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED'] ?? false, FILTER_VALIDATE_BOOL));
+
+            header('Content-Type: text/html; charset=UTF-8');
+            if (($result['allowed'] ?? false) === true) {
+                View::render('pages/landing/public-page', ['result' => $result]);
+                return;
+            }
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('pages/landing/public-page-blocked', ['reason' => 'blocked']);
     },
 
     'GET /' => static function (array $config): void {

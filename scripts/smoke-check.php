@@ -2297,3 +2297,39 @@ if (!str_contains($envContent, 'ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false')
 } else {
     ok('Flag ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false presente.');
 }
+
+
+// PR #120 landing public render controlled checks
+$landingPublicRenderFiles = [
+    'app/Core/Landing/EcosistemaLandingPublicRenderService.php',
+    'resources/views/pages/landing/public-page.php',
+    'resources/views/pages/landing/public-page-blocked.php',
+    'docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_CONTROLLED.md',
+];
+foreach ($landingPublicRenderFiles as $file) { checkFile($root, $file, $criticalFailures); }
+
+if (is_string($routesContent) && str_contains($routesContent, 'GET /l/{slug}')) { ok('routes/web.php contiene GET /l/{slug}.'); }
+else { fail('No se encontró GET /l/{slug}.', $criticalFailures); }
+
+if (!str_contains($envContent, 'ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false')) {
+    fail('Falta flag ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false en .env.example.', $criticalFailures);
+} else {
+    ok('Flag ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false presente.');
+}
+
+$publicRenderServiceContent = @file_get_contents($root . '/app/Core/Landing/EcosistemaLandingPublicRenderService.php') ?: '';
+foreach (['tenant_id', 'INSERT INTO landing_visits', 'UPDATE landing_visits', 'DELETE FROM landing_visits'] as $forbiddenNeedle) {
+    if (str_contains($publicRenderServiceContent, $forbiddenNeedle)) {
+        fail('Servicio public render contiene patrón no permitido: ' . $forbiddenNeedle, $criticalFailures);
+    } else {
+        ok('Servicio public render no contiene patrón prohibido: ' . $forbiddenNeedle);
+    }
+}
+
+$publicView = @file_get_contents($root . '/resources/views/pages/landing/public-page.php') ?: '';
+if (preg_match('/(layout_json|custom_css|custom_js|settings_json|content_json|raw_data_json|ip_address|user_agent|visitor_uuid|session_uuid)/i', $publicView) === 1) {
+    fail('Vista pública landing expone o referencia campos sensibles crudos.', $criticalFailures);
+} else {
+    ok('Vista pública landing sin referencias sensibles crudas.');
+}
+

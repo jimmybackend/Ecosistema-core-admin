@@ -94,7 +94,9 @@ Limitaciones vigentes de autenticación:
 ## Tablas reales usadas
 - `core_users`, `core_sessions`, `core_tenants`, `core_roles`, `core_user_roles`, `core_permissions`, `core_role_permissions`, `core_modules`
 - `system_health_check_definitions`, `system_health_check_results`, `system_logs`, `core_audit`
-- `mail_messages`, `mail_mailboxes`, `mail_folders`
+- `mail_messages`, `mail_attachments`, `mail_delivery_logs`, `mail_smtp_accounts`, `mail_identities`, `mail_mailboxes`, `mail_folders`
+- `notifications_queue`, `notifications_templates`, `notifications_channels`, `notifications_preferences`
+- `url_message_templates`, `url_message_attachments`, `url_message_access_logs`, `url_attachment_access_logs`
 - `cloud_files`, `cloud_folders`, `cloud_buckets`, `cloud_user_roots`
 - `onboarding_flows`, `onboarding_runs`, `onboarding_run_steps`
 
@@ -177,6 +179,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md` (inventario canónico de Landing Pages sobre `adbbmis1_eco`, previo a implementación funcional de UI/lógica).
 - `docs/project/ECOSISTEMA_BROWSER_ANALYTICS_SCHEMA_INVENTORY.md` (inventario canónico de Browser Analytics sobre `adbbmis1_eco`, previo a UI/lógica funcional).
 - `docs/project/ECOSISTEMA_BROWSER_ANALYTICS_DASHBOARD_READ_ONLY.md` (dashboard administrativo read-only sobre rollups de Browser Analytics).
+- `docs/project/ECOSISTEMA_MAIL_NOTIFICATIONS_SCHEMA_INVENTORY.md` (inventario canónico de Mail/Notifications y URL Message sobre `adbbmis1_eco`, previo a implementación funcional).
 
 ## Smoke checks básicos (PR #22)
 Ejecutar:

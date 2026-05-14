@@ -2382,3 +2382,28 @@ $attrView = is_file($root . '/resources/views/pages/attribution/url-landing-dry-
 foreach (["['clicked_url']","['full_url']",'metadata_json','raw_data_json','access_token_hash'] as $forbiddenNeedle) {
     if (!str_contains($attrView, $forbiddenNeedle)) { ok('Vista attribution dry-run no expone: ' . $forbiddenNeedle); } else { fail('Vista attribution dry-run no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
 }
+
+// PR #124 attribution campaigns read-only checks
+foreach ([
+    'app/Core/Attribution/EcosistemaCampaignAttributionRepository.php',
+    'app/Core/Attribution/EcosistemaCampaignAttributionService.php',
+    'resources/views/pages/attribution/campaigns.php',
+    'resources/views/pages/attribution/campaign-detail.php',
+    'docs/project/ECOSISTEMA_CAMPAIGN_ATTRIBUTION_READ_ONLY.md'
+] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto attribution campaigns: ' . $requiredPath); }
+    else { fail('Falta artefacto attribution campaigns: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false) {
+    foreach (['GET /attribution/campaigns', 'GET /attribution/campaigns/{id}'] as $routeNeedle) {
+        if (str_contains($routesContent, $routeNeedle)) { ok('Ruta attribution campaigns detectada: ' . $routeNeedle); }
+        else { fail('Falta ruta attribution campaigns: ' . $routeNeedle, $criticalFailures); }
+    }
+    if (!str_contains((string) $routesContent, "\$_GET['tenant_id']") && !str_contains((string) $routesContent, "\$_POST['tenant_id']")) { ok('Attribution campaigns no acepta tenant_id desde request.'); }
+    else { fail('Attribution campaigns no debe aceptar tenant_id desde request.', $criticalFailures); }
+}
+$campaignView = is_file($root . '/resources/views/pages/attribution/campaign-detail.php') ? (string) file_get_contents($root . '/resources/views/pages/attribution/campaign-detail.php') : '';
+foreach (['raw_data_json', 'metadata_json', 'access_token_hash', 'target_url', 'original_url_after_ads', 'ip_address', 'user_agent', 'email', 'phone'] as $forbiddenNeedle) {
+    if (!str_contains($campaignView, $forbiddenNeedle)) { ok('Vista campaign detail no referencia sensible: ' . $forbiddenNeedle); }
+    else { fail('Vista campaign detail no debe referenciar sensible: ' . $forbiddenNeedle, $criticalFailures); }
+}

@@ -487,3 +487,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Landing form submit dry-run (`/landing/forms/{id}/submit-dry-run` GET/POST) valida campos requeridos/tipos/longitudes y spam básico sin escribir DB ni crear leads. Ver `docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN.md`.
 - Landing public render (`/l/{slug}`) bloqueado por flag `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false`, sin tracking de visitas en este PR. Ver `docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_CONTROLLED.md`.
 - Landing form submit controlado (`POST /l/{slug}/forms/{id}/submit`) por flags `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false` y `ECOSISTEMA_LANDING_FORM_FILE_UPLOADS=false`, con escritura sólo en tablas de submissions. Ver `docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_CONTROLLED.md`.
+
+- Campaign attribution read-only: rutas \/attribution\/campaigns y \/attribution\/campaigns\/{id}. Ver docs/project/ECOSISTEMA_CAMPAIGN_ATTRIBUTION_READ_ONLY.md.

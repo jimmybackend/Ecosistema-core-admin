@@ -40,6 +40,24 @@ final readonly class EcosistemaLandingPageRepository
         return is_array($row) ? $row : null;
     }
 
+
+    public function findPublishedPageBySlug(int $tenantId, string $slug): ?array
+    {
+        $safeSlug = trim($slug);
+        if ($tenantId <= 0 || $safeSlug === '') {
+            return null;
+        }
+
+        $sql = "SELECT lp.id,lp.tenant_id,lp.campaign_id,lp.template_id,lp.title,lp.slug,lp.description,lp.status,lp.page_type,lp.public_url,lp.seo_title,lp.seo_description,lp.published_at,lp.unpublished_at,lp.created_at,lp.updated_at FROM landing_pages lp WHERE lp.tenant_id=:tenant_id AND lp.slug=:slug AND LOWER(COALESCE(lp.status,''))='published' LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
+        $stmt->bindValue(':slug', $safeSlug, PDO::PARAM_STR);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
     public function summarizePages(int $tenantId): array
     {
         $summary = ['total' => 0, 'by_status' => [], 'by_page_type' => []];

@@ -33,6 +33,7 @@ return [
         'enabled' => filter_var(Env::get('ECOSISTEMA_ATTRIBUTION_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'write_enabled' => filter_var(Env::get('ECOSISTEMA_ATTRIBUTION_WRITE', 'false'), FILTER_VALIDATE_BOOL),
         'rollup_dry_run' => filter_var(Env::get('ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+        'rollup_write' => filter_var(Env::get('ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
     'ecosistema_landing' => [

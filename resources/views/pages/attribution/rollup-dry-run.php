@@ -41,3 +41,11 @@ $errorMessage = isset($errorMessage) ? (string) $errorMessage : null;
     <?php endforeach; ?>
   </table>
 <?php endif; ?>
+
+
+<h2>Generar rollup controlado (escritura protegida)</h2>
+<form method="post" action="/attribution/rollups/generate" class="eco-form">
+  <input type="hidden" name="_csrf" value="<?= e((string)($csrfToken ?? '')) ?>"> 
+  <label>Fecha rollup <input type="date" name="rollup_date" required value="<?= e((string)($_POST['rollup_date'] ?? date('Y-m-d'))) ?>"></label>
+  <button type="submit">Generar (controlado)</button>
+</form>

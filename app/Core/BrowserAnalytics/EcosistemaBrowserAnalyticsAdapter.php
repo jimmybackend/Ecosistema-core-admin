@@ -1,4 +1,4 @@
 <?php
 declare(strict_types=1);
 namespace App\Core\BrowserAnalytics;
-final class EcosistemaBrowserAnalyticsAdapter{public function capabilities(): array{return ['dashboard_read'=>true,'sessions_read'=>true,'pageviews_read'=>true,'events_read'=>true,'collector_dry_run'=>true,'collector_write'=>false,'daily_rollups_read'=>true,'mode'=>'read-only','db_writes'=>false];}}
+final class EcosistemaBrowserAnalyticsAdapter{public function capabilities(): array{$enabled=filter_var((string)getenv('ECOSISTEMA_BROWSER_ANALYTICS_ENABLED'),FILTER_VALIDATE_BOOL);$write=filter_var((string)getenv('ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE'),FILTER_VALIDATE_BOOL);return ['dashboard_read'=>true,'sessions_read'=>true,'pageviews_read'=>true,'events_read'=>true,'collector_dry_run'=>true,'collector_write'=>($enabled&&$write),'privacy_controls'=>true,'daily_rollups_read'=>true,'mode'=>'controlled','db_writes'=>($enabled&&$write)];}}

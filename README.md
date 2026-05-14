@@ -456,6 +456,7 @@ Estado actual:
 - URL→Landing attribution dry-run: `/attribution/url-landing/dry-run` (GET/POST), bloqueado por flags `ECOSISTEMA_ATTRIBUTION_ENABLED=false` y `ECOSISTEMA_ATTRIBUTION_WRITE=false`. Ver `docs/project/ECOSISTEMA_URL_LANDING_ATTRIBUTION.md`.
 - Attribution rollup dry-run: `/attribution/rollups/dry-run` (GET/POST), cálculo en memoria por rango sin escribir `browser_analytics_daily_rollups`; requiere `ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN=false` por defecto. Ver `docs/project/ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN.md`.
 - CRM followup task dry-run: `/crm/leads/{id}/followup-task-dry-run` (GET/POST), simulación de tarea CRM sin INSERT y con flag `ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN.md`.
+- CRM followup task write controlado: `POST /crm/leads/{id}/followup-tasks`, requiere CSRF + permiso `modules.manage` y flag `ECOSISTEMA_CRM_FOLLOWUP_TASK_WRITE=false`. Ver `docs/project/ECOSISTEMA_CRM_FOLLOWUP_TASK_CONTROLLED.md`.
 - Attribution rollup controlado por flags: `POST /attribution/rollups/generate` (bloquea escritura si no hay idempotencia confirmada). Ver `docs/project/ECOSISTEMA_ATTRIBUTION_ROLLUP_CONTROLLED.md`.
 
 ## URL Locator public redirect

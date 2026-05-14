@@ -1884,6 +1884,39 @@ return [
         View::render('layouts.admin',['title'=>'CRM Followup Task Dry-Run | Ecosistema Core Admin','contentView'=>'pages/crm/followup-task-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('dryRun','id','errorMessage')]);
     },
 
+    'POST /crm/leads/{id}/followup-tasks' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $csrfToken = $_POST['_csrf'] ?? null;
+        if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $createdByUserId = (int) ($auth['auth_user_id'] ?? 0);
+        $result = ['ok' => false, 'error' => 'No se pudo crear la tarea de seguimiento.'];
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $repo = new \App\Core\Crm\EcosistemaCrmFollowupTaskRepository($pdo);
+            $service = new \App\Core\Crm\EcosistemaCrmFollowupTaskService($repo, (array) ($config['app']['ecosistema_crm'] ?? []));
+            $result = $service->create($tenantId, $id, $createdByUserId, [
+                'assigned_user_id' => $_POST['assigned_user_id'] ?? null,
+                'title' => $_POST['title'] ?? null,
+                'description' => $_POST['description'] ?? null,
+                'due_at' => $_POST['due_at'] ?? null,
+                'priority' => $_POST['priority'] ?? null,
+            ]);
+        } catch (\Throwable) {}
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Followup Task Result | Ecosistema Core Admin','contentView'=>'pages/crm/followup-task-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id')]);
+    },
+
     'GET /crm/submission-to-lead/{id}/dry-run' => static function (array $config, array $params): void {
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

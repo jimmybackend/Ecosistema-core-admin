@@ -35,5 +35,13 @@
         <?php $warnings = (array)($dryRun['warnings'] ?? []); ?>
         <?php if ($warnings === []): ?><p>Sin warnings.</p>
         <?php else: ?><ul><?php foreach($warnings as $w): ?><li><?= htmlspecialchars((string)$w) ?></li><?php endforeach; ?></ul><?php endif; ?>
+
+
+        <h2>Acción controlada</h2>
+        <form method="post" action="/crm/submission-to-lead/<?= $id ?>">
+            <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+            <label><input type="checkbox" name="force_duplicate" value="1"> Permitir continuar si hay duplicados detectados</label><br>
+            <button type="submit">Crear lead real (controlado)</button>
+        </form>
     <?php endif; ?>
 </section>

@@ -116,6 +116,8 @@ use App\Core\Crm\EcosistemaCrmCampaignService;
 use App\Core\Crm\EcosistemaCrmLeadRepository;
 use App\Core\Crm\EcosistemaCrmLeadService;
 use App\Core\Crm\EcosistemaCrmSubmissionToLeadDryRunService;
+use App\Core\Crm\EcosistemaCrmLeadWriteRepository;
+use App\Core\Crm\EcosistemaCrmSubmissionToLeadService;
 
 
 function startAuthSession(array $config): void
@@ -1321,6 +1323,40 @@ return [
     },
 
 
+
+
+    'POST /crm/submission-to-lead/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $csrfToken = $_POST['_csrf'] ?? null;
+        if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+
+        $crmEnabled = (bool) (($config['app']['ecosistema_crm']['enabled'] ?? false) === true);
+        $writeEnabled = (bool) (($config['app']['ecosistema_crm']['submission_to_lead_write'] ?? false) === true);
+        $auth = AuthSession::getAuth();
+        $result = ['ok' => false, 'error' => 'Operación no habilitada por flags.'];
+
+        if ($crmEnabled && $writeEnabled) {
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $userId = (int) ($auth['auth_user_id'] ?? 0);
+            $forceDuplicate = isset($_POST['force_duplicate']) && (string) $_POST['force_duplicate'] === '1';
+            try {
+                $pdo = PdoFactory::make($config['database']);
+                $service = new EcosistemaCrmSubmissionToLeadService(new EcosistemaCrmLeadWriteRepository($pdo));
+                $result = $service->convert($tenantId, $userId, $id, $forceDuplicate);
+            } catch (\Throwable) {
+                $result = ['ok' => false, 'error' => 'No se pudo completar la conversión submission→lead.'];
+            }
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Submission to Lead Result | Ecosistema Core Admin','contentView'=>'pages/crm/submission-to-lead-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id')]);
+    },
 
     'GET /crm/submission-to-lead/{id}/dry-run' => static function (array $config, array $params): void {
         startAuthSession($config);

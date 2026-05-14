@@ -2468,3 +2468,15 @@ if ($routesContent !== false) {
 if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN=false')) { ok('Flag CRM followup-task dry-run en .env.example con default false.'); } else { fail('Falta flag ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN=false en .env.example.', $criticalFailures); }
 $followupTaskService = is_file($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskDryRunService.php') : '';
 if (preg_match('/(INSERT|UPDATE|DELETE)/i', $followupTaskService) === 1) { fail('Servicio followup-task dry-run contiene escritura SQL.', $criticalFailures); } else { ok('Servicio followup-task dry-run sin escritura SQL.'); }
+
+foreach (['app/Core/Crm/EcosistemaCrmFollowupTaskRepository.php','app/Core/Crm/EcosistemaCrmFollowupTaskService.php','resources/views/pages/crm/followup-task-result.php','docs/project/ECOSISTEMA_CRM_FOLLOWUP_TASK_CONTROLLED.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto CRM followup-task controlled: ' . $requiredPath); }
+    else { fail('Falta artefacto CRM followup-task controlled: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false && str_contains($routesContent, 'POST /crm/leads/{id}/followup-tasks')) { ok('Ruta CRM followup-task write detectada: POST /crm/leads/{id}/followup-tasks'); }
+else { fail('Falta ruta CRM followup-task write: POST /crm/leads/{id}/followup-tasks', $criticalFailures); }
+if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_CRM_FOLLOWUP_TASK_WRITE=false')) { ok('Flag CRM followup-task write en .env.example con default false.'); }
+else { fail('Falta flag ECOSISTEMA_CRM_FOLLOWUP_TASK_WRITE=false en .env.example.', $criticalFailures); }
+$followupTaskWriteRepo = is_file($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskRepository.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskRepository.php') : '';
+if (str_contains($followupTaskWriteRepo, 'INSERT INTO crm_tasks')) { ok('Repository followup-task write limita INSERT a crm_tasks.'); }
+else { fail('Repository followup-task write debe insertar en crm_tasks.', $criticalFailures); }

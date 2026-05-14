@@ -12,6 +12,7 @@
     <label>Due at <input type="datetime-local" name="due_at" required></label><br>
     <label>Prioridad <select name="priority"><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select></label><br>
     <button type="submit">Simular tarea</button>
+    <button type="submit" formaction="/crm/leads/<?= $id ?>/followup-tasks">Crear tarea</button>
   </form>
   <?php if (is_array($dryRun)): ?>
     <h2>Resultado</h2><ul>

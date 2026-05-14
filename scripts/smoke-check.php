@@ -2113,6 +2113,24 @@ $dryRunHasInsert = stripos((string) $crmDryRunServiceContent, 'INSERT INTO crm_l
 if ($writeInsertAllowed && !$dryRunHasInsert) { ok('INSERT INTO crm_leads aparece solo en flujo de write controlado.'); } else { fail('INSERT INTO crm_leads no cumple restricción de write controlado.', $criticalFailures); }
 
 if ($routesContent !== false && str_contains((string) $routesContent, 'POST /crm/submission-to-lead/{id}')) { ok('Ruta CRM write detectada: POST /crm/submission-to-lead/{id}'); } else { fail('Falta ruta CRM write: POST /crm/submission-to-lead/{id}', $criticalFailures); }
+
+$crmFollowupsRequired = [
+    'app/Core/Crm/EcosistemaCrmFollowupRepository.php',
+    'app/Core/Crm/EcosistemaCrmFollowupService.php',
+    'resources/views/pages/crm/followups.php',
+    'resources/views/pages/crm/lead-followups.php',
+    'docs/project/ECOSISTEMA_CRM_FOLLOWUPS_READ_ONLY.md',
+];
+foreach ($crmFollowupsRequired as $file) { checkFile($root, $file, $criticalFailures); }
+
+$followupRepo = is_file($root . '/app/Core/Crm/EcosistemaCrmFollowupRepository.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmFollowupRepository.php') : '';
+if (preg_match('/(INSERT|UPDATE|DELETE)\s+.*(crm_tasks|crm_customer_followups|agenda_events)/i', $followupRepo) !== 1) { ok('Followup repository en modo read-only.'); } else { fail('Followup repository contiene escrituras no permitidas.', $criticalFailures); }
+
+foreach (['GET /crm/followups', 'GET /crm/leads/{id}/followups'] as $crmRoute) {
+    if ($routesContent !== false && str_contains((string) $routesContent, $crmRoute)) { ok('Ruta CRM followups detectada: ' . $crmRoute); }
+    else { fail('Falta ruta CRM followups: ' . $crmRoute, $criticalFailures); }
+}
+
 if ($routesContent !== false && str_contains((string) $routesContent, 'ensureValidCsrfToken')) { ok('Ruta write usa CSRF.'); } else { fail('Ruta write debe validar CSRF.', $criticalFailures); }
 $sendDryRunView = is_file($root . '/resources/views/pages/mail-notifications/send-dry-run.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/send-dry-run.php') : '';
 if (str_contains($sendDryRunView, "name=\"_csrf\"")) { ok('Vista send-dry-run usa CSRF.'); } else { fail('Vista send-dry-run no usa CSRF.', $criticalFailures); }

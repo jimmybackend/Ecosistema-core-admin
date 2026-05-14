@@ -1340,6 +1340,42 @@ if (str_contains($combinedVisitsViews, "['ip_address']") || str_contains($combin
     ok('Vistas Landing Visits no exponen ip/visitor_uuid/session_uuid crudos.');
 }
 
+
+$browserInventoryPath = $root . '/docs/project/ECOSISTEMA_BROWSER_ANALYTICS_SCHEMA_INVENTORY.md';
+if (is_file($browserInventoryPath)) {
+    ok('Existe inventario Browser Analytics.');
+} else {
+    fail('No existe docs/project/ECOSISTEMA_BROWSER_ANALYTICS_SCHEMA_INVENTORY.md', $criticalFailures);
+}
+
+$readmeContent = is_file($root . '/README.md') ? file_get_contents($root . '/README.md') : false;
+if ($readmeContent !== false && str_contains($readmeContent, 'ECOSISTEMA_BROWSER_ANALYTICS_SCHEMA_INVENTORY.md')) {
+    ok('README.md referencia inventario Browser Analytics.');
+} else {
+    fail('README.md no referencia ECOSISTEMA_BROWSER_ANALYTICS_SCHEMA_INVENTORY.md', $criticalFailures);
+}
+
+$browserInventoryContent = is_file($browserInventoryPath) ? file_get_contents($browserInventoryPath) : false;
+foreach (['browser_analytics_sessions', 'browser_analytics_pageviews', 'browser_analytics_events', 'browser_analytics_attribution'] as $requiredMention) {
+    if ($browserInventoryContent !== false && str_contains($browserInventoryContent, $requiredMention)) {
+        ok('Inventario Browser Analytics menciona: ' . $requiredMention);
+    } else {
+        fail('Inventario Browser Analytics no menciona: ' . $requiredMention, $criticalFailures);
+    }
+}
+
+if (is_string($gitDiff) && preg_match('#^\+.*(/browser/analytics|GET /browser/analytics|POST /browser/analytics)#mi', $gitDiff) === 1) {
+    fail('Se detectó posible ruta funcional /browser/analytics en cambios del PR.', $criticalFailures);
+} else {
+    ok('No se detectaron rutas funcionales /browser/analytics en cambios del PR.');
+}
+
+if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*browser_analytics_/mi', $gitDiff) === 1) {
+    fail('Se detectó escritura SQL sobre browser_analytics_* en cambios del PR.', $criticalFailures);
+} else {
+    ok('Sin escrituras SQL sobre browser_analytics_* en cambios del PR.');
+}
+
 if ($criticalFailures > 0) {
     report('RESULT', 'SMOKE CHECK FAILURES=' . $criticalFailures . ' WARNINGS=' . $warnings);
     exit(1);
@@ -1515,6 +1551,7 @@ if (str_contains($combinedVisitsViews, "['ip_address']") || str_contains($combin
 } else {
     ok('Vistas Landing Visits no exponen ip/visitor_uuid/session_uuid crudos.');
 }
+
 
 if ($criticalFailures > 0) {
     report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");

@@ -1847,3 +1847,34 @@ foreach (['GET /crm', 'GET /crm/campaigns', 'GET /crm/campaigns/{id}'] as $crmRo
     if ($routesContent !== false && str_contains($routesContent, $crmRoute)) { ok('Ruta CRM detectada: ' . $crmRoute); }
     else { fail('Falta ruta CRM: ' . $crmRoute, $criticalFailures); }
 }
+
+$crmDryRunRequired = [
+    'app/Core/Crm/EcosistemaCrmSubmissionToLeadDryRunService.php',
+    'resources/views/pages/crm/submission-to-lead-dry-run.php',
+    'docs/project/ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_DRY_RUN.md',
+];
+foreach ($crmDryRunRequired as $file) { checkFile($root, $file, $criticalFailures); }
+
+$envExample = is_file($root . '/.env.example') ? (string) file_get_contents($root . '/.env.example') : '';
+foreach (['ECOSISTEMA_CRM_ENABLED=false', 'ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_DRY_RUN=false', 'ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_WRITE=false'] as $flag) {
+    if (str_contains($envExample, $flag)) { ok('.env.example mantiene flag segura: ' . $flag); }
+    else { fail('Falta flag segura en .env.example: ' . $flag, $criticalFailures); }
+}
+
+$crmDryRunServiceContent = is_file($root . '/app/Core/Crm/EcosistemaCrmSubmissionToLeadDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmSubmissionToLeadDryRunService.php') : '';
+foreach (['INSERT INTO crm_leads', 'UPDATE crm_leads', 'INSERT INTO crm_campaign_leads', 'UPDATE crm_campaign_leads', 'UPDATE landing_form_submissions', 'INSERT INTO landing_form_submissions'] as $forbiddenSql) {
+    if (stripos($crmDryRunServiceContent, $forbiddenSql) === false) { ok('Dry-run service sin escritura prohibida: ' . $forbiddenSql); }
+    else { fail('Dry-run service contiene escritura prohibida: ' . $forbiddenSql, $criticalFailures); }
+}
+
+$dryRunViewContent = is_file($root . '/resources/views/pages/crm/submission-to-lead-dry-run.php') ? (string) file_get_contents($root . '/resources/views/pages/crm/submission-to-lead-dry-run.php') : '';
+foreach (['raw_data_json', "['value_json']"] as $sensitive) {
+    if (!str_contains($dryRunViewContent, $sensitive)) { ok('Vista dry-run no expone campo sensible: ' . $sensitive); }
+    else { fail('Vista dry-run no debe exponer campo sensible: ' . $sensitive, $criticalFailures); }
+}
+
+if ($routesContent !== false && str_contains((string) $routesContent, 'GET /crm/submission-to-lead/{id}/dry-run')) {
+    ok('Ruta CRM dry-run detectada: GET /crm/submission-to-lead/{id}/dry-run');
+} else {
+    fail('Falta ruta CRM dry-run: GET /crm/submission-to-lead/{id}/dry-run', $criticalFailures);
+}

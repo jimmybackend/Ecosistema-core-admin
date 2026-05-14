@@ -22,6 +22,12 @@ return [
         'submission_to_lead_dry_run' => filter_var(Env::get('ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
         'submission_to_lead_write' => filter_var(Env::get('ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_WRITE', 'false'), FILTER_VALIDATE_BOOL),
     ],
+    'ecosistema_mail_notifications' => [
+        'enabled' => filter_var(Env::get('ECOSISTEMA_MAIL_NOTIFICATIONS_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'preview_dry_run' => filter_var(Env::get('ECOSISTEMA_MAIL_PREVIEW_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+        'send_dry_run' => filter_var(Env::get('ECOSISTEMA_MAIL_SEND_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+        'send_enabled' => filter_var(Env::get('ECOSISTEMA_MAIL_SEND_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+    ],
     'core_registration' => [
         'enabled' => filter_var(Env::get('CORE_REGISTRATION_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'mode' => Env::get('CORE_REGISTRATION_MODE', 'first_user'),

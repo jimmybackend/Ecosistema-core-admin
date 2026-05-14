@@ -1694,8 +1694,29 @@ ok('No se detectaron escrituras SQL sobre mail_/notifications_/url_message_* en 
 
 $mailAdapterContent = is_file($root . '/app/Core/MailNotifications/EcosistemaMailNotificationsAdapter.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaMailNotificationsAdapter.php') : '';
 if (str_contains($mailAdapterContent, "'url_message_templates_read' => true")) { ok('Mail Notifications adapter habilita url_message_templates_read=true.'); } else { fail('Mail Notifications adapter no habilita url_message_templates_read=true.', $criticalFailures); }
+if (str_contains($mailAdapterContent, "'preview_dry_run' => true")) { ok('Mail Notifications adapter habilita preview_dry_run=true.'); } else { fail('Mail Notifications adapter no habilita preview_dry_run=true.', $criticalFailures); }
 if (str_contains($mailAdapterContent, "'send_write' => false")) { ok('Mail Notifications adapter mantiene send_write=false.'); } else { fail('Mail Notifications adapter no mantiene send_write=false.', $criticalFailures); }
 if (str_contains($mailAdapterContent, "'smtp_connection' => false")) { ok('Mail Notifications adapter mantiene smtp_connection=false.'); } else { fail('Mail Notifications adapter no mantiene smtp_connection=false.', $criticalFailures); }
+
+foreach ([
+    'app/Core/MailNotifications/EcosistemaMessagePreviewDryRunService.php',
+    'resources/views/pages/mail-notifications/message-preview-dry-run.php',
+    'docs/project/ECOSISTEMA_MESSAGE_PREVIEW_DRY_RUN.md',
+] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto dry-run mail notifications: ' . $requiredPath); }
+    else { fail('Falta artefacto dry-run mail notifications: ' . $requiredPath, $criticalFailures); }
+}
+
+$routesContent = is_file($root . '/routes/web.php') ? (string) file_get_contents($root . '/routes/web.php') : '';
+foreach ([
+    'GET /mail-notifications/templates/{id}/preview-dry-run',
+    'POST /mail-notifications/templates/{id}/preview-dry-run',
+    'GET /mail-notifications/url-message-templates/{id}/preview-dry-run',
+    'POST /mail-notifications/url-message-templates/{id}/preview-dry-run',
+] as $routeNeedle) {
+    if (str_contains($routesContent, $routeNeedle)) { ok('Ruta preview dry-run detectada: ' . $routeNeedle); }
+    else { fail('Falta ruta preview dry-run: ' . $routeNeedle, $criticalFailures); }
+}
 
 $urlTemplatesView = is_file($root . '/resources/views/pages/mail-notifications/url-message-templates.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/url-message-templates.php') : '';
 $urlTemplateDetailView = is_file($root . '/resources/views/pages/mail-notifications/url-message-template-detail.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/url-message-template-detail.php') : '';

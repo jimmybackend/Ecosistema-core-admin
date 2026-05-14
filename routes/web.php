@@ -132,6 +132,8 @@ use App\Core\Crm\EcosistemaCrmSubmissionToLeadService;
 use App\Core\Platform\EcosistemaPlatformAdapter;
 use App\Core\Platform\EcosistemaPlatformCockpitRepository;
 use App\Core\Platform\EcosistemaPlatformCockpitService;
+use App\Core\Platform\EcosistemaPlatformHealthRepository;
+use App\Core\Platform\EcosistemaPlatformHealthService;
 
 
 function startAuthSession(array $config): void
@@ -2622,6 +2624,26 @@ return [
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         header('Location: /platform');
+    },
+
+    'GET /platform/health' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $health = ['modules'=>[], 'workers'=>[]];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaPlatformHealthService(new EcosistemaPlatformHealthRepository($pdo)); $health = $service->buildDashboard((int) ($auth['auth_tenant_id'] ?? 0)); } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Platform Health | Ecosistema Core Admin', 'contentView' => 'pages/platform/health', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('health')]);
+    },
+
+    'GET /platform/health/modules/{code}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth(); $code = trim((string) ($params['code'] ?? '')); if ($code === '') { renderError($config, 404); return; }
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaPlatformHealthService(new EcosistemaPlatformHealthRepository($pdo)); $detail = $service->buildModuleDetail((int) ($auth['auth_tenant_id'] ?? 0), $code); } catch (\Throwable) { $detail = null; }
+        if (!is_array($detail)) { renderError($config, 404); return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Module Health | Ecosistema Core Admin', 'contentView' => 'pages/platform/module-health', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('detail')]);
     },
 
     'GET /workflow' => static function (array $config): void {

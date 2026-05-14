@@ -2187,6 +2187,11 @@ $platformRequiredFiles = [
     'app/Core/Platform/EcosistemaPlatformAdapter.php',
     'resources/views/pages/platform/cockpit.php',
     'docs/project/ECOSISTEMA_PLATFORM_COCKPIT.md',
+    'app/Core/Platform/EcosistemaPlatformHealthRepository.php',
+    'app/Core/Platform/EcosistemaPlatformHealthService.php',
+    'resources/views/pages/platform/health.php',
+    'resources/views/pages/platform/module-health.php',
+    'docs/project/ECOSISTEMA_PLATFORM_MODULE_HEALTH.md',
 ];
 foreach ($platformRequiredFiles as $platformFile) {
     checkFile($root, $platformFile, $criticalFailures);
@@ -2206,9 +2211,21 @@ if (is_file($routesFile)) {
     $routesContent = (string) file_get_contents($routesFile);
     if (str_contains($routesContent, "GET /platform")) { ok('routes/web.php contiene GET /platform.'); } else { fail('No se encontró GET /platform.', $criticalFailures); }
     if (str_contains($routesContent, "GET /platform/cockpit")) { ok('routes/web.php contiene GET /platform/cockpit.'); } else { fail('No se encontró GET /platform/cockpit.', $criticalFailures); }
+    if (str_contains($routesContent, "GET /platform/health")) { ok('routes/web.php contiene GET /platform/health.'); } else { fail('No se encontró GET /platform/health.', $criticalFailures); }
+    if (str_contains($routesContent, "GET /platform/health/modules/{code}")) { ok('routes/web.php contiene GET /platform/health/modules/{code}.'); } else { fail('No se encontró GET /platform/health/modules/{code}.', $criticalFailures); }
     if (str_contains($routesContent, "\$_GET['tenant_id']") || str_contains($routesContent, "\$_POST['tenant_id']")) {
         warn('Revisar manualmente posible uso tenant_id desde request en routes/web.php.', $warnings);
     } else {
         ok('No hay uso directo de tenant_id desde request en routes/web.php.');
+    }
+}
+
+$healthViewPath = $root . '/resources/views/pages/platform/health.php';
+if (is_file($healthViewPath)) {
+    $healthViewContent = (string) file_get_contents($healthViewPath);
+    if (str_contains($healthViewContent, 'details_json') || str_contains($healthViewContent, 'payload_json') || str_contains($healthViewContent, 'metadata_json')) {
+        fail('Vista platform/health expone campos JSON sensibles.', $criticalFailures);
+    } else {
+        ok('Vista platform/health sin exposición de JSON sensible.');
     }
 }

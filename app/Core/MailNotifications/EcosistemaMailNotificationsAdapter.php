@@ -11,7 +11,7 @@ final class EcosistemaMailNotificationsAdapter
         return [
             'notification_templates_read' => true,
             'url_message_templates_read' => true,
-            'queue_read' => false,
+            'queue_read' => true,
             'preview_dry_run' => true,
             'send_dry_run' => false,
             'send_write' => false,

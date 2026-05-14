@@ -201,6 +201,11 @@ $requiredFiles = [
     'app/Core/MailNotifications/EcosistemaNotificationTemplateService.php',
     'app/Core/MailNotifications/EcosistemaUrlMessageTemplateRepository.php',
     'app/Core/MailNotifications/EcosistemaUrlMessageTemplateService.php',
+    'docs/project/ECOSISTEMA_NOTIFICATIONS_QUEUE_READ_ONLY.md',
+    'resources/views/pages/mail-notifications/queue-detail.php',
+    'resources/views/pages/mail-notifications/queue.php',
+    'app/Core/MailNotifications/EcosistemaNotificationQueueService.php',
+    'app/Core/MailNotifications/EcosistemaNotificationQueueRepository.php',
     'resources/views/pages/mail-notifications/index.php',
     'resources/views/pages/mail-notifications/templates.php',
     'resources/views/pages/mail-notifications/template-detail.php',
@@ -1471,6 +1476,17 @@ if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*browser_
     ok('Sin escrituras SQL sobre browser_analytics_* en cambios del PR.');
 }
 
+
+$queueRepositoryContent = is_file($root . '/app/Core/MailNotifications/EcosistemaNotificationQueueRepository.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaNotificationQueueRepository.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $queueRepositoryContent) === 1) { fail('Repositorio notifications_queue contiene escritura no permitida.', $criticalFailures); } else { ok('Repositorio notifications_queue no contiene INSERT/UPDATE/DELETE.'); }
+
+$queueViews = (is_file($root . '/resources/views/pages/mail-notifications/queue.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/queue.php') : '') . "
+" . (is_file($root . '/resources/views/pages/mail-notifications/queue-detail.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/queue-detail.php') : '');
+if (str_contains($queueViews, "['payload_json']")) { fail('Vistas de notifications queue imprimen payload_json crudo.', $criticalFailures); } else { ok('Vistas de notifications queue no imprimen payload_json crudo.'); }
+
+if (str_contains($routesContent, 'GET /mail-notifications/queue')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue', $criticalFailures); }
+if (str_contains($routesContent, 'GET /mail-notifications/queue/{id}')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue/{id}'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue/{id}', $criticalFailures); }
+
 if ($criticalFailures > 0) {
     report('RESULT', 'SMOKE CHECK FAILURES=' . $criticalFailures . ' WARNINGS=' . $warnings);
     exit(1);
@@ -1696,6 +1712,7 @@ $mailAdapterContent = is_file($root . '/app/Core/MailNotifications/EcosistemaMai
 if (str_contains($mailAdapterContent, "'url_message_templates_read' => true")) { ok('Mail Notifications adapter habilita url_message_templates_read=true.'); } else { fail('Mail Notifications adapter no habilita url_message_templates_read=true.', $criticalFailures); }
 if (str_contains($mailAdapterContent, "'preview_dry_run' => true")) { ok('Mail Notifications adapter habilita preview_dry_run=true.'); } else { fail('Mail Notifications adapter no habilita preview_dry_run=true.', $criticalFailures); }
 if (str_contains($mailAdapterContent, "'send_write' => false")) { ok('Mail Notifications adapter mantiene send_write=false.'); } else { fail('Mail Notifications adapter no mantiene send_write=false.', $criticalFailures); }
+if (str_contains($mailAdapterContent, "'queue_read' => true")) { ok('Mail Notifications adapter habilita queue_read=true.'); } else { fail('Mail Notifications adapter no habilita queue_read=true.', $criticalFailures); }
 if (str_contains($mailAdapterContent, "'smtp_connection' => false")) { ok('Mail Notifications adapter mantiene smtp_connection=false.'); } else { fail('Mail Notifications adapter no mantiene smtp_connection=false.', $criticalFailures); }
 
 foreach ([
@@ -1724,6 +1741,17 @@ $combinedUrlTemplateViews = $urlTemplatesView . "\n" . $urlTemplateDetailView;
 if (str_contains($combinedUrlTemplateViews, "['s3_key']")) { fail('Vistas URL message templates exponen s3_key crudo.', $criticalFailures); } else { ok('Vistas URL message templates no exponen s3_key crudo.'); }
 if (str_contains($combinedUrlTemplateViews, "['file_path']")) { fail('Vistas URL message templates exponen file_path crudo.', $criticalFailures); } else { ok('Vistas URL message templates no exponen file_path crudo.'); }
 if (str_contains($combinedUrlTemplateViews, "['body_html']")) { fail('Vistas URL message templates exponen body_html crudo.', $criticalFailures); } else { ok('Vistas URL message templates no exponen body_html crudo.'); }
+
+
+$queueRepositoryContent = is_file($root . '/app/Core/MailNotifications/EcosistemaNotificationQueueRepository.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaNotificationQueueRepository.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $queueRepositoryContent) === 1) { fail('Repositorio notifications_queue contiene escritura no permitida.', $criticalFailures); } else { ok('Repositorio notifications_queue no contiene INSERT/UPDATE/DELETE.'); }
+
+$queueViews = (is_file($root . '/resources/views/pages/mail-notifications/queue.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/queue.php') : '') . "
+" . (is_file($root . '/resources/views/pages/mail-notifications/queue-detail.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/queue-detail.php') : '');
+if (str_contains($queueViews, "['payload_json']")) { fail('Vistas de notifications queue imprimen payload_json crudo.', $criticalFailures); } else { ok('Vistas de notifications queue no imprimen payload_json crudo.'); }
+
+if (str_contains($routesContent, 'GET /mail-notifications/queue')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue', $criticalFailures); }
+if (str_contains($routesContent, 'GET /mail-notifications/queue/{id}')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue/{id}'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue/{id}', $criticalFailures); }
 
 if ($criticalFailures > 0) {
     report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");

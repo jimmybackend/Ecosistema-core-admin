@@ -17,5 +17,6 @@
     <a href="/url/locator">URL Locator</a>
     <a href="/landing">Landing Pages</a>
     <a href="/onboarding">Onboarding</a>
+    <a href="/workflow">Workflow</a>
   </nav>
 </aside>

@@ -172,6 +172,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`
 - `docs/ops/MONITORING_OPERATIONS_PLAN.md`
 - `docs/auth/CONTROLLED_INITIAL_REGISTRATION.md`
+- `docs/project/ECOSISTEMA_WORKFLOW_RULES_READ_ONLY.md`
 - `docs/MAILIT_CLICK_TECHNICAL_INVENTORY.md` (inventario documental de referencia para Mailit.click / futuro Ecosistema URL Locator).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md` (inventario canónico del esquema URL Locator sobre `adbbmis1_eco`, previo a implementación funcional).
 - `docs/project/ECOSISTEMA_URL_LOCATOR_CLICKS_READ_ONLY.md` (consulta read-only de clicks existentes con privacidad y sin escrituras).

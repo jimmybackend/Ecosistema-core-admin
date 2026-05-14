@@ -78,6 +78,7 @@ Limitaciones vigentes de autenticación:
 - Browser Analytics (read-only): `/browser/analytics`
 - Workflow runs (read-only): `/workflow/runs`, `/workflow/runs/{id}`, `/workflow/rules/{id}/runs`
 - Workflow dry-run: `/workflow/dry-run`, `/workflow/rules/{id}/dry-run`
+- Platform health read-only: `/platform/health`, `/platform/health/modules/{code}`
 - Health técnico DB: `/health/db`
 
 ## Módulos implementados
@@ -125,6 +126,7 @@ Limitaciones vigentes de autenticación:
 - No hay UI avanzada de perfiles, grupos o jerarquías.
 
 ## Estado operativo actual
+- Documento PR #117: `docs/project/ECOSISTEMA_PLATFORM_MODULE_HEALTH.md`.
 - Estado consolidado: `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`.
 - Resumen operativo: módulos activos, comandos, rutas, variables, riesgos, limitaciones y pendientes mayores.
 - Este README mantiene un resumen breve para evitar duplicidad; el detalle vive en el documento de cierre.

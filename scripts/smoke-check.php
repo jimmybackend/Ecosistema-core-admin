@@ -2180,3 +2180,35 @@ $repoContent = (string) file_get_contents($root . '/app/Core/Workflow/Ecosistema
 if (substr_count($repoContent, 'INSERT INTO workflow_runs') !== 1 || substr_count($repoContent, 'INSERT INTO workflow_run_logs') !== 1 || substr_count($repoContent, 'UPDATE workflow_runs') !== 1) {
     fail('Queries workflow_runs/logs deben existir sólo en ExecutionRepository.', $criticalFailures);
 } else { ok('Queries de escritura workflow centralizadas en ExecutionRepository.'); }
+
+$platformRequiredFiles = [
+    'app/Core/Platform/EcosistemaPlatformCockpitRepository.php',
+    'app/Core/Platform/EcosistemaPlatformCockpitService.php',
+    'app/Core/Platform/EcosistemaPlatformAdapter.php',
+    'resources/views/pages/platform/cockpit.php',
+    'docs/project/ECOSISTEMA_PLATFORM_COCKPIT.md',
+];
+foreach ($platformRequiredFiles as $platformFile) {
+    checkFile($root, $platformFile, $criticalFailures);
+}
+
+$platformRepositoryPath = $root . '/app/Core/Platform/EcosistemaPlatformCockpitRepository.php';
+if (is_file($platformRepositoryPath)) {
+    $platformRepositoryContent = (string) file_get_contents($platformRepositoryPath);
+    if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $platformRepositoryContent) === 1) {
+        fail('Repositorio Platform cockpit contiene escritura no permitida.', $criticalFailures);
+    } else {
+        ok('Repositorio Platform cockpit sólo contiene lecturas.');
+    }
+}
+
+if (is_file($routesFile)) {
+    $routesContent = (string) file_get_contents($routesFile);
+    if (str_contains($routesContent, "GET /platform")) { ok('routes/web.php contiene GET /platform.'); } else { fail('No se encontró GET /platform.', $criticalFailures); }
+    if (str_contains($routesContent, "GET /platform/cockpit")) { ok('routes/web.php contiene GET /platform/cockpit.'); } else { fail('No se encontró GET /platform/cockpit.', $criticalFailures); }
+    if (str_contains($routesContent, "\$_GET['tenant_id']") || str_contains($routesContent, "\$_POST['tenant_id']")) {
+        warn('Revisar manualmente posible uso tenant_id desde request en routes/web.php.', $warnings);
+    } else {
+        ok('No hay uso directo de tenant_id desde request en routes/web.php.');
+    }
+}

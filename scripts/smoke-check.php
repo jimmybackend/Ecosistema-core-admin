@@ -1701,10 +1701,10 @@ foreach (["'GET /browser/analytics/events'", "'GET /browser/analytics/pageviews/
 }
 
 $adapterContent = @file_get_contents($root . '/app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsAdapter.php');
-if ($adapterContent === false || !str_contains($adapterContent, "'dashboard_read'=>true") || !str_contains($adapterContent, "'events_read'=>true") || !str_contains($adapterContent, "'collector_write'=>false")) {
+if ($adapterContent === false || !str_contains($adapterContent, "'dashboard_read'=>true") || !str_contains($adapterContent, "'events_read'=>true") || !str_contains($adapterContent, "'collector_write'=>($enabled&&$write)") || !str_contains($adapterContent, "'privacy_controls'=>true")) {
     fail('Adapter Browser Analytics no declara capacidades read-only esperadas.', $criticalFailures);
 } else {
-    ok('Adapter Browser Analytics declara dashboard_read=true y collector_write=false.');
+    ok('Adapter Browser Analytics declara capacidades controladas y privacy_controls=true.');
 }
 
 $allPhpFiles = @shell_exec('find ' . escapeshellarg($root) . ' -type f -name "*.php"');
@@ -1716,7 +1716,10 @@ if (is_string($allPhpFiles) && $allPhpFiles !== '') {
         $content = @file_get_contents($absPath);
         if (!is_string($content)) { continue; }
         if (preg_match('/\b(INSERT|UPDATE|DELETE)\b[^;]*\bbrowser_analytics_/i', $content) === 1) {
-            $writeViolations[] = str_replace($root . '/', '', $absPath);
+            $rel = str_replace($root . '/', '', $absPath);
+            if ($rel !== 'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsCollectorRepository.php') {
+                $writeViolations[] = $rel;
+            }
         }
     }
     if ($writeViolations !== []) {
@@ -1769,4 +1772,16 @@ foreach ($eventViews as $eventViewFile) {
     } else {
         ok('Vista de events no expone metadata_json crudo: ' . $eventViewFile);
     }
+}
+
+
+$collectorServicePath = $root . '/app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsCollectorService.php';
+$collectorRepositoryPath = $root . '/app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsCollectorRepository.php';
+checkFile($root, 'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsCollectorService.php', $criticalFailures);
+checkFile($root, 'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsCollectorRepository.php', $criticalFailures);
+if ($routesContent !== false && str_contains($routesContent, "'POST /browser/analytics/collect'")) { ok('Existe ruta POST /browser/analytics/collect en routes/web.php.'); } else { fail('No existe ruta POST /browser/analytics/collect en routes/web.php.', $criticalFailures); }
+if (is_file($collectorServicePath)) {
+    $collectorServiceContent = (string) file_get_contents($collectorServicePath);
+    if (str_contains($collectorServiceContent, "'ip_address' => $collectIp ?") && str_contains($collectorServiceContent, "'user_agent' => $collectUa ?")) { ok('CollectorService respeta flags de IP y User-Agent.'); } else { fail('CollectorService no respeta flags de IP/User-Agent.', $criticalFailures); }
+    if (str_contains($collectorServiceContent, "tenant_id") && str_contains($collectorServiceContent, "request")) { fail('CollectorService parece aceptar tenant_id desde request.', $criticalFailures); } else { ok('CollectorService no acepta tenant_id desde request.'); }
 }

@@ -108,6 +108,8 @@ use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsPageviewService;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsEventRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsEventService;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorDryRunService;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorRepository;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorService;
 
 
 function startAuthSession(array $config): void
@@ -2470,6 +2472,27 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title'=>'Browser Analytics Collector Dry Run | Ecosistema Core Admin','contentView'=>'pages/browser-analytics/collector-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
+
+    'POST /browser/analytics/collect' => static function (array $config): void {
+        $featureEnabled = filter_var((string) getenv('ECOSISTEMA_BROWSER_ANALYTICS_ENABLED'), FILTER_VALIDATE_BOOL);
+        $writeEnabled = filter_var((string) getenv('ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE'), FILTER_VALIDATE_BOOL);
+        if (!$featureEnabled || !$writeEnabled) { renderJson(['ok' => false, 'error' => 'not_found'], 404); return; }
+        $origin = (string) ($_SERVER['HTTP_ORIGIN'] ?? '');
+        $expectedOrigin = rtrim((string) ($config['app']['url'] ?? getenv('APP_URL') ?? ''), '/');
+        if ($origin !== '' && $expectedOrigin !== '' && strpos($origin, $expectedOrigin) !== 0) { renderJson(['ok' => false, 'error' => 'forbidden_origin'], 403); return; }
+        $tenantId = (int) (getenv('ECOSISTEMA_BROWSER_ANALYTICS_TENANT_ID') ?: 0);
+        if ($tenantId <= 0) { renderJson(['ok' => false, 'error' => 'collector_unavailable'], 503); return; }
+        $payload = json_decode((string) file_get_contents('php://input'), true);
+        if (!is_array($payload)) { renderJson(['ok' => false, 'error' => 'invalid_payload'], 422); return; }
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaBrowserAnalyticsCollectorService(new EcosistemaBrowserAnalyticsCollectorRepository($pdo), $pdo);
+            $result = $service->collect($tenantId, 0, $payload, ['ip_address' => (string) ($_SERVER['REMOTE_ADDR'] ?? ''), 'user_agent' => (string) ($_SERVER['HTTP_USER_AGENT'] ?? '')]);
+            renderJson(['ok' => true, 'data' => $result], 200);
+        } catch (\InvalidArgumentException) { renderJson(['ok' => false, 'error' => 'invalid_payload'], 422);
+        } catch (\Throwable) { renderJson(['ok' => false, 'error' => 'collector_failed'], 500); }
     },
 
 

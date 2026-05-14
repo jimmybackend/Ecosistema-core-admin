@@ -470,3 +470,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 
 
 - Workflow ejecución controlada: `docs/project/ECOSISTEMA_WORKFLOW_EXECUTION_CONTROLLED.md`.
+
+- Platform cockpit read-only disponible en `/platform` (ver `docs/project/ECOSISTEMA_PLATFORM_COCKPIT.md`).

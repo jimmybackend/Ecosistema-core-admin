@@ -129,6 +129,9 @@ use App\Core\Crm\EcosistemaCrmLeadService;
 use App\Core\Crm\EcosistemaCrmSubmissionToLeadDryRunService;
 use App\Core\Crm\EcosistemaCrmLeadWriteRepository;
 use App\Core\Crm\EcosistemaCrmSubmissionToLeadService;
+use App\Core\Platform\EcosistemaPlatformAdapter;
+use App\Core\Platform\EcosistemaPlatformCockpitRepository;
+use App\Core\Platform\EcosistemaPlatformCockpitService;
 
 
 function startAuthSession(array $config): void
@@ -2600,6 +2603,26 @@ return [
 
     'POST /onboarding/run-steps/{id}/status' => static function (array $config,array $params): void { startAuthSession($config); if(!AuthSession::isAuthenticated()){header('Location: /login');return;} if (!requirePermission($config, 'onboarding.manage')) { return; } $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; } $id=(int)($params['id']??0); $status=(string)($_POST['status']??''); $allowed=['pending','running','completed','failed','skipped']; if(!in_array($status,$allowed,true)){ header('Location: /onboarding?error=1'); return; } $tenantId=(int)(AuthSession::getAuth()['auth_tenant_id']??0); try{$pdo=PdoFactory::make($config['database']); $q=$pdo->prepare('SELECT rs.id, rs.run_id, st.is_required FROM onboarding_run_steps rs INNER JOIN onboarding_runs r ON r.id = rs.run_id INNER JOIN onboarding_steps st ON st.id = rs.step_id WHERE rs.id = :id AND r.tenant_id = :tenant_id LIMIT 1'); $q->execute([':id'=>$id,':tenant_id'=>$tenantId]); $row=$q->fetch(PDO::FETCH_ASSOC); if(!is_array($row)){echo 'Onboarding run no encontrado.'; return;} $sql='UPDATE onboarding_run_steps SET status = :status'; $params2=[':status'=>$status,':id'=>$id]; if($status==='running'){$sql.=', started_at = COALESCE(started_at, NOW())';} if($status==='completed'){$sql.=', completed_at = NOW(), error_message = NULL';} if($status==='failed'){$sql.=', completed_at = NOW(), error_message = :error_message'; $params2[':error_message']=(string)($_POST['error_message']??'');} if($status==='skipped'){$sql.=', completed_at = NOW()';} $sql.=' WHERE id = :id'; $u=$pdo->prepare($sql); $u->execute($params2); $runId=(int)$row['run_id']; $pdo->prepare('INSERT INTO onboarding_run_logs (run_id, run_step_id, level, message, context_json) VALUES (:run_id,:run_step_id,:level,:message,:context_json)')->execute([':run_id'=>$runId,':run_step_id'=>$id,':level'=>$status==='failed'?'error':'info',':message'=>'Paso actualizado correctamente.',':context_json'=>json_encode(['status'=>$status])]); }catch(\Throwable){ renderError($config, 500); return;} header('Location: /onboarding/runs/'.(int)$row['run_id']); },
 
+
+    'GET /platform' => static function (array $config): void {
+        startAuthSession($config);
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $cockpit = ['modules'=>[],'links'=>[],'tenant_summary'=>['roles_count'=>0,'users_count'=>0]];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaPlatformCockpitService(new EcosistemaPlatformCockpitRepository($pdo), new EcosistemaPlatformAdapter());
+            $cockpit = $service->buildCockpit((int) ($auth['auth_tenant_id'] ?? 0));
+        } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Platform Cockpit | Ecosistema Core Admin', 'contentView' => 'pages/platform/cockpit', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => ['cockpit' => $cockpit]]);
+    },
+
+    'GET /platform/cockpit' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        header('Location: /platform');
+    },
 
     'GET /workflow' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

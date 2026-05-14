@@ -75,6 +75,7 @@ Limitaciones vigentes de autenticación:
 - Ecosistema Drive: `/cloud/drive`, `/cloud/drive/summary`, `/cloud/drive/files`, `/cloud/drive/files/{id}, /cloud/drive/files/{id}/s3-key-validation`, `/cloud/drive/folders`, `/cloud/drive/folders/{id}`, `/cloud/drive/browse`, `/cloud/drive/root`, `/cloud/drive/buckets`
 - Onboarding: `/onboarding`
 - URL Locator (read-only): `/url/locator`, `/url/locator/links`, `/url/locator/clicks`, `/url/locator/links/{id}`, `/url/locator/links/{id}/clicks`, `/url/locator/links/{id}/redirect-dry-run`
+- Browser Analytics (read-only): `/browser/analytics`
 - Health técnico DB: `/health/db`
 
 ## Módulos implementados
@@ -175,6 +176,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_URL_LOCATOR_REDIRECT_DRY_RUN.md` (simulación protegida de resolución de redirect sin redirección ni escrituras).
 - `docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md` (inventario canónico de Landing Pages sobre `adbbmis1_eco`, previo a implementación funcional de UI/lógica).
 - `docs/project/ECOSISTEMA_BROWSER_ANALYTICS_SCHEMA_INVENTORY.md` (inventario canónico de Browser Analytics sobre `adbbmis1_eco`, previo a UI/lógica funcional).
+- `docs/project/ECOSISTEMA_BROWSER_ANALYTICS_DASHBOARD_READ_ONLY.md` (dashboard administrativo read-only sobre rollups de Browser Analytics).
 
 ## Smoke checks básicos (PR #22)
 Ejecutar:

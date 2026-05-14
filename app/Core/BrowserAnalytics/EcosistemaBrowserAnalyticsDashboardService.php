@@ -1,0 +1,5 @@
+<?php
+declare(strict_types=1);
+namespace App\Core\BrowserAnalytics;
+final readonly class EcosistemaBrowserAnalyticsDashboardService{public function __construct(private EcosistemaBrowserAnalyticsDashboardRepository $repository, private EcosistemaBrowserAnalyticsAdapter $adapter){}
+public function build(int $tenantId): array{$summary=$this->repository->summarizeTenant($tenantId);return ['total_sessions'=>(int)($summary['total_sessions']??0),'total_pageviews'=>(int)($summary['total_pageviews']??0),'total_events'=>(int)($summary['total_events']??0),'total_conversions'=>(int)($summary['total_conversions']??0),'avg_duration_ms'=>(float)($summary['avg_duration_ms']??0),'avg_scroll_depth_percent'=>(float)($summary['avg_scroll_depth_percent']??0),'by_campaign'=>$this->repository->summarizeByCampaign($tenantId),'by_landing_page'=>$this->repository->summarizeByLandingPage($tenantId),'daily_rollups'=>$this->repository->summarizeDailyRollups($tenantId,30),'privacy_mode'=>'protected','mode'=>'read-only','db_write'=>false,'collector_enabled'=>false,'capabilities'=>$this->adapter->capabilities()];}}

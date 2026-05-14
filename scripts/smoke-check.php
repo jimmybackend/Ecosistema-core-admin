@@ -2131,3 +2131,29 @@ if (substr_count($allCore, 'INSERT INTO notifications_queue') === substr_count($
 $sendService = is_file($root . '/app/Core/MailNotifications/EcosistemaSendNotificationService.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaSendNotificationService.php') : '';
 if (!str_contains($sendService, "['tenant_id']") && !str_contains($sendService, "\$_POST['tenant_id']")) { ok('SendNotificationService no acepta tenant_id desde request.'); } else { fail('SendNotificationService acepta tenant_id desde request.', $criticalFailures); }
 if (!str_contains($sendService, 'password_encrypted') || !str_contains($sendService, 'result')) { ok('SendNotificationService no imprime password_encrypted.'); }
+
+$dryRunFiles = [
+    'app/Core/Workflow/EcosistemaWorkflowDryRunService.php',
+    'resources/views/pages/workflow/dry-run.php',
+    'docs/project/ECOSISTEMA_WORKFLOW_DRY_RUN.md',
+];
+foreach ($dryRunFiles as $dryRunFile) {
+    checkFile($root, $dryRunFile, $criticalFailures);
+}
+
+$routesContent = is_file($root . '/routes/web.php') ? (string) file_get_contents($root . '/routes/web.php') : '';
+foreach (['GET /workflow/rules/{id}/dry-run', 'POST /workflow/rules/{id}/dry-run', 'GET /workflow/dry-run', 'POST /workflow/dry-run'] as $route) {
+    if (str_contains($routesContent, $route)) { ok('Ruta dry-run presente: ' . $route); } else { fail('Ruta dry-run ausente: ' . $route, $criticalFailures); }
+}
+
+$envExample = is_file($root . '/.env.example') ? (string) file_get_contents($root . '/.env.example') : '';
+foreach (['ECOSISTEMA_WORKFLOW_ENABLED=false', 'ECOSISTEMA_WORKFLOW_DRY_RUN_ENABLED=false', 'ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED=false'] as $envFlag) {
+    if (str_contains($envExample, $envFlag)) { ok('.env.example mantiene flag segura: ' . $envFlag); } else { fail('.env.example no contiene: ' . $envFlag, $criticalFailures); }
+}
+
+$dryRunService = is_file($root . '/app/Core/Workflow/EcosistemaWorkflowDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Workflow/EcosistemaWorkflowDryRunService.php') : '';
+if (preg_match('/\b(eval|mail\s*\(|curl_|webhook_called\s*=\s*true)\b/i', $dryRunService) === 1) {
+    fail('Dry-run contiene ejecución no permitida.', $criticalFailures);
+} else {
+    ok('Dry-run sin ejecución prohibida (eval/mail/curl/webhook real).');
+}

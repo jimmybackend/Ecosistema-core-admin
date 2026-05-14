@@ -1878,3 +1878,19 @@ if ($routesContent !== false && str_contains((string) $routesContent, 'GET /crm/
 } else {
     fail('Falta ruta CRM dry-run: GET /crm/submission-to-lead/{id}/dry-run', $criticalFailures);
 }
+
+$crmWriteRequired = [
+    'app/Core/Crm/EcosistemaCrmLeadWriteRepository.php',
+    'app/Core/Crm/EcosistemaCrmSubmissionToLeadService.php',
+    'resources/views/pages/crm/submission-to-lead-result.php',
+    'docs/project/ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_CONTROLLED.md',
+];
+foreach ($crmWriteRequired as $file) { checkFile($root, $file, $criticalFailures); }
+
+$crmWriteRepo = is_file($root . '/app/Core/Crm/EcosistemaCrmLeadWriteRepository.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmLeadWriteRepository.php') : '';
+$writeInsertAllowed = str_contains($crmWriteRepo, 'INSERT INTO crm_leads');
+$dryRunHasInsert = stripos((string) $crmDryRunServiceContent, 'INSERT INTO crm_leads') !== false;
+if ($writeInsertAllowed && !$dryRunHasInsert) { ok('INSERT INTO crm_leads aparece solo en flujo de write controlado.'); } else { fail('INSERT INTO crm_leads no cumple restricción de write controlado.', $criticalFailures); }
+
+if ($routesContent !== false && str_contains((string) $routesContent, 'POST /crm/submission-to-lead/{id}')) { ok('Ruta CRM write detectada: POST /crm/submission-to-lead/{id}'); } else { fail('Falta ruta CRM write: POST /crm/submission-to-lead/{id}', $criticalFailures); }
+if ($routesContent !== false && str_contains((string) $routesContent, 'ensureValidCsrfToken')) { ok('Ruta write usa CSRF.'); } else { fail('Ruta write debe validar CSRF.', $criticalFailures); }

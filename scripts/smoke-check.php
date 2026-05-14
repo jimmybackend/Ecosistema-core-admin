@@ -2453,3 +2453,18 @@ $routeContent = @file_get_contents($root . '/routes/web.php');
 if ($routeContent !== false && str_contains($routeContent, "'POST /attribution/rollups/generate'")) { ok('Existe ruta POST /attribution/rollups/generate.'); } else { fail('No existe ruta POST /attribution/rollups/generate.', $criticalFailures); }
 
 if ($envContent !== false && str_contains($envContent, 'ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE=false')) { ok('Flag ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE=false presente en .env.example.'); } else { fail('Falta ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE=false en .env.example.', $criticalFailures); }
+
+
+foreach (['app/Core/Crm/EcosistemaCrmFollowupTaskDryRunRepository.php','app/Core/Crm/EcosistemaCrmFollowupTaskDryRunService.php','resources/views/pages/crm/followup-task-dry-run.php','docs/project/ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto CRM followup-task dry-run: ' . $requiredPath); }
+    else { fail('Falta artefacto CRM followup-task dry-run: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false) {
+    foreach (['GET /crm/leads/{id}/followup-task-dry-run','POST /crm/leads/{id}/followup-task-dry-run'] as $routeNeedle) {
+        if (str_contains($routesContent, $routeNeedle)) { ok('Ruta CRM followup-task dry-run detectada: ' . $routeNeedle); }
+        else { fail('Falta ruta CRM followup-task dry-run: ' . $routeNeedle, $criticalFailures); }
+    }
+}
+if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN=false')) { ok('Flag CRM followup-task dry-run en .env.example con default false.'); } else { fail('Falta flag ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN=false en .env.example.', $criticalFailures); }
+$followupTaskService = is_file($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskDryRunService.php') : '';
+if (preg_match('/(INSERT|UPDATE|DELETE)/i', $followupTaskService) === 1) { fail('Servicio followup-task dry-run contiene escritura SQL.', $criticalFailures); } else { ok('Servicio followup-task dry-run sin escritura SQL.'); }

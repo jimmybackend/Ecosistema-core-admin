@@ -12,7 +12,7 @@ $errorMessage = $contentData['errorMessage'] ?? null;
 <?php if (is_string($errorMessage) && $errorMessage !== ''): ?><p><?= htmlspecialchars($errorMessage) ?></p><?php else: ?>
 <p>Lead #<?= (int)($lead['id'] ?? 0) ?> · Status: <?= htmlspecialchars((string)($lead['status'] ?? '')) ?></p>
 <p>Empresa: <?= htmlspecialchars((string)($lead['company_name_preview'] ?? '')) ?> · Contacto: <?= htmlspecialchars((string)($lead['contact_name_preview'] ?? '—')) ?></p>
-<p><a href="/crm/leads/<?= (int)($lead['id'] ?? 0) ?>/followups">Ver followups del lead</a></p>
+<p><a href="/crm/leads/<?= (int)($lead['id'] ?? 0) ?>/followups">Ver followups del lead</a> · <a href="/crm/leads/<?= (int)($lead['id'] ?? 0) ?>/followup-task-dry-run">Simular tarea de seguimiento</a></p>
 <h2>Campañas vinculadas</h2><ul><?php foreach ($campaignLinks as $row): ?><li>#<?= (int)$row['campaign_id'] ?> <?= htmlspecialchars((string)($row['campaign_name'] ?? '')) ?> · <?= htmlspecialchars((string)($row['status'] ?? '')) ?></li><?php endforeach; ?></ul>
 <h2>Conversiones</h2><ul><?php foreach ($conversions as $row): ?><li>#<?= (int)$row['id'] ?> · <?= htmlspecialchars((string)($row['conversion_type'] ?? '')) ?> · <?= htmlspecialchars((string)($row['converted_at'] ?? '')) ?></li><?php endforeach; ?></ul>
 <h2>Attribution</h2><ul><?php foreach ($attributions as $row): ?><li>#<?= (int)$row['id'] ?> · <?= htmlspecialchars((string)($row['utm_source'] ?? '')) ?> / <?= htmlspecialchars((string)($row['utm_campaign'] ?? '')) ?> · <?= htmlspecialchars((string)($row['attributed_at'] ?? '')) ?></li><?php endforeach; ?></ul>

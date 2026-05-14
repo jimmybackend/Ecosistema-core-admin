@@ -200,6 +200,11 @@ $requiredFiles = [
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsDashboardService.php',
     'resources/views/pages/browser-analytics/dashboard.php',
     'docs/project/ECOSISTEMA_BROWSER_ANALYTICS_DASHBOARD_READ_ONLY.md',
+    'docs/project/ECOSISTEMA_BROWSER_ANALYTICS_PAGEVIEWS_READ_ONLY.md',
+    'resources/views/pages/browser-analytics/session-pageviews.php',
+    'resources/views/pages/browser-analytics/pageviews.php',
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsPageviewService.php',
+    'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsPageviewRepository.php',
     'resources/views/pages/landing/index.php',
     'resources/views/pages/landing/pages.php',
     'resources/views/pages/landing/page-detail.php',
@@ -1696,5 +1701,26 @@ if (is_string($allPhpFiles) && $allPhpFiles !== '') {
         fail('Se detectaron escrituras SQL sobre browser_analytics_*: ' . implode(', ', $writeViolations), $criticalFailures);
     } else {
         ok('No se detectaron INSERT/UPDATE/DELETE sobre browser_analytics_* en archivos PHP.');
+    }
+}
+
+
+$pageviewRepoPath = $root . '/app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsPageviewRepository.php';
+if (is_file($pageviewRepoPath)) {
+    $repoContent = (string) file_get_contents($pageviewRepoPath);
+    if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $repoContent) === 1) {
+        fail('Repository de pageviews contiene sentencia de escritura SQL.', $criticalFailures);
+    } else {
+        ok('Repository de pageviews no contiene INSERT/UPDATE/DELETE.');
+    }
+}
+
+$viewPageviewsPath = $root . '/resources/views/pages/browser-analytics/pageviews.php';
+if (is_file($viewPageviewsPath)) {
+    $viewContent = (string) file_get_contents($viewPageviewsPath);
+    if (str_contains($viewContent, "query_string") || str_contains($viewContent, "meta_json")) {
+        fail('Vista pageviews expone campos sensibles crudos.', $criticalFailures);
+    } else {
+        ok('Vista pageviews no expone query_string/meta_json crudos.');
     }
 }

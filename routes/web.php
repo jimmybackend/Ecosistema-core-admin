@@ -103,6 +103,8 @@ use App\Core\Landing\EcosistemaLandingSubmissionRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsAdapter;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsDashboardService;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsPageviewRepository;
+use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsPageviewService;
 
 
 function startAuthSession(array $config): void
@@ -1024,6 +1026,49 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title'=>'Browser Analytics | Ecosistema Core Admin','contentView'=>'pages/browser-analytics/dashboard','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('dashboard')]);
+    },
+
+
+
+    'GET /browser/analytics/pageviews' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $pageviews = ['summary' => [], 'items' => [], 'mode' => 'read-only', 'db_write' => false];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaBrowserAnalyticsPageviewService(new EcosistemaBrowserAnalyticsPageviewRepository($pdo), new EcosistemaBrowserAnalyticsAdapter());
+            $pageviews = $service->listRecent($tenantId, 100);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Browser Analytics Pageviews | Ecosistema Core Admin','contentView'=>'pages/browser-analytics/pageviews','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('pageviews')]);
+    },
+
+    'GET /browser/analytics/sessions/{id}/pageviews' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $sessionId = (int) ($params['id'] ?? 0);
+        if ($sessionId <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $pageviews = ['summary' => [], 'items' => [], 'mode' => 'read-only', 'db_write' => false, 'session_id' => $sessionId];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaBrowserAnalyticsPageviewService(new EcosistemaBrowserAnalyticsPageviewRepository($pdo), new EcosistemaBrowserAnalyticsAdapter());
+            $pageviews = $service->listForSession($tenantId, $sessionId, 100);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Session Pageviews | Ecosistema Core Admin','contentView'=>'pages/browser-analytics/session-pageviews','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('pageviews')]);
     },
 
     'GET /landing' => static function (array $config): void {

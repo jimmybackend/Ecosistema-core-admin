@@ -10,4 +10,5 @@ $capabilities = (array)($contentData['capabilities'] ?? []);
         <?php endforeach; ?>
     </ul>
     <p><a href="/crm/campaigns">Ver campañas</a></p>
+    <p><a href="/crm/leads">Ver leads</a></p>
 </section>

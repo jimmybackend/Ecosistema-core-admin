@@ -41,4 +41,19 @@
 
     <button type="submit">Simular envío</button>
   </form>
+
+
+  <?php $canRealSend = filter_var((string) getenv('ECOSISTEMA_MAIL_NOTIFICATIONS_ENABLED'), FILTER_VALIDATE_BOOL) && filter_var((string) getenv('ECOSISTEMA_MAIL_SEND_ENABLED'), FILTER_VALIDATE_BOOL); ?>
+  <?php if ($canRealSend): ?>
+    <h2>Enviar controlado</h2>
+    <form method="post" action="/mail-notifications/send">
+      <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string) ($csrfToken ?? '')) ?>">
+      <label>template_id</label><br><input type="number" min="1" name="template_id" required><br><br>
+      <label>recipient_user_id</label><br><input type="number" min="1" name="recipient_user_id" required><br><br>
+      <label>mailbox_id</label><br><input type="number" min="1" name="mailbox_id" required><br><br>
+      <label>payload_json (opcional)</label><br><textarea name="payload_json" rows="4" cols="80">{}</textarea><br><br>
+      <button type="submit">Enviar controlado</button>
+    </form>
+  <?php endif; ?>
+
 </section>

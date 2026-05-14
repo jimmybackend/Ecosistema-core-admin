@@ -2039,3 +2039,19 @@ $sendDryRunService = is_file($root . '/app/Core/MailNotifications/EcosistemaSend
 if (preg_match('/\bINSERT\s+INTO\s+(notifications_queue|mail_messages)\b/i', $sendDryRunService) === 1) { fail('Servicio send dry-run contiene INSERT no permitido.', $criticalFailures); } else { ok('Servicio send dry-run sin INSERT en notifications_queue/mail_messages.'); }
 if (preg_match('/\b(mail\s*\(|smtp|curl_init)\b/i', $sendDryRunService) === 1) { fail('Servicio send dry-run detecta uso de mail()/SMTP/curl.', $criticalFailures); } else { ok('Servicio send dry-run no usa mail()/SMTP/curl.'); }
 
+
+checkFile($root, 'app/Core/MailNotifications/EcosistemaSendNotificationRepository.php', $criticalFailures);
+checkFile($root, 'app/Core/MailNotifications/EcosistemaSendNotificationService.php', $criticalFailures);
+checkFile($root, 'resources/views/pages/mail-notifications/send-result.php', $criticalFailures);
+checkFile($root, 'docs/project/ECOSISTEMA_SEND_NOTIFICATION_CONTROLLED.md', $criticalFailures);
+
+$envExample = is_file($root . '/.env.example') ? (string) file_get_contents($root . '/.env.example') : '';
+if (str_contains($envExample, 'ECOSISTEMA_MAIL_NOTIFICATIONS_ENABLED=false') && str_contains($envExample, 'ECOSISTEMA_MAIL_SEND_ENABLED=false') && str_contains($envExample, 'ECOSISTEMA_SMTP_ENABLED=false')) { ok('.env.example mantiene flags en false.'); } else { fail('.env.example no mantiene flags de mail notifications en false.', $criticalFailures); }
+
+$sendRepo = is_file($root . '/app/Core/MailNotifications/EcosistemaSendNotificationRepository.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaSendNotificationRepository.php') : '';
+$allCore = (string) shell_exec('cat ' . escapeshellarg($root . '/app/Core/MailNotifications') . '/*.php 2>/dev/null');
+if (substr_count($allCore, 'INSERT INTO notifications_queue') === substr_count($sendRepo, 'INSERT INTO notifications_queue') && substr_count($allCore, 'INSERT INTO mail_messages') === substr_count($sendRepo, 'INSERT INTO mail_messages')) { ok('INSERT notifications_queue/mail_messages localizado sólo en SendNotificationRepository.'); } else { fail('INSERT notifications_queue/mail_messages aparece fuera de SendNotificationRepository.', $criticalFailures); }
+
+$sendService = is_file($root . '/app/Core/MailNotifications/EcosistemaSendNotificationService.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaSendNotificationService.php') : '';
+if (!str_contains($sendService, "['tenant_id']") && !str_contains($sendService, "\$_POST['tenant_id']")) { ok('SendNotificationService no acepta tenant_id desde request.'); } else { fail('SendNotificationService acepta tenant_id desde request.', $criticalFailures); }
+if (!str_contains($sendService, 'password_encrypted') || !str_contains($sendService, 'result')) { ok('SendNotificationService no imprime password_encrypted.'); }

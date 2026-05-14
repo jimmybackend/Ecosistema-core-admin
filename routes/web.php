@@ -41,6 +41,8 @@ use App\Core\MailNotifications\EcosistemaNotificationTemplateService;
 use App\Core\MailNotifications\EcosistemaNotificationQueueRepository;
 use App\Core\MailNotifications\EcosistemaNotificationQueueService;
 use App\Core\MailNotifications\EcosistemaSendNotificationDryRunService;
+use App\Core\MailNotifications\EcosistemaSendNotificationRepository;
+use App\Core\MailNotifications\EcosistemaSendNotificationService;
 use App\Core\MailNotifications\EcosistemaUrlMessageTemplateRepository;
 use App\Core\MailNotifications\EcosistemaUrlMessageTemplateService;
 use App\Core\Cloud\CloudFileRepository;
@@ -992,6 +994,28 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title' => 'Send Notification Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/send-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage')]);
     },
+
+    'POST /mail-notifications/send' => static function (array $config): void {
+        startAuthSession($config); if (!requirePermission($config, 'mail.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth();
+        $result = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $authUserId = (int) ($auth['auth_user_id'] ?? 0);
+            $service = new EcosistemaSendNotificationService($pdo, new EcosistemaSendNotificationRepository($pdo), new EcosistemaMailNotificationsAdapter());
+            $result = $service->sendControlled($tenantId, $authUserId, $_POST);
+            if (!is_array($result) || empty($result['ok'])) {
+                $errorMessage = is_array($result) ? (string) ($result['error'] ?? 'No se pudo preparar el envío controlado.') : 'No se pudo preparar el envío controlado.';
+            }
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo preparar el envío controlado.';
+        }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Send Notification Result | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/send-result', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage')]);
+    },
+
     'GET /mail/compose' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }

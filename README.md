@@ -480,3 +480,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Muestra permisos por módulo/rol para el tenant autenticado.
 - No crea ni modifica roles/permisos; sólo consultas `SELECT`.
 - Documento técnico: `docs/project/ECOSISTEMA_PERMISSIONS_AUDIT.md`.
+
+- Landing public render dry-run (`/landing/pages/{id}/public-render-dry-run`) bloqueado por flag `ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN.md`.

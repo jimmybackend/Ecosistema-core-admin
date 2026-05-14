@@ -100,6 +100,40 @@ final readonly class EcosistemaLandingPageRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+
+    public function findPublishedVersion(int $tenantId, int $pageId): ?array
+    {
+        if ($pageId <= 0) {
+            return null;
+        }
+
+        $sql = 'SELECT id,landing_page_id,version_no,title,layout_json,custom_css,custom_js,is_published,created_at FROM landing_page_versions WHERE tenant_id=:tenant_id AND landing_page_id=:page_id AND is_published=1 ORDER BY version_no DESC,id DESC LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
+        $stmt->bindValue(':page_id', $pageId, PDO::PARAM_INT);
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function listBlocksByVersion(int $tenantId, int $pageId, int $versionId, int $limit = 100): array
+    {
+        if ($pageId <= 0 || $versionId <= 0) {
+            return [];
+        }
+
+        $safeLimit = $this->safeLimit($limit);
+        $sql = 'SELECT id,version_id,parent_block_id,block_type,name,sort_order,is_active,settings_json,content_json,created_at,updated_at FROM landing_page_blocks WHERE tenant_id=:tenant_id AND landing_page_id=:page_id AND version_id=:version_id ORDER BY sort_order ASC,id ASC LIMIT :limit';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
+        $stmt->bindValue(':page_id', $pageId, PDO::PARAM_INT);
+        $stmt->bindValue(':version_id', $versionId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $safeLimit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
     private function safeLimit(int $limit): int
     {
         return max(1, min(200, $limit));

@@ -2274,3 +2274,26 @@ if (is_file($permissionsViewPath)) {
         ok('Vista de auditoría de permisos sin exposición de campos sensibles.');
     }
 }
+
+$landingDryRunFiles = [
+    'app/Core/Landing/EcosistemaLandingPublicRenderDryRunService.php',
+    'resources/views/pages/landing/public-render-dry-run.php',
+    'docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN.md',
+];
+foreach ($landingDryRunFiles as $file) { checkFile($root, $file, $criticalFailures); }
+
+if (is_file($routesFile)) {
+    $routesContent = (string) file_get_contents($routesFile);
+    if (str_contains($routesContent, 'GET /landing/pages/{id}/public-render-dry-run')) { ok('routes/web.php contiene GET /landing/pages/{id}/public-render-dry-run.'); } else { fail('No se encontró GET /landing/pages/{id}/public-render-dry-run.', $criticalFailures); }
+    if (str_contains($routesContent, "\$_REQUEST['tenant_id']") || str_contains($routesContent, "\$_GET['tenant_id']") || str_contains($routesContent, "\$_POST['tenant_id']")) {
+        warn('Revisar manualmente uso de tenant_id desde request en routes/web.php.', $warnings);
+    } else {
+        ok('Ruta dry-run no acepta tenant_id desde request.');
+    }
+}
+
+if (!str_contains($envContent, 'ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false')) {
+    fail('Falta flag ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false en .env.example.', $criticalFailures);
+} else {
+    ok('Flag ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false presente.');
+}

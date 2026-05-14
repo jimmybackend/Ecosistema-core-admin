@@ -10,7 +10,7 @@ final class EcosistemaCrmAdapter
     {
         return [
             'campaigns_read' => true,
-            'leads_read' => false,
+            'leads_read' => true,
             'lead_detail_read' => false,
             'lead_write' => false,
             'campaign_write' => false,

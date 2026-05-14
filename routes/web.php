@@ -113,6 +113,8 @@ use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorService;
 use App\Core\Crm\EcosistemaCrmAdapter;
 use App\Core\Crm\EcosistemaCrmCampaignRepository;
 use App\Core\Crm\EcosistemaCrmCampaignService;
+use App\Core\Crm\EcosistemaCrmLeadRepository;
+use App\Core\Crm\EcosistemaCrmLeadService;
 
 
 function startAuthSession(array $config): void
@@ -1350,6 +1352,28 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'CRM Campaigns | Ecosistema Core Admin','contentView'=>'pages/crm/campaigns','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','campaigns')]);
+    },
+
+    'GET /crm/leads' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'by_status' => []];
+        $leads = [];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmLeadService(new EcosistemaCrmLeadRepository($pdo), new EcosistemaCrmAdapter());
+            $data = $service->listLeads($tenantId);
+            $summary = (array) ($data['summary'] ?? []);
+            $leads = (array) ($data['leads'] ?? []);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Leads | Ecosistema Core Admin','contentView'=>'pages/crm/leads','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','leads')]);
     },
 
     'GET /crm/campaigns/{id}' => static function (array $config, array $params): void {

@@ -216,10 +216,34 @@ $requiredFiles = [
     'resources/views/pages/landing/index.php',
     'resources/views/pages/landing/pages.php',
     'resources/views/pages/landing/page-detail.php',
+    'app/Core/Crm/EcosistemaCrmLeadRepository.php',
+    'app/Core/Crm/EcosistemaCrmLeadService.php',
+    'resources/views/pages/crm/leads.php',
+    'docs/project/ECOSISTEMA_CRM_LEADS_READ_ONLY.md',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
     checkFile($root, $requiredFile, $criticalFailures);
+}
+
+$leadRepositoryPath = $root . '/app/Core/Crm/EcosistemaCrmLeadRepository.php';
+if (is_file($leadRepositoryPath)) {
+    $leadRepositoryContent = (string) file_get_contents($leadRepositoryPath);
+    if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $leadRepositoryContent) === 1) {
+        fail('Repositorio CRM leads contiene escritura no permitida.', $criticalFailures);
+    } else {
+        ok('Repositorio CRM leads no contiene INSERT/UPDATE/DELETE.');
+    }
+}
+
+$leadViewPath = $root . '/resources/views/pages/crm/leads.php';
+if (is_file($leadViewPath)) {
+    $leadViewContent = (string) file_get_contents($leadViewPath);
+    if (str_contains($leadViewContent, "['email']") || str_contains($leadViewContent, "['phone']") || str_contains($leadViewContent, "['contact_name']")) {
+        fail('Vista CRM leads imprime campos sensibles crudos.', $criticalFailures);
+    } else {
+        ok('Vista CRM leads usa previews para campos sensibles.');
+    }
 }
 
 if (is_file($root . '/bootstrap/app.php')) {

@@ -1785,3 +1785,28 @@ if (is_file($collectorServicePath)) {
     if (str_contains($collectorServiceContent, "'ip_address' => $collectIp ?") && str_contains($collectorServiceContent, "'user_agent' => $collectUa ?")) { ok('CollectorService respeta flags de IP y User-Agent.'); } else { fail('CollectorService no respeta flags de IP/User-Agent.', $criticalFailures); }
     if (str_contains($collectorServiceContent, "tenant_id") && str_contains($collectorServiceContent, "request")) { fail('CollectorService parece aceptar tenant_id desde request.', $criticalFailures); } else { ok('CollectorService no acepta tenant_id desde request.'); }
 }
+
+$crmRequired = [
+    'app/Core/Crm/EcosistemaCrmAdapter.php',
+    'app/Core/Crm/EcosistemaCrmCampaignRepository.php',
+    'app/Core/Crm/EcosistemaCrmCampaignService.php',
+    'resources/views/pages/crm/index.php',
+    'resources/views/pages/crm/campaigns.php',
+    'resources/views/pages/crm/campaign-detail.php',
+    'docs/project/ECOSISTEMA_CRM_CAMPAIGNS_READ_ONLY.md',
+];
+foreach ($crmRequired as $crmFile) { checkFile($root, $crmFile, $criticalFailures); }
+
+$crmAdapterContent = is_file($root . '/app/Core/Crm/EcosistemaCrmAdapter.php') ? file_get_contents($root . '/app/Core/Crm/EcosistemaCrmAdapter.php') : false;
+if ($crmAdapterContent !== false && str_contains($crmAdapterContent, "'campaign_write' => false")) { ok('CRM adapter mantiene campaign_write=false.'); }
+else { fail('CRM adapter no mantiene campaign_write=false.', $criticalFailures); }
+
+$crmRepoContent = is_file($root . '/app/Core/Crm/EcosistemaCrmCampaignRepository.php') ? file_get_contents($root . '/app/Core/Crm/EcosistemaCrmCampaignRepository.php') : false;
+if ($crmRepoContent !== false && preg_match('/\b(INSERT|UPDATE|DELETE)\b\s+.*crm_marketing_campaigns/i', $crmRepoContent) !== 1) { ok('CRM repository sin escrituras sobre crm_marketing_campaigns.'); }
+else { fail('CRM repository contiene escrituras sobre crm_marketing_campaigns.', $criticalFailures); }
+
+$routesContent = is_file($root . '/routes/web.php') ? file_get_contents($root . '/routes/web.php') : false;
+foreach (['GET /crm', 'GET /crm/campaigns', 'GET /crm/campaigns/{id}'] as $crmRoute) {
+    if ($routesContent !== false && str_contains($routesContent, $crmRoute)) { ok('Ruta CRM detectada: ' . $crmRoute); }
+    else { fail('Falta ruta CRM: ' . $crmRoute, $criticalFailures); }
+}

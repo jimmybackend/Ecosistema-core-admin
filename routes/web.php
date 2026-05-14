@@ -110,6 +110,9 @@ use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsEventService;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorDryRunService;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorRepository;
 use App\Core\BrowserAnalytics\EcosistemaBrowserAnalyticsCollectorService;
+use App\Core\Crm\EcosistemaCrmAdapter;
+use App\Core\Crm\EcosistemaCrmCampaignRepository;
+use App\Core\Crm\EcosistemaCrmCampaignService;
 
 
 function startAuthSession(array $config): void
@@ -1312,6 +1315,63 @@ return [
         try { $pdo=PdoFactory::make($config['database']); $service=new EcosistemaLandingSubmissionService(new EcosistemaLandingSubmissionRepository($pdo), new EcosistemaLandingAdapter()); $data=$service->getSubmissionDetail($tenantId, $id); $submission=$data['submission']??null; $values=(array)($data['values']??[]);} catch (\Throwable) {}
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Landing Submission Detail | Ecosistema Core Admin','contentView'=>'pages/landing/submission-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('submission','values')]);
+    },
+
+
+    'GET /crm' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $capabilities = (new EcosistemaCrmAdapter())->capabilities();
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM | Ecosistema Core Admin','contentView'=>'pages/crm/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('capabilities')]);
+    },
+
+    'GET /crm/campaigns' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0, 'by_status' => []];
+        $campaigns = [];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmCampaignService(new EcosistemaCrmCampaignRepository($pdo), new EcosistemaCrmAdapter());
+            $data = $service->listCampaigns($tenantId);
+            $summary = (array) ($data['summary'] ?? []);
+            $campaigns = (array) ($data['campaigns'] ?? []);
+        } catch (\Throwable) {
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Campaigns | Ecosistema Core Admin','contentView'=>'pages/crm/campaigns','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','campaigns')]);
+    },
+
+    'GET /crm/campaigns/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $campaign = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmCampaignService(new EcosistemaCrmCampaignRepository($pdo), new EcosistemaCrmAdapter());
+            $campaign = $service->getCampaign($tenantId, $id);
+            if ($campaign === null) { $errorMessage = 'Campaña no encontrada para el tenant actual.'; }
+        } catch (\Throwable) { $errorMessage = 'No se pudo obtener el detalle de la campaña.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Campaign Detail | Ecosistema Core Admin','contentView'=>'pages/crm/campaign-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('campaign','errorMessage')]);
     },
 
     'GET /cloud' => static function (array $config): void {

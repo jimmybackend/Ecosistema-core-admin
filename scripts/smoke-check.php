@@ -195,6 +195,7 @@ $requiredFiles = [
     'resources/views/pages/landing/page-visits.php',
     'docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md',
     'docs/project/ECOSISTEMA_MAIL_NOTIFICATIONS_SCHEMA_INVENTORY.md',
+    'docs/project/ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md',
     'docs/project/ECOSISTEMA_NOTIFICATION_TEMPLATES_READ_ONLY.md',
     'app/Core/MailNotifications/EcosistemaMailNotificationsAdapter.php',
     'app/Core/MailNotifications/EcosistemaNotificationTemplateRepository.php',
@@ -1378,6 +1379,42 @@ if (is_string($gitDiff) && preg_match('/^\+\+\+ b\/.*(migrations?|seeds?)\//mi',
     fail('Se detectó creación/modificación en rutas de migraciones o seeds.', $criticalFailures);
 } else {
     ok('No se detectaron cambios en migraciones o seeds.');
+}
+
+
+$workflowInventoryPath = $root . '/docs/project/ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md';
+if (is_file($workflowInventoryPath)) {
+    ok('Existe inventario Workflow canónico.');
+} else {
+    fail('No existe docs/project/ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md', $criticalFailures);
+}
+
+$readmeContent = is_file($root . '/README.md') ? file_get_contents($root . '/README.md') : false;
+if ($readmeContent !== false && str_contains($readmeContent, 'ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md')) {
+    ok('README.md referencia inventario Workflow.');
+} else {
+    fail('README.md no referencia ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md', $criticalFailures);
+}
+
+$workflowInventoryContent = is_file($workflowInventoryPath) ? file_get_contents($workflowInventoryPath) : false;
+foreach (['workflow_rules', 'workflow_actions', 'workflow_runs', 'workflow_run_logs', 'module_workflow_links', 'adbbmis1_eco'] as $requiredMention) {
+    if ($workflowInventoryContent !== false && str_contains($workflowInventoryContent, $requiredMention)) {
+        ok('Inventario Workflow menciona: ' . $requiredMention);
+    } else {
+        fail('Inventario Workflow no menciona: ' . $requiredMention, $criticalFailures);
+    }
+}
+
+if (is_string($gitDiff) && preg_match('#^\+.*(/workflow|GET\s+/workflow|POST\s+/workflow)#mi', $gitDiff) === 1) {
+    fail('Se detectó posible ruta funcional Workflow en cambios del PR.', $criticalFailures);
+} else {
+    ok('No se detectaron rutas funcionales Workflow en cambios del PR.');
+}
+
+if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*workflow_/mi', $gitDiff) === 1) {
+    fail('Se detectó escritura SQL sobre tablas workflow_* en cambios del PR.', $criticalFailures);
+} else {
+    ok('Sin escrituras SQL sobre tablas workflow_* en cambios del PR.');
 }
 
 $landingInventoryPath = $root . '/docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md';

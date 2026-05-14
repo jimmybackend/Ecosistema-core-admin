@@ -2229,3 +2229,48 @@ if (is_file($healthViewPath)) {
         ok('Vista platform/health sin exposición de JSON sensible.');
     }
 }
+
+$permissionsAuditRequiredFiles = [
+    'app/Core/Security/EcosistemaPermissionAuditRepository.php',
+    'app/Core/Security/EcosistemaPermissionAuditService.php',
+    'resources/views/pages/security/permissions-audit.php',
+    'resources/views/pages/security/module-permissions-audit.php',
+    'docs/project/ECOSISTEMA_PERMISSIONS_AUDIT.md',
+];
+foreach ($permissionsAuditRequiredFiles as $permissionsFile) { checkFile($root, $permissionsFile, $criticalFailures); }
+
+$securityRepoPath = $root . '/app/Core/Security/EcosistemaPermissionAuditRepository.php';
+if (is_file($securityRepoPath)) {
+    $securityRepoContent = (string) file_get_contents($securityRepoPath);
+    if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $securityRepoContent) === 1) {
+        fail('EcosistemaPermissionAuditRepository contiene escritura no permitida.', $criticalFailures);
+    } else {
+        ok('EcosistemaPermissionAuditRepository sólo contiene lecturas.');
+    }
+}
+
+$securityServicePath = $root . '/app/Core/Security/EcosistemaPermissionAuditService.php';
+if (is_file($securityServicePath)) {
+    $securityServiceContent = (string) file_get_contents($securityServicePath);
+    if (str_contains($securityServiceContent, "['tenant_id']") || str_contains($securityServiceContent, '$_POST[\'tenant_id\']') || str_contains($securityServiceContent, '$_GET[\'tenant_id\']')) {
+        fail('EcosistemaPermissionAuditService acepta tenant_id desde request.', $criticalFailures);
+    } else {
+        ok('EcosistemaPermissionAuditService no acepta tenant_id desde request.');
+    }
+}
+
+if (is_file($routesFile)) {
+    $routesContent = (string) file_get_contents($routesFile);
+    if (str_contains($routesContent, 'GET /security/permissions-audit')) { ok('routes/web.php contiene GET /security/permissions-audit.'); } else { fail('No se encontró GET /security/permissions-audit.', $criticalFailures); }
+    if (str_contains($routesContent, 'GET /security/permissions-audit/modules/{code}')) { ok('routes/web.php contiene GET /security/permissions-audit/modules/{code}.'); } else { fail('No se encontró GET /security/permissions-audit/modules/{code}.', $criticalFailures); }
+}
+
+$permissionsViewPath = $root . '/resources/views/pages/security/module-permissions-audit.php';
+if (is_file($permissionsViewPath)) {
+    $permissionsViewContent = (string) file_get_contents($permissionsViewPath);
+    if (str_contains($permissionsViewContent, 'details_json') || str_contains($permissionsViewContent, 'metadata_json') || str_contains($permissionsViewContent, 'payload_json') || str_contains($permissionsViewContent, 'password_hash')) {
+        fail('Vista de auditoría de permisos expone campos sensibles.', $criticalFailures);
+    } else {
+        ok('Vista de auditoría de permisos sin exposición de campos sensibles.');
+    }
+}

@@ -1409,25 +1409,31 @@ $workflowFiles = [
     'app/Core/Workflow/EcosistemaWorkflowAdapter.php',
     'app/Core/Workflow/EcosistemaWorkflowRuleRepository.php',
     'app/Core/Workflow/EcosistemaWorkflowRuleService.php',
+    'app/Core/Workflow/EcosistemaWorkflowRunRepository.php',
+    'app/Core/Workflow/EcosistemaWorkflowRunService.php',
     'resources/views/pages/workflow/index.php',
     'resources/views/pages/workflow/rules.php',
     'resources/views/pages/workflow/rule-detail.php',
+    'resources/views/pages/workflow/runs.php',
+    'resources/views/pages/workflow/run-detail.php',
+    'resources/views/pages/workflow/rule-runs.php',
     'docs/project/ECOSISTEMA_WORKFLOW_RULES_READ_ONLY.md',
+    'docs/project/ECOSISTEMA_WORKFLOW_RUNS_READ_ONLY.md',
 ];
 foreach ($workflowFiles as $workflowFile) {
     if (is_file($root . '/' . $workflowFile)) { ok('Existe archivo Workflow: ' . $workflowFile); } else { fail('No existe archivo Workflow: ' . $workflowFile, $criticalFailures); }
 }
 
-foreach (['GET /workflow', 'GET /workflow/rules', 'GET /workflow/rules/{id}'] as $requiredRoute) {
+foreach (['GET /workflow', 'GET /workflow/rules', 'GET /workflow/rules/{id}', 'GET /workflow/runs', 'GET /workflow/runs/{id}', 'GET /workflow/rules/{id}/runs'] as $requiredRoute) {
     if ($routesContent !== false && str_contains($routesContent, $requiredRoute)) { ok('routes/web.php contiene ruta Workflow: ' . $requiredRoute); } else { fail('Falta ruta Workflow: ' . $requiredRoute, $criticalFailures); }
 }
 
 $workflowAdapterContent = is_file($root . '/app/Core/Workflow/EcosistemaWorkflowAdapter.php') ? file_get_contents($root . '/app/Core/Workflow/EcosistemaWorkflowAdapter.php') : false;
-foreach (["'rules_read' => true", "'execution_write' => false", "'action_execution' => false"] as $requiredFlag) {
+foreach (["'rules_read' => true", "'runs_read' => true", "'run_logs_read' => true", "'execution_write' => false", "'retry_enabled' => false", "'action_execution' => false"] as $requiredFlag) {
     if ($workflowAdapterContent !== false && str_contains($workflowAdapterContent, $requiredFlag)) { ok('Adapter Workflow contiene ' . $requiredFlag . '.'); } else { fail('Adapter Workflow no contiene ' . $requiredFlag . '.', $criticalFailures); }
 }
 
-if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*workflow_(rules|actions)/mi', $gitDiff) === 1) {
+if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*workflow_(rules|actions|runs|run_logs)/mi', $gitDiff) === 1) {
     fail('Se detectó escritura SQL sobre tablas workflow_* en cambios del PR.', $criticalFailures);
 } else {
     ok('Sin escrituras SQL sobre tablas workflow_* en cambios del PR.');
@@ -1438,10 +1444,13 @@ $workflowViews = [
     $root . '/resources/views/pages/workflow/index.php',
     $root . '/resources/views/pages/workflow/rules.php',
     $root . '/resources/views/pages/workflow/rule-detail.php',
+    $root . '/resources/views/pages/workflow/runs.php',
+    $root . '/resources/views/pages/workflow/run-detail.php',
+    $root . '/resources/views/pages/workflow/rule-runs.php',
 ];
 foreach ($workflowViews as $workflowView) {
     $content = is_file($workflowView) ? file_get_contents($workflowView) : false;
-    if ($content !== false && (str_contains($content, 'conditions_json') || str_contains($content, 'config_json')) && !str_contains($content, '_present') && !str_contains($content, '_exposed')) {
+    if ($content !== false && (str_contains($content, 'conditions_json') || str_contains($content, 'config_json') || str_contains($content, 'input_json') || str_contains($content, 'output_json') || str_contains($content, 'context_json') || str_contains($content, 'metadata_json')) && !str_contains($content, '_present') && !str_contains($content, '_exposed')) {
         fail('Vista Workflow parece exponer JSON crudo: ' . basename($workflowView), $criticalFailures);
     } else {
         ok('Vista Workflow sin exposición de JSON crudo: ' . basename($workflowView));

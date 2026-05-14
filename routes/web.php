@@ -2633,6 +2633,44 @@ return [
         View::render('layouts.admin', ['title' => 'Workflow Rule Detail | Ecosistema Core Admin', 'contentView' => 'pages/workflow/rule-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('detail')]);
     },
 
+
+    'GET /workflow/runs' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth = AuthSession::getAuth();
+        $userId = (int) ($auth['auth_user_id'] ?? 0); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.view') || $authorization->can($userId, $tenantId, 'modules.view'); } catch (\Throwable) { $allowed = false; }
+        if (!$allowed) { renderError($config, 403); return; }
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowRunService(new \App\Core\Workflow\EcosistemaWorkflowRunRepository($pdo), new \App\Core\Workflow\EcosistemaWorkflowAdapter()); $workflow = $service->listRuns($tenantId, 100); } catch (\Throwable) { $workflow = ['summary'=>[], 'items'=>[]]; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Workflow Runs | Ecosistema Core Admin', 'contentView' => 'pages/workflow/runs', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('workflow')]);
+    },
+    'GET /workflow/runs/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $runId = (int) ($params['id'] ?? 0); if ($runId <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth();
+        $userId = (int) ($auth['auth_user_id'] ?? 0); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.view') || $authorization->can($userId, $tenantId, 'modules.view'); } catch (\Throwable) { $allowed = false; }
+        if (!$allowed) { renderError($config, 403); return; }
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowRunService(new \App\Core\Workflow\EcosistemaWorkflowRunRepository($pdo), new \App\Core\Workflow\EcosistemaWorkflowAdapter()); $detail = $service->findRunDetail($tenantId, $runId); } catch (\Throwable) { $detail = null; }
+        if (!is_array($detail)) { renderError($config, 404); return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Workflow Run Detail | Ecosistema Core Admin', 'contentView' => 'pages/workflow/run-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('detail')]);
+    },
+    'GET /workflow/rules/{id}/runs' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $ruleId = (int) ($params['id'] ?? 0); if ($ruleId <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth();
+        $userId = (int) ($auth['auth_user_id'] ?? 0); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.view') || $authorization->can($userId, $tenantId, 'modules.view'); } catch (\Throwable) { $allowed = false; }
+        if (!$allowed) { renderError($config, 403); return; }
+        try { $ruleService = new \App\Core\Workflow\EcosistemaWorkflowRuleService(new \App\Core\Workflow\EcosistemaWorkflowRuleRepository($pdo), new \App\Core\Workflow\EcosistemaWorkflowAdapter()); $detail = $ruleService->findRuleDetail($tenantId, $ruleId); } catch (\Throwable) { $detail = null; }
+        if (!is_array($detail) || !is_array($detail['rule'] ?? null)) { renderError($config, 404); return; }
+        try { $runService = new \App\Core\Workflow\EcosistemaWorkflowRunService(new \App\Core\Workflow\EcosistemaWorkflowRunRepository($pdo), new \App\Core\Workflow\EcosistemaWorkflowAdapter()); $workflow = $runService->listRuns($tenantId, 300, $ruleId); } catch (\Throwable) { $workflow = ['summary'=>[], 'items'=>[]]; }
+        $rule = (array) ($detail['rule'] ?? []);
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Workflow Rule Runs | Ecosistema Core Admin', 'contentView' => 'pages/workflow/rule-runs', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('workflow', 'rule')]);
+    },
+
     'GET /login' => static function (array $config): void {
         startAuthSession($config);
 

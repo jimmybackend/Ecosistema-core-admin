@@ -38,6 +38,8 @@ use App\Core\MailNotifications\EcosistemaMailNotificationsAdapter;
 use App\Core\MailNotifications\EcosistemaMessagePreviewDryRunService;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateRepository;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateService;
+use App\Core\MailNotifications\EcosistemaNotificationQueueRepository;
+use App\Core\MailNotifications\EcosistemaNotificationQueueService;
 use App\Core\MailNotifications\EcosistemaUrlMessageTemplateRepository;
 use App\Core\MailNotifications\EcosistemaUrlMessageTemplateService;
 use App\Core\Cloud\CloudFileRepository;
@@ -817,6 +819,53 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title' => 'Notification Template Detail | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/template-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('template', 'errorMessage')]);
+    },
+
+    'GET /mail-notifications/queue' => static function (array $config): void {
+        startAuthSession($config);
+        if (!requirePermission($config, 'mail.view')) {
+            return;
+        }
+
+        $auth = AuthSession::getAuth();
+        $items = [];
+        $summary = [];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaNotificationQueueService(new EcosistemaNotificationQueueRepository($pdo), new EcosistemaMailNotificationsAdapter());
+            $result = $service->listQueue($tenantId, 100);
+            $items = (array) ($result['items'] ?? []);
+            $summary = (array) ($result['summary'] ?? []);
+        } catch (\Throwable) {
+            $items = [];
+            $summary = [];
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Notifications Queue | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/queue', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('items', 'summary')]);
+    },
+    'GET /mail-notifications/queue/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!requirePermission($config, 'mail.view')) {
+            return;
+        }
+
+        $auth = AuthSession::getAuth();
+        $id = (int) ($params['id'] ?? 0);
+        $item = null;
+        $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+            $service = new EcosistemaNotificationQueueService(new EcosistemaNotificationQueueRepository($pdo), new EcosistemaMailNotificationsAdapter());
+            $item = $service->getQueueItem($tenantId, $id);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo obtener el detalle del elemento de cola.';
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Notification Queue Detail | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/queue-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('item', 'errorMessage')]);
     },
     'GET /mail-notifications/url-message-templates' => static function (array $config): void {
         startAuthSession($config);

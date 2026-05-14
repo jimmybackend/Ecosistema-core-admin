@@ -219,6 +219,8 @@ $requiredFiles = [
     'app/Core/Crm/EcosistemaCrmLeadRepository.php',
     'app/Core/Crm/EcosistemaCrmLeadService.php',
     'resources/views/pages/crm/leads.php',
+    'resources/views/pages/crm/lead-detail.php',
+    'docs/project/ECOSISTEMA_CRM_LEAD_DETAIL.md',
     'docs/project/ECOSISTEMA_CRM_LEADS_READ_ONLY.md',
 ];
 
@@ -246,6 +248,17 @@ if (is_file($leadViewPath)) {
     }
 }
 
+
+
+$leadDetailViewPath = $root . '/resources/views/pages/crm/lead-detail.php';
+if (is_file($leadDetailViewPath)) {
+    $leadDetailContent = (string) file_get_contents($leadDetailViewPath);
+    if (str_contains($leadDetailContent, "['email']") || str_contains($leadDetailContent, "['phone']") || str_contains($leadDetailContent, "['contact_name']") || str_contains($leadDetailContent, 'raw_data_json') || str_contains($leadDetailContent, 'value_json') || str_contains($leadDetailContent, 'metadata_json')) {
+        fail('Vista CRM lead detail imprime PII completa o JSON crudo.', $criticalFailures);
+    } else {
+        ok('Vista CRM lead detail evita PII completa y JSON crudo.');
+    }
+}
 if (is_file($root . '/bootstrap/app.php')) {
     try {
         $app = require $root . '/bootstrap/app.php';

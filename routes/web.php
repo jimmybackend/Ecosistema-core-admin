@@ -1376,6 +1376,28 @@ return [
         View::render('layouts.admin',['title'=>'CRM Leads | Ecosistema Core Admin','contentView'=>'pages/crm/leads','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','leads')]);
     },
 
+
+
+    'GET /crm/leads/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $detail = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmLeadService(new EcosistemaCrmLeadRepository($pdo), new EcosistemaCrmAdapter());
+            $detail = $service->getLeadDetail($tenantId, $id);
+            if ($detail === null) { $errorMessage = 'Lead no encontrado para el tenant actual.'; }
+        } catch (\Throwable) { $errorMessage = 'No se pudo obtener el detalle del lead.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Lead Detail | Ecosistema Core Admin','contentView'=>'pages/crm/lead-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('detail','errorMessage')]);
+    },
     'GET /crm/campaigns/{id}' => static function (array $config, array $params): void {
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

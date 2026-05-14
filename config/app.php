@@ -29,6 +29,11 @@ return [
         'send_enabled' => filter_var(Env::get('ECOSISTEMA_MAIL_SEND_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
+    'ecosistema_attribution' => [
+        'enabled' => filter_var(Env::get('ECOSISTEMA_ATTRIBUTION_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'write_enabled' => filter_var(Env::get('ECOSISTEMA_ATTRIBUTION_WRITE', 'false'), FILTER_VALIDATE_BOOL),
+    ],
+
     'ecosistema_landing' => [
         'public_render_dry_run' => filter_var(Env::get('ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
         'form_submit_dry_run' => filter_var(Env::get('ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),

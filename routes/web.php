@@ -1617,6 +1617,35 @@ return [
 
 
 
+
+    'GET /attribution/url-landing/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $result = null; $errorMessage = null;
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Attribution URL→Landing Dry-run | Ecosistema Core Admin','contentView'=>'pages/attribution/url-landing-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
+    'POST /attribution/url-landing/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $clickId = (int)($_POST['click_id'] ?? 0);
+        $result = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new \App\Core\Attribution\EcosistemaUrlLandingAttributionService(new \App\Core\Attribution\EcosistemaUrlLandingAttributionRepository($pdo), ['enabled'=>(bool)($config['app']['ecosistema_attribution']['enabled'] ?? false),'write_enabled'=>(bool)($config['app']['ecosistema_attribution']['write_enabled'] ?? false)]);
+            $result = $service->dryRun($tenantId, $clickId);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo ejecutar dry-run de atribución URL→Landing.';
+        }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Attribution URL→Landing Dry-run | Ecosistema Core Admin','contentView'=>'pages/attribution/url-landing-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
     'GET /landing/forms/{id}/submit-dry-run' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }

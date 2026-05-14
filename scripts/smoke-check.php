@@ -2361,3 +2361,24 @@ foreach (['ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false','ECOSISTEMA_LANDING_FOR
     if (str_contains($envExampleContent, $flagLine)) { ok('.env.example mantiene ' . $flagLine . '.'); }
     else { fail('.env.example no contiene ' . $flagLine . '.', $criticalFailures); }
 }
+
+// PR #123 attribution url-landing dry-run checks
+foreach (['app/Core/Attribution/EcosistemaUrlLandingAttributionRepository.php','app/Core/Attribution/EcosistemaUrlLandingAttributionService.php','resources/views/pages/attribution/url-landing-dry-run.php','docs/project/ECOSISTEMA_URL_LANDING_ATTRIBUTION.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto attribution URL→Landing: ' . $requiredPath); }
+    else { fail('Falta artefacto attribution URL→Landing: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false) {
+    foreach (['GET /attribution/url-landing/dry-run','POST /attribution/url-landing/dry-run'] as $routeNeedle) {
+        if (str_contains($routesContent, $routeNeedle)) { ok('Ruta attribution dry-run detectada: ' . $routeNeedle); } else { fail('Falta ruta attribution dry-run: ' . $routeNeedle, $criticalFailures); }
+    }
+    if (!str_contains((string)$routesContent, "\$_POST['tenant_id']") && !str_contains((string)$routesContent, "\$_GET['tenant_id']")) { ok('Ruta attribution dry-run no acepta tenant_id desde request.'); }
+    else { fail('Ruta attribution dry-run no debe aceptar tenant_id desde request.', $criticalFailures); }
+}
+$envExample = is_file($root . '/.env.example') ? (string) file_get_contents($root . '/.env.example') : '';
+foreach (['ECOSISTEMA_ATTRIBUTION_ENABLED=false','ECOSISTEMA_ATTRIBUTION_WRITE=false'] as $flagNeedle) {
+    if (str_contains($envExample, $flagNeedle)) { ok('.env.example contiene flag segura: ' . $flagNeedle); } else { fail('.env.example no contiene flag segura: ' . $flagNeedle, $criticalFailures); }
+}
+$attrView = is_file($root . '/resources/views/pages/attribution/url-landing-dry-run.php') ? (string) file_get_contents($root . '/resources/views/pages/attribution/url-landing-dry-run.php') : '';
+foreach (["['clicked_url']","['full_url']",'metadata_json','raw_data_json','access_token_hash'] as $forbiddenNeedle) {
+    if (!str_contains($attrView, $forbiddenNeedle)) { ok('Vista attribution dry-run no expone: ' . $forbiddenNeedle); } else { fail('Vista attribution dry-run no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
+}

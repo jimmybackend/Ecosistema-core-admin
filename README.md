@@ -453,6 +453,8 @@ Estado actual:
 - docs/project/ECOSISTEMA_URL_LOCATOR_CREATE_EDIT_CONTROLLED.md
 
 
+- URL→Landing attribution dry-run: `/attribution/url-landing/dry-run` (GET/POST), bloqueado por flags `ECOSISTEMA_ATTRIBUTION_ENABLED=false` y `ECOSISTEMA_ATTRIBUTION_WRITE=false`. Ver `docs/project/ECOSISTEMA_URL_LANDING_ATTRIBUTION.md`.
+
 ## URL Locator public redirect
 
 Se agregó redirect público controlado por flags en `GET /u/{slug}` con defaults apagados y tracking opcional. Ver `docs/project/ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECT.md`.

@@ -1646,6 +1646,35 @@ return [
         View::render('layouts.admin',['title'=>'Attribution URL→Landing Dry-run | Ecosistema Core Admin','contentView'=>'pages/attribution/url-landing-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
     },
 
+    'GET /attribution/rollups/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $result = null; $errorMessage = null;
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Attribution Rollup Dry-run | Ecosistema Core Admin','contentView'=>'pages/attribution/rollup-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
+    'POST /attribution/rollups/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $startDate = trim((string)($_POST['start_date'] ?? ''));
+        $endDate = trim((string)($_POST['end_date'] ?? ''));
+        $result = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new \App\Core\Attribution\EcosistemaAttributionRollupDryRunService(new \App\Core\Attribution\EcosistemaAttributionRollupDryRunRepository($pdo), (bool)($config['app']['ecosistema_attribution']['rollup_dry_run'] ?? false));
+            $result = $service->simulate($tenantId, $startDate, $endDate);
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo ejecutar dry-run de rollups de atribución.';
+        }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Attribution Rollup Dry-run | Ecosistema Core Admin','contentView'=>'pages/attribution/rollup-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
     'GET /attribution/campaigns' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }

@@ -2407,3 +2407,25 @@ foreach (['raw_data_json', 'metadata_json', 'access_token_hash', 'target_url', '
     if (!str_contains($campaignView, $forbiddenNeedle)) { ok('Vista campaign detail no referencia sensible: ' . $forbiddenNeedle); }
     else { fail('Vista campaign detail no debe referenciar sensible: ' . $forbiddenNeedle, $criticalFailures); }
 }
+
+// PR #125 attribution rollup dry-run checks
+foreach (['app/Core/Attribution/EcosistemaAttributionRollupDryRunRepository.php','app/Core/Attribution/EcosistemaAttributionRollupDryRunService.php','resources/views/pages/attribution/rollup-dry-run.php','docs/project/ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto attribution rollup dry-run: ' . $requiredPath); }
+    else { fail('Falta artefacto attribution rollup dry-run: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false) {
+    foreach (['GET /attribution/rollups/dry-run','POST /attribution/rollups/dry-run'] as $routeNeedle) {
+        if (str_contains($routesContent, $routeNeedle)) { ok('Ruta attribution rollup dry-run detectada: ' . $routeNeedle); }
+        else { fail('Falta ruta attribution rollup dry-run: ' . $routeNeedle, $criticalFailures); }
+    }
+}
+if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN=false')) { ok('Flag attribution rollup dry-run en .env.example con default false.'); }
+else { fail('Falta ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN=false en .env.example.', $criticalFailures); }
+$rollupService = is_file($root . '/app/Core/Attribution/EcosistemaAttributionRollupDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Attribution/EcosistemaAttributionRollupDryRunService.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $rollupService) === 1) { fail('Servicio attribution rollup dry-run contiene escritura SQL.', $criticalFailures); }
+else { ok('Servicio attribution rollup dry-run sin escritura SQL.'); }
+$rollupView = is_file($root . '/resources/views/pages/attribution/rollup-dry-run.php') ? (string) file_get_contents($root . '/resources/views/pages/attribution/rollup-dry-run.php') : '';
+foreach (["['ip_address']","['user_agent']","['target_url']","['access_token_hash']","['metadata_json']","['raw_data_json']"] as $forbiddenNeedle) {
+    if (!str_contains($rollupView, $forbiddenNeedle)) { ok('Vista attribution rollup dry-run no expone: ' . $forbiddenNeedle); }
+    else { fail('Vista attribution rollup dry-run no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
+}

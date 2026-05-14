@@ -194,6 +194,7 @@ $requiredFiles = [
     'resources/views/pages/landing/visits.php',
     'resources/views/pages/landing/page-visits.php',
     'docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md',
+    'docs/project/ECOSISTEMA_MAIL_NOTIFICATIONS_SCHEMA_INVENTORY.md',
 
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsAdapter.php',
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsDashboardRepository.php',
@@ -1614,6 +1615,50 @@ if (str_contains($combinedVisitsViews, "['ip_address']") || str_contains($combin
     ok('Vistas Landing Visits no exponen ip/visitor_uuid/session_uuid crudos.');
 }
 
+
+
+$mailNotificationsPaths = [
+    'app/Core/Mail',
+    'app/Core/UrlLocator',
+    'routes/web.php',
+];
+
+$writePatterns = [
+    '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+(mail_|notifications_|url_message_)/i',
+    '/\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+url_attachment_access_logs\b/i',
+];
+
+foreach ($mailNotificationsPaths as $relativePath) {
+    $absolutePath = $root . '/' . $relativePath;
+    if (!file_exists($absolutePath)) {
+        continue;
+    }
+
+    $iterator = is_dir($absolutePath)
+        ? new RecursiveIteratorIterator(new RecursiveDirectoryIterator($absolutePath, FilesystemIterator::SKIP_DOTS))
+        : new ArrayIterator([new SplFileInfo($absolutePath)]);
+
+    foreach ($iterator as $file) {
+        if (!$file instanceof SplFileInfo || !$file->isFile()) {
+            continue;
+        }
+
+        if (pathinfo($file->getFilename(), PATHINFO_EXTENSION) !== 'php') {
+            continue;
+        }
+
+        $content = (string) file_get_contents($file->getPathname());
+        foreach ($writePatterns as $pattern) {
+            if (preg_match($pattern, $content) === 1) {
+                $relative = str_replace($root . '/', '', $file->getPathname());
+                fail("Se detectó escritura SQL no permitida para Mail/Notifications/URL Message en {$relative}.", $criticalFailures);
+                continue 3;
+            }
+        }
+    }
+}
+
+ok('No se detectaron escrituras SQL sobre mail_/notifications_/url_message_* en rutas verificadas.');
 
 if ($criticalFailures > 0) {
     report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");

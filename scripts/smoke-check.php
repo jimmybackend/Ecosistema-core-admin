@@ -195,6 +195,13 @@ $requiredFiles = [
     'resources/views/pages/landing/page-visits.php',
     'docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md',
     'docs/project/ECOSISTEMA_MAIL_NOTIFICATIONS_SCHEMA_INVENTORY.md',
+    'docs/project/ECOSISTEMA_NOTIFICATION_TEMPLATES_READ_ONLY.md',
+    'app/Core/MailNotifications/EcosistemaMailNotificationsAdapter.php',
+    'app/Core/MailNotifications/EcosistemaNotificationTemplateRepository.php',
+    'app/Core/MailNotifications/EcosistemaNotificationTemplateService.php',
+    'resources/views/pages/mail-notifications/index.php',
+    'resources/views/pages/mail-notifications/templates.php',
+    'resources/views/pages/mail-notifications/template-detail.php',
 
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsAdapter.php',
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsDashboardRepository.php',
@@ -258,6 +265,26 @@ if (is_file($leadDetailViewPath)) {
         fail('Vista CRM lead detail imprime PII completa o JSON crudo.', $criticalFailures);
     } else {
         ok('Vista CRM lead detail evita PII completa y JSON crudo.');
+    }
+}
+
+$notificationTemplateRepositoryPath = $root . '/app/Core/MailNotifications/EcosistemaNotificationTemplateRepository.php';
+if (is_file($notificationTemplateRepositoryPath)) {
+    $notificationTemplateRepositoryContent = (string) file_get_contents($notificationTemplateRepositoryPath);
+    if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $notificationTemplateRepositoryContent) === 1) {
+        fail('Repositorio de notification templates contiene escritura no permitida.', $criticalFailures);
+    } else {
+        ok('Repositorio de notification templates no contiene INSERT/UPDATE/DELETE.');
+    }
+}
+
+$notificationTemplateDetailViewPath = $root . '/resources/views/pages/mail-notifications/template-detail.php';
+if (is_file($notificationTemplateDetailViewPath)) {
+    $notificationTemplateDetailContent = (string) file_get_contents($notificationTemplateDetailViewPath);
+    if (str_contains($notificationTemplateDetailContent, "['variables_json']")) {
+        fail('Vista template-detail imprime variables_json crudo.', $criticalFailures);
+    } else {
+        ok('Vista template-detail no imprime variables_json crudo.');
     }
 }
 if (is_file($root . '/bootstrap/app.php')) {

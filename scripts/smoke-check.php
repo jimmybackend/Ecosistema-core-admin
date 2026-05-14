@@ -199,9 +199,14 @@ $requiredFiles = [
     'app/Core/MailNotifications/EcosistemaMailNotificationsAdapter.php',
     'app/Core/MailNotifications/EcosistemaNotificationTemplateRepository.php',
     'app/Core/MailNotifications/EcosistemaNotificationTemplateService.php',
+    'app/Core/MailNotifications/EcosistemaUrlMessageTemplateRepository.php',
+    'app/Core/MailNotifications/EcosistemaUrlMessageTemplateService.php',
     'resources/views/pages/mail-notifications/index.php',
     'resources/views/pages/mail-notifications/templates.php',
     'resources/views/pages/mail-notifications/template-detail.php',
+    'resources/views/pages/mail-notifications/url-message-templates.php',
+    'resources/views/pages/mail-notifications/url-message-template-detail.php',
+    'docs/project/ECOSISTEMA_URL_MESSAGE_TEMPLATES_READ_ONLY.md',
 
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsAdapter.php',
     'app/Core/BrowserAnalytics/EcosistemaBrowserAnalyticsDashboardRepository.php',
@@ -1686,6 +1691,18 @@ foreach ($mailNotificationsPaths as $relativePath) {
 }
 
 ok('No se detectaron escrituras SQL sobre mail_/notifications_/url_message_* en rutas verificadas.');
+
+$mailAdapterContent = is_file($root . '/app/Core/MailNotifications/EcosistemaMailNotificationsAdapter.php') ? (string) file_get_contents($root . '/app/Core/MailNotifications/EcosistemaMailNotificationsAdapter.php') : '';
+if (str_contains($mailAdapterContent, "'url_message_templates_read' => true")) { ok('Mail Notifications adapter habilita url_message_templates_read=true.'); } else { fail('Mail Notifications adapter no habilita url_message_templates_read=true.', $criticalFailures); }
+if (str_contains($mailAdapterContent, "'send_write' => false")) { ok('Mail Notifications adapter mantiene send_write=false.'); } else { fail('Mail Notifications adapter no mantiene send_write=false.', $criticalFailures); }
+if (str_contains($mailAdapterContent, "'smtp_connection' => false")) { ok('Mail Notifications adapter mantiene smtp_connection=false.'); } else { fail('Mail Notifications adapter no mantiene smtp_connection=false.', $criticalFailures); }
+
+$urlTemplatesView = is_file($root . '/resources/views/pages/mail-notifications/url-message-templates.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/url-message-templates.php') : '';
+$urlTemplateDetailView = is_file($root . '/resources/views/pages/mail-notifications/url-message-template-detail.php') ? (string) file_get_contents($root . '/resources/views/pages/mail-notifications/url-message-template-detail.php') : '';
+$combinedUrlTemplateViews = $urlTemplatesView . "\n" . $urlTemplateDetailView;
+if (str_contains($combinedUrlTemplateViews, "['s3_key']")) { fail('Vistas URL message templates exponen s3_key crudo.', $criticalFailures); } else { ok('Vistas URL message templates no exponen s3_key crudo.'); }
+if (str_contains($combinedUrlTemplateViews, "['file_path']")) { fail('Vistas URL message templates exponen file_path crudo.', $criticalFailures); } else { ok('Vistas URL message templates no exponen file_path crudo.'); }
+if (str_contains($combinedUrlTemplateViews, "['body_html']")) { fail('Vistas URL message templates exponen body_html crudo.', $criticalFailures); } else { ok('Vistas URL message templates no exponen body_html crudo.'); }
 
 if ($criticalFailures > 0) {
     report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");

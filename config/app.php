@@ -31,6 +31,7 @@ return [
 
     'ecosistema_landing' => [
         'public_render_dry_run' => filter_var(Env::get('ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+        'form_submit_dry_run' => filter_var(Env::get('ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
     'ecosistema_workflow' => [

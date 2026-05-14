@@ -191,6 +191,9 @@ $requiredFiles = [
     'resources/views/pages/landing/forms.php',
     'app/Core/Landing/EcosistemaLandingFormService.php',
     'app/Core/Landing/EcosistemaLandingFormRepository.php',
+    'app/Core/Landing/EcosistemaLandingFormSubmitDryRunService.php',
+    'resources/views/pages/landing/form-submit-dry-run.php',
+    'docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN.md',
     'resources/views/pages/landing/visits.php',
     'resources/views/pages/landing/page-visits.php',
     'docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md',
@@ -2298,6 +2301,19 @@ if (!str_contains($envContent, 'ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false')
     ok('Flag ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false presente.');
 }
 
+
+
+// PR #121 landing form submit dry-run checks
+if (is_file($routesFile)) {
+    $routesContent = (string) file_get_contents($routesFile);
+    foreach (['GET /landing/forms/{id}/submit-dry-run', 'POST /landing/forms/{id}/submit-dry-run'] as $routeNeedle) {
+        if (str_contains($routesContent, $routeNeedle)) { ok('Ruta landing form submit dry-run detectada: ' . $routeNeedle); } else { fail('Falta ruta landing form submit dry-run: ' . $routeNeedle, $criticalFailures); }
+    }
+}
+$landingDryRunService = @file_get_contents($root . '/app/Core/Landing/EcosistemaLandingFormSubmitDryRunService.php') ?: '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $landingDryRunService) === 1) { fail('Servicio landing form submit dry-run contiene escritura SQL.', $criticalFailures); } else { ok('Servicio landing form submit dry-run sin escritura SQL.'); }
+if (str_contains($landingDryRunService, "tenant_id'])") || str_contains($landingDryRunService, "\$_POST['tenant_id']") || str_contains($landingDryRunService, "\$_GET['tenant_id']")) { fail('Dry-run acepta tenant_id desde request.', $criticalFailures); } else { ok('Dry-run no acepta tenant_id desde request.'); }
+if (!str_contains($envContent, 'ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN=false')) { fail('Falta flag ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN=false en .env.example.', $criticalFailures); } else { ok('Flag ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN=false presente.'); }
 
 // PR #120 landing public render controlled checks
 $landingPublicRenderFiles = [

@@ -467,3 +467,6 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Rutas admin: `/landing/submissions`, `/landing/forms/{id}/submissions`, `/landing/pages/{id}/submissions`, `/landing/submissions/{id}`.
 - Consulta segura de submissions con protección de PII y sin exponer adjuntos internos.
 - Ver: `docs/project/ECOSISTEMA_LANDING_SUBMISSIONS_READ_ONLY.md`.
+
+
+- Workflow ejecución controlada: `docs/project/ECOSISTEMA_WORKFLOW_EXECUTION_CONTROLLED.md`.

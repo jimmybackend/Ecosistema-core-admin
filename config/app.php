@@ -29,6 +29,10 @@ return [
         'send_enabled' => filter_var(Env::get('ECOSISTEMA_MAIL_SEND_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
+    'ecosistema_landing' => [
+        'public_render_dry_run' => filter_var(Env::get('ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+    ],
+
     'ecosistema_workflow' => [
         'enabled' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'dry_run_enabled' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_DRY_RUN_ENABLED', 'false'), FILTER_VALIDATE_BOOL),

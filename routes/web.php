@@ -105,6 +105,7 @@ use App\Core\UrlLocator\EcosistemaUrlLocatorPublicRedirectService;
 use App\Core\Landing\EcosistemaLandingAdapter;
 use App\Core\Landing\EcosistemaLandingPageRepository;
 use App\Core\Landing\EcosistemaLandingPageService;
+use App\Core\Landing\EcosistemaLandingPublicRenderDryRunService;
 use App\Core\Landing\EcosistemaLandingVisitRepository;
 use App\Core\Landing\EcosistemaLandingVisitService;
 use App\Core\Landing\EcosistemaLandingFormRepository;
@@ -1426,6 +1427,32 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Landing Pages List | Ecosistema Core Admin','contentView'=>'pages/landing/pages','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','pages')]);
+    },
+
+
+    'GET /landing/pages/{id}/public-render-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $enabled = (bool) (($config['app']['ecosistema_landing']['public_render_dry_run'] ?? false) === true);
+        $result = ['allowed' => false, 'reason' => 'No disponible.'];
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaLandingPublicRenderDryRunService(new EcosistemaLandingPageRepository($pdo));
+            $result = $service->simulate($tenantId, $id, $enabled);
+        } catch (\Throwable) {
+            $result = ['allowed' => false, 'reason' => 'No se pudo ejecutar el dry-run de render público.'];
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Landing Public Render Dry-run | Ecosistema Core Admin','contentView'=>'pages/landing/public-render-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id')]);
     },
 
     'GET /landing/pages/{id}' => static function (array $config, array $params): void {

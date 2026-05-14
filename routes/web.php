@@ -1646,6 +1646,37 @@ return [
         View::render('layouts.admin',['title'=>'Attribution URL→Landing Dry-run | Ecosistema Core Admin','contentView'=>'pages/attribution/url-landing-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
     },
 
+    'GET /attribution/campaigns' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0]; $campaigns = [];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new \App\Core\Attribution\EcosistemaCampaignAttributionService(new \App\Core\Attribution\EcosistemaCampaignAttributionRepository($pdo));
+            $data = $service->listCampaigns($tenantId);
+            $summary = (array)($data['summary'] ?? []);
+            $campaigns = (array)($data['campaigns'] ?? []);
+        } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Attribution Campaigns | Ecosistema Core Admin','contentView'=>'pages/attribution/campaigns','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','campaigns')]);
+    },
+
+    'GET /attribution/campaigns/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int)$params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth(); $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $detail = ['found' => false, 'campaign' => null, 'funnel' => ['clicks' => 0, 'visits' => 0, 'submissions' => 0, 'leads' => 0, 'conversions' => 0]];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new \App\Core\Attribution\EcosistemaCampaignAttributionService(new \App\Core\Attribution\EcosistemaCampaignAttributionRepository($pdo));
+            $detail = $service->campaignDetail($tenantId, $id);
+        } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Attribution Campaign Detail | Ecosistema Core Admin','contentView'=>'pages/attribution/campaign-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('detail')]);
+    },
+
     'GET /landing/forms/{id}/submit-dry-run' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }

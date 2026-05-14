@@ -454,6 +454,7 @@ Estado actual:
 
 
 - URL→Landing attribution dry-run: `/attribution/url-landing/dry-run` (GET/POST), bloqueado por flags `ECOSISTEMA_ATTRIBUTION_ENABLED=false` y `ECOSISTEMA_ATTRIBUTION_WRITE=false`. Ver `docs/project/ECOSISTEMA_URL_LANDING_ATTRIBUTION.md`.
+- Attribution rollup dry-run: `/attribution/rollups/dry-run` (GET/POST), cálculo en memoria por rango sin escribir `browser_analytics_daily_rollups`; requiere `ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN=false` por defecto. Ver `docs/project/ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN.md`.
 
 ## URL Locator public redirect
 

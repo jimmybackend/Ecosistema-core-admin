@@ -2493,3 +2493,28 @@ if ($leadStatusRepo !== '' && str_contains($leadStatusRepo, 'UPDATE crm_leads SE
 else { fail('LeadStatusRepository no contiene UPDATE canónicos esperados.', $criticalFailures); }
 if ($leadStatusRepo !== '' && !str_contains($leadStatusRepo, 'tenant_id FROM') && !str_contains($leadStatusRepo, '$_REQUEST')) { ok('LeadStatusRepository sin lectura de tenant_id desde request.'); }
 else { fail('LeadStatusRepository evidencia patrón inseguro de tenant/request.', $criticalFailures); }
+
+// PR #131 campaign cockpit read-only checks
+foreach ([
+    'app/Core/Campaigns/EcosistemaCampaignCockpitRepository.php',
+    'app/Core/Campaigns/EcosistemaCampaignCockpitService.php',
+    'resources/views/pages/campaigns/index.php',
+    'resources/views/pages/campaigns/cockpit.php',
+    'docs/project/ECOSISTEMA_CAMPAIGN_COCKPIT_READ_ONLY.md',
+] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto campaign cockpit: ' . $requiredPath); }
+    else { fail('Falta artefacto campaign cockpit: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false) {
+    foreach (['GET /campaigns', 'GET /campaigns/{id}/cockpit'] as $routeNeedle) {
+        if (str_contains((string) $routesContent, $routeNeedle)) { ok('Ruta campaign cockpit detectada: ' . $routeNeedle); }
+        else { fail('Falta ruta campaign cockpit: ' . $routeNeedle, $criticalFailures); }
+    }
+    if (!str_contains((string) $routesContent, '\$_GET[\'tenant_id\']') && !str_contains((string) $routesContent, '\$_POST[\'tenant_id\']')) { ok('Campaign cockpit no acepta tenant_id desde request.'); }
+    else { fail('Campaign cockpit no debe aceptar tenant_id desde request.', $criticalFailures); }
+}
+$campaignCockpitView = is_file($root . '/resources/views/pages/campaigns/cockpit.php') ? (string) file_get_contents($root . '/resources/views/pages/campaigns/cockpit.php') : '';
+foreach (['raw_data_json', 'value_json', 'access_token_hash'] as $forbiddenNeedle) {
+    if (!str_contains($campaignCockpitView, $forbiddenNeedle)) { ok('Vista campaign cockpit no referencia sensible: ' . $forbiddenNeedle); }
+    else { fail('Vista campaign cockpit no debe referenciar sensible: ' . $forbiddenNeedle, $criticalFailures); }
+}

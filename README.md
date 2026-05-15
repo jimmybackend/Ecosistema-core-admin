@@ -492,6 +492,7 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Landing public render (`/l/{slug}`) bloqueado por flag `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false`, sin tracking de visitas en este PR. Ver `docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_CONTROLLED.md`.
 - Landing form submit controlado (`POST /l/{slug}/forms/{id}/submit`) por flags `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false` y `ECOSISTEMA_LANDING_FORM_FILE_UPLOADS=false`, con escritura sólo en tablas de submissions. Ver `docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_CONTROLLED.md`.
 
+- Campaign cockpit read-only: rutas /campaigns y /campaigns/{id}/cockpit. Ver docs/project/ECOSISTEMA_CAMPAIGN_COCKPIT_READ_ONLY.md.
 - Campaign attribution read-only: rutas \/attribution\/campaigns y \/attribution\/campaigns\/{id}. Ver docs/project/ECOSISTEMA_CAMPAIGN_ATTRIBUTION_READ_ONLY.md.
 
 - CRM followups read-only: `/crm/followups` y `/crm/leads/{id}/followups`.

@@ -65,6 +65,8 @@ return [
         'enabled' => filter_var(Env::get('ECOSISTEMA_AI_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'lead_summary_dry_run' => filter_var(Env::get('ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
         'campaign_insight_dry_run' => filter_var(Env::get('ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+        'provider_enabled' => filter_var(Env::get('ECOSISTEMA_AI_PROVIDER_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'write_proposals' => filter_var(Env::get('ECOSISTEMA_AI_WRITE_PROPOSALS', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
     'ecosistema_security' => [

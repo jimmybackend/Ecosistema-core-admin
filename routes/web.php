@@ -138,6 +138,9 @@ use App\Core\Crm\EcosistemaCrmFollowupRepository;
 use App\Core\Crm\EcosistemaCrmFollowupService;
 use App\Core\Crm\EcosistemaCrmLeadStatusService;
 use App\Core\Crm\EcosistemaCrmLeadStatusRepository;
+use App\Core\Ai\EcosistemaAiAssistanceService;
+use App\Core\Ai\EcosistemaAiAssistanceRepository;
+use App\Core\Ai\EcosistemaAiProvider;
 use App\Core\Campaigns\EcosistemaCampaignCockpitRepository;
 use App\Core\Campaigns\EcosistemaCampaignCockpitService;
 use App\Core\Campaigns\EcosistemaCampaignCreationRepository;
@@ -2288,6 +2291,33 @@ return [
 
 
 
+
+
+    'POST /ai/assist' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        verifyCsrfOrAbort();
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $userId = (int) ($auth['user_id'] ?? 0);
+        $leadId = isset($_POST['lead_id']) ? (int) $_POST['lead_id'] : 0;
+
+        $result = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaAiAssistanceService(
+                new EcosistemaAiAssistanceRepository($pdo),
+                new EcosistemaAiProvider((array) ($config['app']['ecosistema_ai'] ?? [])),
+                (array) ($config['app']['ecosistema_ai'] ?? [])
+            );
+            $result = $service->assist($tenantId, $userId, ['lead_id' => $leadId]);
+        } catch (\Throwable) { $errorMessage = 'No se pudo procesar asistencia IA.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'AI Assist Result | Ecosistema Core Admin','contentView'=>'pages/ai/assist-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
 
     'GET /ai/campaigns/{id}/insight-dry-run' => static function (array $config, array $params): void {
         startAuthSession($config);

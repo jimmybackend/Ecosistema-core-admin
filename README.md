@@ -495,3 +495,4 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Campaign attribution read-only: rutas \/attribution\/campaigns y \/attribution\/campaigns\/{id}. Ver docs/project/ECOSISTEMA_CAMPAIGN_ATTRIBUTION_READ_ONLY.md.
 
 - CRM followups read-only: `/crm/followups` y `/crm/leads/{id}/followups`.
+- CRM lead status controlado: `GET/POST /crm/leads/{id}/status`, requiere CSRF + permiso `modules.manage` para POST y flag `ECOSISTEMA_CRM_LEAD_STATUS_WRITE=false`. Ver `docs/project/ECOSISTEMA_CRM_LEAD_STATUS_CONTROLLED.md`.

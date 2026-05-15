@@ -2480,3 +2480,16 @@ else { fail('Falta flag ECOSISTEMA_CRM_FOLLOWUP_TASK_WRITE=false en .env.example
 $followupTaskWriteRepo = is_file($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskRepository.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmFollowupTaskRepository.php') : '';
 if (str_contains($followupTaskWriteRepo, 'INSERT INTO crm_tasks')) { ok('Repository followup-task write limita INSERT a crm_tasks.'); }
 else { fail('Repository followup-task write debe insertar en crm_tasks.', $criticalFailures); }
+
+foreach (['app/Core/Crm/EcosistemaCrmLeadStatusRepository.php','app/Core/Crm/EcosistemaCrmLeadStatusService.php','resources/views/pages/crm/lead-status.php','resources/views/pages/crm/lead-status-result.php','docs/project/ECOSISTEMA_CRM_LEAD_STATUS_CONTROLLED.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe ' . $requiredPath); } else { fail('Falta archivo requerido: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false && str_contains($routesContent, 'GET /crm/leads/{id}/status') && str_contains($routesContent, 'POST /crm/leads/{id}/status')) { ok('Rutas CRM lead status detectadas (GET/POST).'); }
+else { fail('Faltan rutas CRM lead status esperadas.', $criticalFailures); }
+if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_CRM_LEAD_STATUS_WRITE=false')) { ok('Flag CRM lead status write en .env.example con default false.'); }
+else { fail('Falta flag ECOSISTEMA_CRM_LEAD_STATUS_WRITE=false en .env.example.', $criticalFailures); }
+$leadStatusRepo = is_file($root . '/app/Core/Crm/EcosistemaCrmLeadStatusRepository.php') ? (string) file_get_contents($root . '/app/Core/Crm/EcosistemaCrmLeadStatusRepository.php') : '';
+if ($leadStatusRepo !== '' && str_contains($leadStatusRepo, 'UPDATE crm_leads SET status=') && str_contains($leadStatusRepo, 'UPDATE crm_campaign_leads SET status=')) { ok('LeadStatusRepository contiene UPDATE permitidos en tablas canónicas.'); }
+else { fail('LeadStatusRepository no contiene UPDATE canónicos esperados.', $criticalFailures); }
+if ($leadStatusRepo !== '' && !str_contains($leadStatusRepo, 'tenant_id FROM') && !str_contains($leadStatusRepo, '$_REQUEST')) { ok('LeadStatusRepository sin lectura de tenant_id desde request.'); }
+else { fail('LeadStatusRepository evidencia patrón inseguro de tenant/request.', $criticalFailures); }

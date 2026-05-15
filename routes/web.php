@@ -136,6 +136,8 @@ use App\Core\Crm\EcosistemaCrmLeadWriteRepository;
 use App\Core\Crm\EcosistemaCrmSubmissionToLeadService;
 use App\Core\Crm\EcosistemaCrmFollowupRepository;
 use App\Core\Crm\EcosistemaCrmFollowupService;
+use App\Core\Crm\EcosistemaCrmLeadStatusService;
+use App\Core\Crm\EcosistemaCrmLeadStatusRepository;
 use App\Core\Platform\EcosistemaPlatformAdapter;
 use App\Core\Platform\EcosistemaPlatformCockpitRepository;
 use App\Core\Platform\EcosistemaPlatformCockpitService;
@@ -1915,6 +1917,51 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'CRM Followup Task Result | Ecosistema Core Admin','contentView'=>'pages/crm/followup-task-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id')]);
+    },
+
+
+    'GET /crm/leads/{id}/status' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $statusData = ['ok' => false, 'error' => 'No se pudo cargar el estado del lead.'];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmLeadStatusService(new EcosistemaCrmLeadStatusRepository($pdo), new AuditLogger($pdo), (array) ($config['app']['ecosistema_crm'] ?? []));
+            $statusData = $service->getStatusContext($tenantId, $id);
+        } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Lead Status | Ecosistema Core Admin','contentView'=>'pages/crm/lead-status','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('id','statusData')]);
+    },
+
+    'POST /crm/leads/{id}/status' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+        $csrfToken = $_POST['_csrf'] ?? null;
+        if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $userId = (int) ($auth['auth_user_id'] ?? 0);
+        $result = ['ok' => false, 'error' => 'No se pudo actualizar el estado del lead.'];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCrmLeadStatusService(new EcosistemaCrmLeadStatusRepository($pdo), new AuditLogger($pdo), (array) ($config['app']['ecosistema_crm'] ?? []));
+            $result = $service->update($tenantId, $id, $userId, [
+                'status' => $_POST['status'] ?? null,
+                'campaign_lead_id' => $_POST['campaign_lead_id'] ?? null,
+                'temperature' => $_POST['temperature'] ?? null,
+                'score' => $_POST['score'] ?? null,
+            ]);
+        } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'CRM Lead Status Result | Ecosistema Core Admin','contentView'=>'pages/crm/lead-status-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('id','result')]);
     },
 
     'GET /crm/submission-to-lead/{id}/dry-run' => static function (array $config, array $params): void {

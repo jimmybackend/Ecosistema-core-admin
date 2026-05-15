@@ -2630,3 +2630,27 @@ if ($envExampleContent !== false && str_contains($envExampleContent, 'ECOSISTEMA
 
 $envExampleContent = is_file($root . '/.env.example') ? (string) file_get_contents($root . '/.env.example') : '';
 if (str_contains($envExampleContent, 'ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_WRITE=false')) { ok('Flag workflow template install write existe y está en false por defecto.'); } else { fail('Falta flag ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_WRITE=false en .env.example', $criticalFailures); }
+
+// PR #140 reports export dry-run checks
+foreach (['app/Core/Reports/EcosistemaReportExportDryRunRepository.php','app/Core/Reports/EcosistemaReportExportDryRunService.php','resources/views/pages/reports/export-dry-run.php','docs/project/ECOSISTEMA_REPORT_EXPORT_DRY_RUN.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto reports export dry-run: ' . $requiredPath); }
+    else { fail('Falta artefacto reports export dry-run: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false) {
+    foreach (['GET /reports/exports/dry-run','POST /reports/exports/dry-run'] as $routeNeedle) {
+        if (str_contains((string)$routesContent, $routeNeedle)) { ok('Ruta reports export dry-run detectada: ' . $routeNeedle); }
+        else { fail('Falta ruta reports export dry-run: ' . $routeNeedle, $criticalFailures); }
+    }
+    if (!str_contains((string)$routesContent, "\$_POST['tenant_id']") && !str_contains((string)$routesContent, "\$_GET['tenant_id']")) { ok('Ruta reports export dry-run no acepta tenant_id desde request.'); }
+    else { fail('Ruta reports export dry-run no debe aceptar tenant_id desde request.', $criticalFailures); }
+}
+if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_REPORT_EXPORT_DRY_RUN=false')) { ok('Flag reports export dry-run en .env.example con default false.'); }
+else { fail('Falta ECOSISTEMA_REPORT_EXPORT_DRY_RUN=false en .env.example.', $criticalFailures); }
+$reportExportService = is_file($root . '/app/Core/Reports/EcosistemaReportExportDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Reports/EcosistemaReportExportDryRunService.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $reportExportService) === 1) { fail('Servicio reports export dry-run contiene escritura SQL.', $criticalFailures); }
+else { ok('Servicio reports export dry-run sin escritura SQL.'); }
+$reportExportView = is_file($root . '/resources/views/pages/reports/export-dry-run.php') ? (string) file_get_contents($root . '/resources/views/pages/reports/export-dry-run.php') : '';
+foreach (['query_sql','query_json','layout_json','config_json','metadata_json'] as $forbiddenNeedle) {
+    if (!str_contains($reportExportView, $forbiddenNeedle)) { ok('Vista reports export dry-run no expone: ' . $forbiddenNeedle); }
+    else { fail('Vista reports export dry-run no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
+}

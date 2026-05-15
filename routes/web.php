@@ -153,6 +153,8 @@ use App\Core\Reports\EcosistemaMarketingFunnelReportRepository;
 use App\Core\Reports\EcosistemaMarketingFunnelReportService;
 use App\Core\Reports\EcosistemaLeadPerformanceReportRepository;
 use App\Core\Reports\EcosistemaLeadPerformanceReportService;
+use App\Core\Reports\EcosistemaReportExportDryRunRepository;
+use App\Core\Reports\EcosistemaReportExportDryRunService;
 
 
 function startAuthSession(array $config): void
@@ -2015,6 +2017,34 @@ return [
         try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaMarketingFunnelReportService(new EcosistemaMarketingFunnelReportRepository($pdo)); $data = $service->build($tenantId, $_GET); } catch (\Throwable) {}
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title'=>'Reporte embudo marketing | Ecosistema Core Admin','contentView'=>'pages/reports/marketing-funnel','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>$data]);
+    },
+
+
+
+    'GET /reports/exports/dry-run' => static function (array $config): void {
+        if (!requirePermission($config, 'campaigns.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $result = null;
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Reports Export Dry-Run | Ecosistema Core Admin','contentView'=>'pages/reports/export-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result')]);
+    },
+
+    'POST /reports/exports/dry-run' => static function (array $config): void {
+        if (!requirePermission($config, 'campaigns.view')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null;
+        if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $result = ['allowed' => false, 'blocked_reason' => 'internal_error'];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaReportExportDryRunService(new EcosistemaReportExportDryRunRepository($pdo), filter_var((string) ($_ENV['ECOSISTEMA_REPORT_EXPORT_DRY_RUN'] ?? false), FILTER_VALIDATE_BOOL));
+            $result = $service->simulate($tenantId, is_array($_POST) ? $_POST : []);
+        } catch (\Throwable) {}
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Reports Export Dry-Run | Ecosistema Core Admin','contentView'=>'pages/reports/export-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result')]);
     },
 
     'GET /campaigns/new/dry-run' => static function (array $config): void {

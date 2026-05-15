@@ -64,6 +64,7 @@ return [
     'ecosistema_ai' => [
         'enabled' => filter_var(Env::get('ECOSISTEMA_AI_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'lead_summary_dry_run' => filter_var(Env::get('ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+        'campaign_insight_dry_run' => filter_var(Env::get('ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
     'ecosistema_security' => [

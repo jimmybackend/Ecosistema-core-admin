@@ -57,3 +57,10 @@ JOIN core_permissions p ON p.id = rp.permission_id
 WHERE u.id = 1
 ORDER BY p.code;
 ```
+
+
+## Actualización PR #157 (tenant_id obligatorio en asignación rol↔permiso)
+- La asignación de permisos de rol se alinea con esquema canónico: `core_role_permissions.tenant_id` **siempre** se inserta.
+- El tenant para asignación se toma del rol (`core_roles.tenant_id`) cargado en repositorio/servicio.
+- No se acepta `tenant_id` desde request para este flujo.
+- Las lecturas y borrados de `core_role_permissions` en la pantalla de asignación filtran por `role_id` + `tenant_id`.

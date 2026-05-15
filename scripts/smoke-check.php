@@ -2848,3 +2848,16 @@ if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $aiCampaignService) === 1) { fai
 else { ok('Servicio AI campaign insight dry-run sin escritura SQL.'); }
 if (str_contains($aiCampaignService, "\$_POST['tenant_id']") || str_contains($aiCampaignService, "\$_GET['tenant_id']")) { fail('Servicio AI campaign insight dry-run no debe leer tenant_id desde request.', $criticalFailures); }
 else { ok('Servicio AI campaign insight dry-run no lee tenant_id desde request.'); }
+
+// PR #157 role permissions tenant_id alignment checks
+$rolePermissionsRepo = is_file($root . '/app/Core/Permissions/PermissionRepository.php') ? (string) file_get_contents($root . '/app/Core/Permissions/PermissionRepository.php') : '';
+if (str_contains($rolePermissionsRepo, 'INSERT INTO core_role_permissions (tenant_id, role_id, permission_id, created_at)')) {
+    ok('Asignación de permisos a rol inserta tenant_id en core_role_permissions.');
+} else {
+    fail('Asignación de permisos a rol no incluye tenant_id en INSERT de core_role_permissions.', $criticalFailures);
+}
+if (str_contains($rolePermissionsRepo, 'WHERE role_id=:role_id AND tenant_id=:tenant_id')) {
+    ok('Consultas de role-permissions filtran por tenant_id cuando aplica.');
+} else {
+    fail('Consultas de role-permissions no filtran por tenant_id.', $criticalFailures);
+}

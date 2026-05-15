@@ -1424,15 +1424,17 @@ $workflowFiles = [
     'resources/views/pages/workflow/rule-runs.php',
     'resources/views/pages/workflow/templates.php',
     'resources/views/pages/workflow/template-detail.php',
+    'resources/views/pages/workflow/template-install-dry-run.php',
     'docs/project/ECOSISTEMA_WORKFLOW_RULES_READ_ONLY.md',
     'docs/project/ECOSISTEMA_WORKFLOW_RUNS_READ_ONLY.md',
     'docs/project/ECOSISTEMA_WORKFLOW_TEMPLATES_READ_ONLY.md',
+    'docs/project/ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN.md',
 ];
 foreach ($workflowFiles as $workflowFile) {
     if (is_file($root . '/' . $workflowFile)) { ok('Existe archivo Workflow: ' . $workflowFile); } else { fail('No existe archivo Workflow: ' . $workflowFile, $criticalFailures); }
 }
 
-foreach (['GET /workflow', 'GET /workflow/rules', 'GET /workflow/rules/{id}', 'GET /workflow/runs', 'GET /workflow/runs/{id}', 'GET /workflow/rules/{id}/runs', 'GET /workflow/templates', 'GET /workflow/templates/{key}'] as $requiredRoute) {
+foreach (['GET /workflow', 'GET /workflow/rules', 'GET /workflow/rules/{id}', 'GET /workflow/runs', 'GET /workflow/runs/{id}', 'GET /workflow/rules/{id}/runs', 'GET /workflow/templates', 'GET /workflow/templates/{key}', 'GET /workflow/templates/{key}/install-dry-run', 'POST /workflow/templates/{key}/install-dry-run'] as $requiredRoute) {
     if ($routesContent !== false && str_contains($routesContent, $requiredRoute)) { ok('routes/web.php contiene ruta Workflow: ' . $requiredRoute); } else { fail('Falta ruta Workflow: ' . $requiredRoute, $criticalFailures); }
 }
 
@@ -2574,3 +2576,6 @@ foreach (['raw_data_json', 'value_json', 'password', 'token', 'secret'] as $forb
     if (!str_contains($campaignResultView, $forbiddenNeedle)) { ok('Vista campaign create-result no referencia sensible: ' . $forbiddenNeedle); }
     else { fail('Vista campaign create-result no debe referenciar sensible: ' . $forbiddenNeedle, $criticalFailures); }
 }
+
+$envExampleContent = is_file($root . '/.env.example') ? file_get_contents($root . '/.env.example') : false;
+if ($envExampleContent !== false && str_contains($envExampleContent, 'ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN=false')) { ok('.env.example mantiene ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN=false.'); } else { fail('.env.example no define ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN=false.', $criticalFailures); }

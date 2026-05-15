@@ -10,4 +10,5 @@
     <li><strong>Descripción:</strong> <?= e((string) ($template['description_preview'] ?? '')) ?></li>
     <li><strong>JSON sensible expuesto:</strong> No</li>
   </ul>
+  <p><a href="/workflow/templates/<?= rawurlencode((string) ($template['key'] ?? '')) ?>/install-dry-run">Simular instalación (dry-run)</a></p>
 </section>

@@ -15,6 +15,8 @@ cp .env.example .env
 php -S 127.0.0.1:8000 -t public
 ```
 
+Nota de base de datos (canónica para Core Admin): `docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md`.
+
 Comandos útiles:
 ```bash
 composer dump-autoload

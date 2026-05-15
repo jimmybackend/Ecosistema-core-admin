@@ -149,6 +149,8 @@ use App\Core\Platform\EcosistemaPlatformHealthRepository;
 use App\Core\Platform\EcosistemaPlatformHealthService;
 use App\Core\Security\EcosistemaPermissionAuditRepository;
 use App\Core\Security\EcosistemaPermissionAuditService;
+use App\Core\Security\EcosistemaRateLimitDryRunRepository;
+use App\Core\Security\EcosistemaRateLimitDryRunService;
 use App\Core\Reports\EcosistemaMarketingFunnelReportRepository;
 use App\Core\Reports\EcosistemaMarketingFunnelReportService;
 use App\Core\Reports\EcosistemaLeadPerformanceReportRepository;
@@ -3246,6 +3248,34 @@ return [
         View::render('layouts.admin', ['title' => 'Module Health | Ecosistema Core Admin', 'contentView' => 'pages/platform/module-health', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('detail')]);
     },
 
+
+    'GET /security/rate-limit/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!requirePermission($config, 'permissions.view')) { return; }
+        $auth = AuthSession::getAuth();
+        View::render('layouts.admin', ['title' => 'Security Rate Limit Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/security/rate-limit-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => ['result' => null, 'errorMessage' => null, 'input' => []]]);
+    },
+    'POST /security/rate-limit/dry-run' => static function (array $config): void {
+        startAuthSession($config); if (!requirePermission($config, 'permissions.view')) { return; }
+        $auth = AuthSession::getAuth();
+        verifyCsrfOrAbort();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $errorMessage = null;
+        $result = null;
+        $input = ['path' => (string) ($_POST['path'] ?? ''), 'ip_address' => (string) ($_POST['ip_address'] ?? ''), 'window_minutes' => (string) ($_POST['window_minutes'] ?? ''), 'max_requests' => (string) ($_POST['max_requests'] ?? ''), 'max_login_failures' => (string) ($_POST['max_login_failures'] ?? '')];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaRateLimitDryRunService(new EcosistemaRateLimitDryRunRepository($pdo));
+            $result = $service->simulate(
+                $tenantId,
+                $_POST,
+                filter_var((string) ($config['app']['features']['ecosistema_rate_limit_enabled'] ?? false), FILTER_VALIDATE_BOOL),
+                filter_var((string) ($config['app']['features']['ecosistema_rate_limit_dry_run'] ?? false), FILTER_VALIDATE_BOOL),
+            );
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo calcular la simulación de rate limit.';
+        }
+        View::render('layouts.admin', ['title' => 'Security Rate Limit Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/security/rate-limit-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage', 'input')]);
+    },
     'GET /security/permissions-audit' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }

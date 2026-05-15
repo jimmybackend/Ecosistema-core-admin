@@ -489,6 +489,7 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 
 ## Auditoría de permisos por módulo (PR #118)
 - Rutas read-only: `GET /security/permissions-audit` y `GET /security/permissions-audit/modules/{code}`.
+- Security rate limit dry-run: `/security/rate-limit/dry-run` (GET/POST), simulación por endpoint/IP sin bloqueo ni escrituras; flags `ECOSISTEMA_RATE_LIMIT_ENABLED=false` y `ECOSISTEMA_RATE_LIMIT_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_RATE_LIMIT_DRY_RUN.md`.
 - Muestra permisos por módulo/rol para el tenant autenticado.
 - No crea ni modifica roles/permisos; sólo consultas `SELECT`.
 - Documento técnico: `docs/project/ECOSISTEMA_PERMISSIONS_AUDIT.md`.

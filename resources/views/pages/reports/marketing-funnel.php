@@ -1,0 +1,11 @@
+<?php declare(strict_types=1); $filters=(array)($filters??[]); $funnel=(array)($funnel??[]); $rates=(array)($conversion_rates??[]); $campaigns=(array)($campaigns??[]); $landings=(array)($landings??[]); ?>
+<h1>Reporte de embudo de marketing</h1><p>Modo solo lectura. No guarda consultas ni exporta datos sensibles.</p>
+<form method="get" action="/reports/marketing-funnel" class="eco-form"><label>Desde <input type="date" name="from" value="<?= htmlspecialchars((string)($filters['from']??'')) ?>"></label><label>Hasta <input type="date" name="to" value="<?= htmlspecialchars((string)($filters['to']??'')) ?>"></label><label>Campaña <select name="campaign_id"><option value="">Todas</option><?php foreach($campaigns as $campaign): ?><option value="<?= (int)($campaign['id']??0) ?>"<?= ((int)($filters['campaign_id']??0)===(int)($campaign['id']??0)?' selected':'') ?>><?= htmlspecialchars((string)($campaign['name']??'')) ?></option><?php endforeach; ?></select></label><label>Landing <select name="landing_id"><option value="">Todas</option><?php foreach($landings as $landing): ?><option value="<?= (int)($landing['id']??0) ?>"<?= ((int)($filters['landing_id']??0)===(int)($landing['id']??0)?' selected':'') ?>><?= htmlspecialchars((string)($landing['name']??'')) ?></option><?php endforeach; ?></select></label><button type="submit">Aplicar</button></form>
+<table class="eco-table"><thead><tr><th>Etapa</th><th>Total</th><th>Conversión</th></tr></thead><tbody>
+<tr><td>Clicks</td><td><?= (int)($funnel['clicks']??0) ?></td><td>—</td></tr>
+<tr><td>Visits</td><td><?= (int)($funnel['visits']??0) ?></td><td><?= number_format((float)($rates['visit_rate']??0),2) ?>%</td></tr>
+<tr><td>Submissions</td><td><?= (int)($funnel['submissions']??0) ?></td><td><?= number_format((float)($rates['submission_rate']??0),2) ?>%</td></tr>
+<tr><td>Leads</td><td><?= (int)($funnel['leads']??0) ?></td><td><?= number_format((float)($rates['lead_rate']??0),2) ?>%</td></tr>
+<tr><td>Conversions</td><td><?= (int)($funnel['conversions']??0) ?></td><td><?= number_format((float)($rates['conversion_rate']??0),2) ?>%</td></tr>
+</tbody></table>
+<?php if((int)($funnel['clicks']??0)===0&&(int)($funnel['visits']??0)===0&&(int)($funnel['submissions']??0)===0&&(int)($funnel['leads']??0)===0&&(int)($funnel['conversions']??0)===0): ?><p>Sin datos para los filtros seleccionados.</p><?php endif; ?>

@@ -7,6 +7,7 @@ Aplicación administrativa interna del ecosistema. Este README resume **estado o
 - Hay módulos adicionales visibles en rutas (Mail, Cloud/Drive, URL Locator, Browser Analytics, Landing, CRM, Workflow, Reports, Campaigns, AI), pero su operación real está mayormente limitada por modo read-only, dry-run o flags desactivados por defecto.  
 - Matriz canónica de estado por módulo: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
 - Guía de demo/showcase honesta: `docs/project/CORE_ADMIN_SHOWCASE_DEMO_GUIDE.md`.
+- Checklist de preparación para demo controlada: `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`.
 
 ## Instalación local
 ```bash

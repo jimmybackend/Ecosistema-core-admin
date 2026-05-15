@@ -57,6 +57,8 @@ return [
         'action_create_ticket' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_CREATE_TICKET', 'false'), FILTER_VALIDATE_BOOL),
         'action_create_agenda_event' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_CREATE_AGENDA_EVENT', 'false'), FILTER_VALIDATE_BOOL),
         'action_custom' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_ACTION_CUSTOM', 'false'), FILTER_VALIDATE_BOOL),
+        'template_install_dry_run' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+        'template_install_write' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_WRITE', 'false'), FILTER_VALIDATE_BOOL),
     ],
     'core_registration' => [
         'enabled' => filter_var(Env::get('CORE_REGISTRATION_ENABLED', 'false'), FILTER_VALIDATE_BOOL),

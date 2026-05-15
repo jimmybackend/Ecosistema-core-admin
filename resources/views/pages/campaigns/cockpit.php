@@ -1,0 +1,8 @@
+<?php declare(strict_types=1); $cockpit=(array)($cockpit??[]); $campaign=(array)($cockpit['campaign']??[]); ?>
+<p><a href="/campaigns">← Volver</a></p><h1>Campaign Cockpit</h1>
+<?php if(empty($cockpit['found'])): ?><p>Campaña no encontrada para el tenant actual.</p><?php else: ?>
+<ul><li>ID: <?= (int)($campaign['id']??0) ?></li><li>Nombre: <?= htmlspecialchars((string)($campaign['name']??'')) ?></li><li>Código: <?= htmlspecialchars((string)($campaign['code']??'')) ?></li><li>Estado: <?= htmlspecialchars((string)($campaign['status']??'')) ?></li><li>Objetivo (preview): <?= htmlspecialchars((string)($campaign['objective']??'')) ?></li><li>Descripción (preview): <?= htmlspecialchars((string)($campaign['description_preview']??'')) ?></li><li>Budget presente: <?= !empty($campaign['budget_present'])?'sí (oculto)':'no' ?></li><li>Landing URL: <?= !empty($campaign['landing_url_present'])?htmlspecialchars((string)($campaign['landing_url_preview']??'')):'no definida' ?></li><li>Modo: <?= htmlspecialchars((string)($campaign['mode']??'')) ?></li></ul>
+<h2>Embudo</h2><ul><?php foreach((array)($cockpit['funnel']??[]) as $k=>$v): ?><li><?= htmlspecialchars((string)$k) ?>: <?= (int)$v ?></li><?php endforeach; ?></ul>
+<h2>Leads por estado</h2><ul><?php foreach((array)($cockpit['leads_by_status']??[]) as $r): ?><li><?= htmlspecialchars((string)($r['status']??'')) ?>: <?= (int)($r['total']??0) ?></li><?php endforeach; ?></ul>
+<h2>Workflow runs por estado</h2><ul><?php foreach((array)($cockpit['workflows_by_status']??[]) as $r): ?><li><?= htmlspecialchars((string)($r['status']??'')) ?>: <?= (int)($r['total']??0) ?></li><?php endforeach; ?></ul>
+<?php endif; ?>

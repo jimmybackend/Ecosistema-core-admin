@@ -138,6 +138,8 @@ use App\Core\Crm\EcosistemaCrmFollowupRepository;
 use App\Core\Crm\EcosistemaCrmFollowupService;
 use App\Core\Crm\EcosistemaCrmLeadStatusService;
 use App\Core\Crm\EcosistemaCrmLeadStatusRepository;
+use App\Core\Campaigns\EcosistemaCampaignCockpitRepository;
+use App\Core\Campaigns\EcosistemaCampaignCockpitService;
 use App\Core\Platform\EcosistemaPlatformAdapter;
 use App\Core\Platform\EcosistemaPlatformCockpitRepository;
 use App\Core\Platform\EcosistemaPlatformCockpitService;
@@ -1984,6 +1986,34 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'CRM Submission to Lead Dry-Run | Ecosistema Core Admin','contentView'=>'pages/crm/submission-to-lead-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('dryRun','id','errorMessage')]);
+    },
+
+
+
+    'GET /campaigns' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $summary = ['total' => 0]; $campaigns = [];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaCampaignCockpitService(new EcosistemaCampaignCockpitRepository($pdo)); $data = $service->list($tenantId); $summary=(array)($data['summary']??[]); $campaigns=(array)($data['campaigns']??[]);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Campaigns | Ecosistema Core Admin','contentView'=>'pages/campaigns/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('summary','campaigns')]);
+    },
+
+    'GET /campaigns/{id}/cockpit' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $cockpit = ['found'=>false,'campaign'=>null,'funnel'=>[],'leads_by_status'=>[],'workflows_by_status'=>[]];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaCampaignCockpitService(new EcosistemaCampaignCockpitRepository($pdo)); $cockpit = $service->cockpit($tenantId, $id);} catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Campaign Cockpit | Ecosistema Core Admin','contentView'=>'pages/campaigns/cockpit','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('cockpit')]);
     },
 
     'GET /crm' => static function (array $config): void {

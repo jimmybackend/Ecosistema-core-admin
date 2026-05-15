@@ -2723,3 +2723,23 @@ foreach (['old_values','new_values','before_json','after_json','metadata_json','
     }
 }
 ok('Vistas de auditoría no exponen JSON/campos sensibles canónicos.');
+
+
+// PR #144 security rate limit dry-run checks
+foreach (['app/Core/Security/EcosistemaRateLimitDryRunRepository.php','app/Core/Security/EcosistemaRateLimitDryRunService.php','resources/views/pages/security/rate-limit-dry-run.php','docs/project/ECOSISTEMA_RATE_LIMIT_DRY_RUN.md'] as $requiredPath) {
+    checkFile($root, $requiredPath, $criticalFailures);
+}
+if ($routesContent !== false) {
+    foreach (['GET /security/rate-limit/dry-run', 'POST /security/rate-limit/dry-run'] as $routeNeedle) {
+        if (str_contains((string) $routesContent, $routeNeedle)) { ok('Ruta security rate-limit dry-run detectada: ' . $routeNeedle); }
+        else { fail('Falta ruta security rate-limit dry-run: ' . $routeNeedle, $criticalFailures); }
+    }
+}
+if ($envContent !== false && str_contains((string) $envContent, 'ECOSISTEMA_RATE_LIMIT_ENABLED=false') && str_contains((string) $envContent, 'ECOSISTEMA_RATE_LIMIT_DRY_RUN=false')) { ok('Flags rate limit en .env.example presentes y en false.'); }
+else { fail('Faltan flags ECOSISTEMA_RATE_LIMIT_ENABLED=false o ECOSISTEMA_RATE_LIMIT_DRY_RUN=false.', $criticalFailures); }
+$rateLimitRepo = is_file($root . '/app/Core/Security/EcosistemaRateLimitDryRunRepository.php') ? (string) file_get_contents($root . '/app/Core/Security/EcosistemaRateLimitDryRunRepository.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $rateLimitRepo) === 1) { fail('Repositorio rate-limit dry-run contiene escrituras no permitidas.', $criticalFailures); }
+else { ok('Repositorio rate-limit dry-run sin INSERT/UPDATE/DELETE.'); }
+$rateLimitService = is_file($root . '/app/Core/Security/EcosistemaRateLimitDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Security/EcosistemaRateLimitDryRunService.php') : '';
+if (str_contains($rateLimitService, "\$_POST['tenant_id']") || str_contains($rateLimitService, "\$_GET['tenant_id']")) { fail('Servicio rate-limit dry-run no debe aceptar tenant_id desde request.', $criticalFailures); }
+else { ok('Servicio rate-limit dry-run no acepta tenant_id desde request.'); }

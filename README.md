@@ -190,6 +190,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_BROWSER_ANALYTICS_DASHBOARD_READ_ONLY.md` (dashboard administrativo read-only sobre rollups de Browser Analytics).
 - `docs/project/ECOSISTEMA_MAIL_NOTIFICATIONS_SCHEMA_INVENTORY.md` (inventario canónico de Mail/Notifications y URL Message sobre `adbbmis1_eco`, previo a implementación funcional).
 - `docs/project/ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md` (inventario canónico del esquema Workflow sobre `adbbmis1_eco`, previo a UI/lógica de ejecución).
+- `docs/project/ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md` (inventario seguro y read-only de puntos de asistencia IA sobre tablas `os_ai_*` y relacionadas en `adbbmis1_eco`, sin proveedor IA ni persistencia de prompts).
 
 ## Smoke checks básicos (PR #22)
 Ejecutar:

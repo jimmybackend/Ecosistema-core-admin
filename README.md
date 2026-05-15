@@ -171,6 +171,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_CORE_ADMIN_QA_CHECKLIST.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_RUTAS.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_PENDIENTES.md`
+- Matriz de estado real por módulo: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md` (fuente para distinguir implementado/read-only/dry-run/controlled/roadmap).
 - `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`
 - `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`
 - `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`

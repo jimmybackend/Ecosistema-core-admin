@@ -501,3 +501,4 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - CRM lead status controlado: `GET/POST /crm/leads/{id}/status`, requiere CSRF + permiso `modules.manage` para POST y flag `ECOSISTEMA_CRM_LEAD_STATUS_WRITE=false`. Ver `docs/project/ECOSISTEMA_CRM_LEAD_STATUS_CONTROLLED.md`.
 
 - Workflow templates (read-only): `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATES_READ_ONLY.md`
+- Workflow template install dry-run: `/workflow/templates/{key}/install-dry-run` (GET/POST), sin escritura DB y con flag `ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN.md`.

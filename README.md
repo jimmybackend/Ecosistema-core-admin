@@ -1,526 +1,101 @@
 # Ecosistema Core Admin
 
-Aplicación administrativa operativa del ecosistema para gestión interna (etapa 1 + endurecimiento inicial de autorización).
+Aplicación administrativa interna del ecosistema. Este README resume **estado operativo real** (lo que funciona hoy) y separa claramente lo que está en read-only, dry-run, controlado por flags o en roadmap.
 
-## Índice
-- [Resumen](#resumen)
-- [Instalación local](#instalación-local)
-- [Rutas principales](#rutas-principales)
-- [Módulos implementados](#módulos-implementados)
-- [Tablas reales usadas](#tablas-reales-usadas)
-- [Limitaciones actuales](#limitaciones-actuales)
-- [Documentación del proyecto](#documentación-del-proyecto)
-- [Estado operativo actual](#estado-operativo-actual)
-- [Integración futura con S3 Drive](#integración-futura-con-s3-drive)
-- [Inventario técnico S3 Drive](#inventario-técnico-s3-drive)
-- [Mapeo DB Cloud/S3](#mapeo-db-clouds3)
-- [Configuración compartida S3 Drive](#configuración-compartida-s3-drive)
-- [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
-- [Checklist de hardening de producción](#checklist-de-hardening-de-producción)
-- [Comandos rápidos](#comandos-rápidos)
-- [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
-- [Registro inicial controlado en VM](#registro-inicial-controlado-en-vm)
-- [Configuración de entorno en VM](#configuración-de-entorno-en-vm)
-
-## Resumen
-Incluye autenticación real, sesión persistida, dashboard, gestión base de tenants/usuarios/roles/permisos/módulos y módulos mínimos de system, mail, cloud y onboarding.
+## Resumen operativo real
+- Core administrativo funcional: autenticación/sesión, dashboard, tenants, users, roles, permissions, modules, system health/logs/audit.  
+- Hay módulos adicionales visibles en rutas (Mail, Cloud/Drive, URL Locator, Browser Analytics, Landing, CRM, Workflow, Reports, Campaigns, AI), pero su operación real está mayormente limitada por modo read-only, dry-run o flags desactivados por defecto.  
+- Matriz canónica de estado por módulo: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
 
 ## Instalación local
 ```bash
 composer install
 cp .env.example .env
-# configurar variables de DB en .env
+# Configura DB_* según tu entorno
 php -S 127.0.0.1:8000 -t public
 ```
 
-Comando recomendado tras cambios estructurales de clases:
+Comandos útiles:
 ```bash
 composer dump-autoload
+composer smoke
 ```
 
+## Estado por módulo (fuente oficial)
+Para evitar duplicidad y promesas incorrectas, usa la matriz oficial:
+- `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`
 
-## Variables de sesión (PR #24)
-- `SESSION_NAME`: nombre de cookie de sesión PHP.
-- `SESSION_SECURE`: usar `true` en producción/HTTPS para enviar cookie sólo por canal seguro.
-- `SESSION_SAMESITE`: política SameSite de cookie (`Lax` por defecto).
-- `SESSION_IDLE_TIMEOUT`: expiración por inactividad en segundos (por defecto `1800`).
+Ahí se distingue explícitamente:
+- Implementado estable
+- Read-only
+- Dry-run
+- Controlled por flags
+- Documental / roadmap
 
-Comportamiento de expiración por inactividad:
-- Si una sesión autenticada supera `SESSION_IDLE_TIMEOUT`, se intenta revocar el registro en `core_sessions`, se destruye la sesión PHP y se redirige a `/login` sin exponer detalles internos.
+## Rutas principales reales
+- Auth y base: `/login`, `POST /login`, `POST /logout`, `/dashboard`, `/health/db`
+- Core admin: `/tenants`, `/users`, `/roles`, `/permissions`, `/modules`
+- System: `/system/health`, `/system/logs`, `/system/audit`, `/audit/events`
+- Cloud/Drive: `/cloud`, `/cloud/drive`, `/cloud/drive/download-contract, /cloud/drive/files`, `/cloud/drive/folders`, `/cloud/drive/summary`
+- Mail: `/mail`, `/mail/compose`, `/mail-notifications`
+- Workflow: `/workflow`, `/workflow/runs`, `/workflow/dry-run`
+- Reports/Campaigns: `/reports/marketing-funnel`, `/reports/lead-performance`, `/campaigns`
+- Landing/URL/Analytics/CRM/AI (operación condicionada): `/landing`, `/url/locator`, `/browser/analytics`, `/crm`, `POST /ai/assist`
 
-Limitaciones vigentes de autenticación:
-- No hay remember-me persistente.
-- No hay MFA todavía.
-- No hay rotación avanzada por dispositivo todavía.
+Referencia completa de rutas: `routes/web.php`.
 
+## Features read-only
+Ejemplos de superficies de consulta o detalle sin operación productiva completa:
+- Workflow runs y vistas operativas (`/workflow/runs`, `/workflow/runs/{id}`)
+- Reportes administrativos (`/reports/*`) como lectura/diagnóstico principal
+- Partes de Cloud/Drive (incluyendo contrato de descarga), URL Locator, Browser Analytics, Landing, CRM según matriz y flags
 
-## Configuración de entorno en VM
-- Guía rápida segura: `docs/deploy/VM_ENV_SETUP.md`.
-- Usa `bash scripts/setup-vm-env.sh` para crear/actualizar `.env` sin commitear secretos.
+Ver detalle por módulo en la matriz: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
 
-## Registro inicial controlado en VM
-- Consulta la guía: `docs/auth/CONTROLLED_INITIAL_REGISTRATION.md`.
-- Mantén `CORE_REGISTRATION_ENABLED=false` por defecto y actívalo sólo temporalmente para onboarding inicial.
+## Features dry-run
+Ejemplos explícitos de simulación:
+- Workflow: `/workflow/dry-run`, `/workflow/rules/{id}/dry-run`
+- URL Locator redirect: `/url/locator/links/{id}/redirect-dry-run`
+- Landing submit/render: rutas `*dry-run*`
+- Reports export dry-run, Campaign creation dry-run, AI insights dry-run
 
-## Rutas principales
-- Auth: `/login`, `POST /logout`
-- Dashboard: `/dashboard`
-- Tenants: `/tenants`
-- Usuarios: `/users`, `/users/{id}/roles`
-- Roles: `/roles`
-- Permisos: `/permissions`
-- Módulos: `/modules`
-- System: `/system/health`, `/system/logs`, `/system/audit`
-- Mail: `/mail`
-- Cloud: `/cloud`
-- Ecosistema Drive: `/cloud/drive`, `/cloud/drive/summary`, `/cloud/drive/files`, `/cloud/drive/files/{id}, /cloud/drive/files/{id}/s3-key-validation`, `/cloud/drive/folders`, `/cloud/drive/folders/{id}`, `/cloud/drive/browse`, `/cloud/drive/root`, `/cloud/drive/buckets`
-- Onboarding: `/onboarding`
-- URL Locator (read-only): `/url/locator`, `/url/locator/links`, `/url/locator/clicks`, `/url/locator/links/{id}`, `/url/locator/links/{id}/clicks`, `/url/locator/links/{id}/redirect-dry-run`
-- Browser Analytics (read-only): `/browser/analytics`
-- Reports: `/reports/marketing-funnel`, `/reports/lead-performance`
-- Workflow runs (read-only): `/workflow/runs`, `/workflow/runs/{id}`, `/workflow/rules/{id}/runs`
-- Workflow dry-run: `/workflow/dry-run`, `/workflow/rules/{id}/dry-run`
-- Platform health read-only: `/platform/health`, `/platform/health/modules/{code}`
-- Health técnico DB: `/health/db`
+No implican ejecución productiva ni escrituras completas si flags de write/enable no están activos.
 
-## Módulos implementados
-- Auth (login real con `core_users` + sesión en `core_sessions`)
-- Dashboard
-- Tenants
-- Usuarios
-- Roles
-- Permisos
-- Módulos
-- Health / Logs / Auditoría
-- Mail mínimo
-- Cloud mínimo
-- Onboarding base
+## Features controlled por flags
+Por defecto `.env.example` mantiene la mayoría de integraciones avanzadas en `false`:
+- Mail/SMTP real: `MAIL_SEND_ENABLED=false`, `ECOSISTEMA_SMTP_ENABLED=false`
+- Cloud/AWS/S3 real: `CLOUD_S3_ENABLED=false`, `ECOSISTEMA_DRIVE_AWS_ENABLED=false`, `ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=false`
+- IA externa/escrituras IA: `ECOSISTEMA_AI_ENABLED=false`, `ECOSISTEMA_AI_PROVIDER_ENABLED=false`, `ECOSISTEMA_AI_WRITE_PROPOSALS=false`
+- Workflow ejecución real: `ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED=false`
+- URL Locator, Landing, Campaigns, Reports, CRM, Notifications: flags `*_ENABLED`, `*_DRY_RUN`, `*_WRITE` en `false` por defecto.
 
-## Tablas reales usadas
-- `core_users`, `core_sessions`, `core_tenants`, `core_roles`, `core_user_roles`, `core_permissions`, `core_role_permissions`, `core_modules`
-- `system_health_check_definitions`, `system_health_check_results`, `system_logs`, `core_audit`
-- `mail_messages`, `mail_attachments`, `mail_delivery_logs`, `mail_smtp_accounts`, `mail_identities`, `mail_mailboxes`, `mail_folders`
-- `notifications_queue`, `notifications_templates`, `notifications_channels`, `notifications_preferences`
-- `url_message_templates`, `url_message_attachments`, `url_message_access_logs`, `url_attachment_access_logs`
-- `cloud_files`, `cloud_folders`, `cloud_buckets`, `cloud_user_roots`
-- `onboarding_flows`, `onboarding_runs`, `onboarding_run_steps`
+## Features roadmap / no activas
+No asumir productivo por existencia de vistas, docs o rutas:
+- Envío masivo productivo
+- Workers/cron productivos end-to-end
+- S3/AWS real por defecto
+- IA autónoma externa por defecto
+
+Estado y límites reales: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
+
+## Seguridad y flags
+- No subir secretos ni commitear `.env`; usar `.env.example` como plantilla.
+- Configuración por defecto segura: sin SMTP real, sin AWS/S3 real, sin proveedor IA externo.
+- Registro inicial controlado por flag: `CORE_REGISTRATION_ENABLED=false` por defecto.
+
+Referencia: `.env.example`.
+
+## Pruebas / smoke
+Ejecuta:
+```bash
+composer smoke
+# o directamente
+php scripts/smoke-check.php
+```
+
+El smoke valida estructura/carga/sintaxis y controles básicos; no reemplaza pruebas funcionales completas ni activa integraciones externas.
 
 ## Limitaciones actuales
-- Se agregó autorización fina por permisos en rutas administrativas existentes mediante `requirePermission($config, $code)` con validación por `auth_user_id` y `auth_tenant_id` en sesión.
-- La asignación de roles de usuario usa la tabla real `core_user_roles` y reemplaza asignaciones dentro de transacción (DELETE + INSERT).
-- Mail **no** realiza envío real (sin SMTP/IMAP/POP productivo).
-- Cloud **no** integra S3 real ni AWS SDK.
-- Onboarding no ejecuta aprovisionamiento real.
-- No hay workers/cron ni API separada en este repositorio.
-
-- Auditoría automática mínima en acciones críticas de core administrativo (tenants/users/roles/permissions/modules) usando la tabla real `core_audit`.
-- Seguridad de auditoría: no se registran contraseñas, `password_hash`, `session_token_hash`, `refresh_token_hash` ni secretos de entorno.
-- Limitación vigente: Mail, Cloud y Onboarding quedan fuera de esta ampliación de auditoría; tampoco se agregan exportaciones ni filtros avanzados nuevos.
-
-
-## Notas de autorización por permisos
-- La validación consulta únicamente tablas reales: `core_user_roles`, `core_roles`, `core_role_permissions`, `core_permissions`.
-- Los permisos deben existir en `core_permissions` y estar asignados a roles en `core_role_permissions`.
-- Este repositorio **no** crea seeds automáticos, migraciones ni alta automática de permisos/roles/usuarios.
-- No se crean roles nuevos desde la pantalla de asignación.
-- No se crean permisos automáticamente ni seeds.
-- No hay auditoría automática específica para la asignación de roles todavía.
-- No hay UI avanzada de perfiles, grupos o jerarquías.
-
-## Estado operativo actual
-- Documento PR #117: `docs/project/ECOSISTEMA_PLATFORM_MODULE_HEALTH.md`.
-- Estado consolidado: `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`.
-- Resumen operativo: módulos activos, comandos, rutas, variables, riesgos, limitaciones y pendientes mayores.
-- Este README mantiene un resumen breve para evitar duplicidad; el detalle vive en el documento de cierre.
-
-
-## Integración futura con Ecosistema Drive
-- Contrato documental de integración: `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`.
-- Core Admin mantiene operación Cloud local/controlada en estado actual.
-- Ecosistema Drive será el producto propio futuro del ecosistema; `jimmybackend/s3` se mantiene como referencia técnica/funcional y no como dependencia directa en esta etapa.
-- Nota de propiedad canónica (PR #45): `cloud_*` en `adbbmis1_eco` (referencia en `jimmybackend/Ecosistema-bd`) es la estructura canónica del sistema `s3` / ArcadeCloud Drive; Core Admin no debe duplicarla ni modificarla desde este repositorio.
-
-
-## Configuración segura Ecosistema Drive
-- Adaptador dry-run/contract-only: `docs/project/ECOSISTEMA_DRIVE_DRY_RUN_ADAPTER.md`.
-- Configuración base segura: `docs/project/ECOSISTEMA_DRIVE_CONFIGURATION.md`.
-- Panel operativo central: `docs/project/ECOSISTEMA_DRIVE_OPERATIONAL_COCKPIT.md`.
-- Production readiness checklist: `docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md`.
-- Modo por defecto `contract`, sin AWS/S3 real, sin llamadas remotas y con `s3` como repositorio de referencia técnica.
-- Listado read-only de Drive (`/cloud/drive/files`) usando metadata de `cloud_files`, sin listar bucket/key real, sin signed URLs y sin operaciones remotas.
-- Listado read-only de carpetas (`/cloud/drive/folders`) usando metadata de `cloud_folders`, sin exponer `prefix` ni rutas internas, y sin crear/editar/borrar carpetas.
-- Detalle read-only por archivo (`/cloud/drive/files/{id}, /cloud/drive/files/{id}/s3-key-validation`) usando metadata segura de `cloud_files` (aislamiento por tenant/usuario, sin exponer `s3_key`, `stored_name`, hashes sensibles ni `metadata_json` crudo).
-- Detalle read-only por carpeta (`/cloud/drive/folders/{id}`) usando metadata segura de `cloud_folders` (aislamiento por tenant/usuario, sin exponer `prefix`, `prefix_hash`, `password_hash`, `secure_hint` ni rutas internas).
-
-## Inventario técnico S3 Drive
-- Inventario documental de preparación: `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`.
-- Este inventario no activa integración real ni modifica el repositorio `jimmybackend/s3`.
-
-## Mapeo DB Cloud/S3
-- Mapeo documental de tablas Cloud/S3 para integración futura: `docs/project/CLOUD_S3_DATABASE_MAPPING.md`.
-- No activa AWS/S3 real ni modifica esquema de base de datos.
-- `mailit-click` permanece fuera de alcance en esta etapa (futuro short URL/tracking).
-
-## Configuración compartida S3 Drive
-- Configuración compartida y segura para integración futura: `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`.
-- Modo por defecto `contract`, sin llamadas reales al repo `s3` y sin activación AWS/S3.
-
-## Documentación del proyecto
-- `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`
-- `docs/project/ECOSISTEMA_CORE_ADMIN_ESTADO_ACTUAL.md`
-- `docs/project/ECOSISTEMA_CORE_ADMIN_QA_CHECKLIST.md`
-- `docs/project/ECOSISTEMA_CORE_ADMIN_RUTAS.md`
-- `docs/project/ECOSISTEMA_CORE_ADMIN_PENDIENTES.md`
-- Matriz de estado real por módulo: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md` (fuente para distinguir implementado/read-only/dry-run/controlled/roadmap).
-- `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`
-- `docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md`
-- `docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md`
-- `docs/project/CLOUD_S3_DATABASE_MAPPING.md`
-- `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`
-- `docs/ops/MONITORING_OPERATIONS_PLAN.md`
-- `docs/auth/CONTROLLED_INITIAL_REGISTRATION.md`
-- `docs/project/ECOSISTEMA_WORKFLOW_RULES_READ_ONLY.md`
-- `docs/project/ECOSISTEMA_WORKFLOW_RUNS_READ_ONLY.md`
-- `docs/project/ECOSISTEMA_WORKFLOW_DRY_RUN.md`
-- `docs/MAILIT_CLICK_TECHNICAL_INVENTORY.md` (inventario documental de referencia para Mailit.click / futuro Ecosistema URL Locator).
-- `docs/project/ECOSISTEMA_URL_LOCATOR_SCHEMA_INVENTORY.md` (inventario canónico del esquema URL Locator sobre `adbbmis1_eco`, previo a implementación funcional).
-- `docs/project/ECOSISTEMA_URL_LOCATOR_CLICKS_READ_ONLY.md` (consulta read-only de clicks existentes con privacidad y sin escrituras).
-- `docs/project/ECOSISTEMA_URL_LOCATOR_REDIRECT_DRY_RUN.md` (simulación protegida de resolución de redirect sin redirección ni escrituras).
-- `docs/project/ECOSISTEMA_LANDING_SCHEMA_INVENTORY.md` (inventario canónico de Landing Pages sobre `adbbmis1_eco`, previo a implementación funcional de UI/lógica).
-- `docs/project/ECOSISTEMA_BROWSER_ANALYTICS_SCHEMA_INVENTORY.md` (inventario canónico de Browser Analytics sobre `adbbmis1_eco`, previo a UI/lógica funcional).
-- `docs/project/ECOSISTEMA_BROWSER_ANALYTICS_DASHBOARD_READ_ONLY.md` (dashboard administrativo read-only sobre rollups de Browser Analytics).
-- `docs/project/ECOSISTEMA_MAIL_NOTIFICATIONS_SCHEMA_INVENTORY.md` (inventario canónico de Mail/Notifications y URL Message sobre `adbbmis1_eco`, previo a implementación funcional).
-- `docs/project/ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md` (inventario canónico del esquema Workflow sobre `adbbmis1_eco`, previo a UI/lógica de ejecución).
-- `docs/project/ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md` (inventario seguro y read-only de puntos de asistencia IA sobre tablas `os_ai_*` y relacionadas en `adbbmis1_eco`, sin proveedor IA ni persistencia de prompts).
-- AI lead summary dry-run: `/ai/leads/{id}/summary-dry-run` con contexto sanitizado y sin llamada IA externa; flags `ECOSISTEMA_AI_ENABLED=false` y `ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN.md`.
-- AI assist controlado por flags: `POST /ai/assist` con sanitización de PII y escritura opcional en `os_ai_proposals` sólo con `ECOSISTEMA_AI_WRITE_PROPOSALS=true`. Ver `docs/project/ECOSISTEMA_AI_ASSISTANT_CONTROLLED.md`.
-- AI campaign insight dry-run: `/ai/campaigns/{id}/insight-dry-run` prepara métricas agregadas y contexto sanitizado de campaña sin llamada IA externa; flags `ECOSISTEMA_AI_ENABLED=false` y `ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN.md`.
-
-## Smoke checks básicos (PR #22)
-Ejecutar:
-```bash
-composer install
-composer dump-autoload
-composer smoke
-```
-
-### Qué valida
-- Presencia de archivos críticos de Core Admin (autoload, bootstrap, rutas, index público, assets, vistas clave y README).
-- Carga de `bootstrap/app.php` y `routes/web.php` sin error fatal.
-- Carga de clases críticas de autorización, auditoría y roles de usuario.
-- Sintaxis PHP (`php -l`) sobre `app`, `bootstrap`, `config`, `public`, `routes` y `resources/views` (ignorando `vendor`).
-- Búsqueda de cadenas sensibles en `resources/views` y `routes/web.php` (`password_hash`, `session_token_hash`, `refresh_token_hash`, `DB_PASSWORD`, `AWS_SECRET`, `SECRET`).
-
-### Qué no valida
-- No reemplaza pruebas funcionales end-to-end.
-- No valida reglas de negocio profundas ni cobertura completa de permisos.
-- No crea migraciones, seeds ni datos de prueba.
-- No requiere conexión obligatoria a DB para ejecutarse.
-
-### Validación HTTP manual (opcional)
-```bash
-php -S 127.0.0.1:8000 -t public
-curl -I http://127.0.0.1:8000/login
-curl -I http://127.0.0.1:8000/dashboard
-curl -I http://127.0.0.1:8000/health/db
-```
-
-Esperado:
-- `/login` responde `200`.
-- `/dashboard` sin sesión redirige a `/login`.
-- `/health/db` puede responder `200` o `500` según la DB local, pero no debe exponer secretos.
-
-> Nota: la validación funcional completa requiere DB real `adbbmis1_eco` con datos y permisos poblados.
-
-## Manejo centralizado de errores seguros (PR #23)
-- Se agregó una capa mínima de respuesta de errores en `App\Http\Response\ErrorResponder` para estandarizar respuestas HTML seguras en códigos `403`, `404`, `419` y `500`.
-- Se agregaron vistas dedicadas en `resources/views/pages/errors/{403,404,419,500}.php`.
-- Las vistas usan layout administrativo con sesión autenticada y layout de auth sin sesión, evitando exponer trazas, SQL, paths internos, credenciales o secretos.
-- Se redujo repetición en rutas con helpers (`renderError`, `ensureValidCsrfToken`) para respuestas seguras de autorización/CSRF.
-
-Limitaciones vigentes:
-- No se agregó monitoreo externo.
-- No se implementó tracking avanzado de excepciones.
-- No se implementó observabilidad completa.
-
-
-
-## Configuración SMTP segura (PR #26)
-Variables disponibles en `.env`/`.env.example`:
-- `MAIL_MAILER`
-- `MAIL_HOST`
-- `MAIL_PORT`
-- `MAIL_USERNAME`
-- `MAIL_PASSWORD`
-- `MAIL_ENCRYPTION`
-- `MAIL_FROM_ADDRESS`
-- `MAIL_FROM_NAME`
-- `MAIL_SEND_ENABLED`
-- `MAIL_ALLOW_TEST_SEND`
-
-Notas clave:
-- `MAIL_SEND_ENABLED=false` por defecto para mantener deshabilitado el envío real.
-- Este PR **no envía correos reales** y **no implementa envío masivo**.
-- SMTP real (conexión/envío de pruebas) se habilitará en un PR posterior.
-- No commitear secretos ni contraseñas SMTP reales.
-- Usar credenciales SMTP dedicadas y de bajo privilegio (no personales).
-
-
-## Mail adjuntos lógicos (PR #27)
-- Se agregó integración lógica de solo lectura en detalle de Mail (`GET /mail/messages/{id}`) para listar adjuntos cuando existen registros en tabla real `cloud_files` asociados por `origin_table = 'mail_messages'` y `origin_id = mail_messages.id`.
-- Se mantiene aislamiento por `tenant_id` y `user_id`, con consultas PDO preparadas y límite de 100 resultados.
-- Se muestran únicamente campos seguros: `original_name`, `mime_type`, `size_bytes`, `status`, `uploaded_at`.
-- Si no hay adjuntos vinculados en datos reales, la vista muestra: `Adjuntos: no disponibles todavía en esta instalación.`
-
-Limitaciones vigentes de esta integración:
-- No hay subida de archivos.
-- No hay descarga de archivos.
-- No hay integración S3 real.
-- No hay envío real de correos.
-- No hay adjuntos salientes en compose/send.
-- La validación funcional completa requiere datos reales de `mail_messages` y `cloud_files` en DB `adbbmis1_eco`.
-
-## Configuración segura Cloud/S3 (PR #28)
-Variables disponibles en `.env`/`.env.example`:
-- `CLOUD_DISK`
-- `CLOUD_S3_ENABLED`
-- `CLOUD_ALLOW_DOWNLOADS`
-- `CLOUD_ALLOW_UPLOADS`
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_DEFAULT_REGION`
-- `AWS_BUCKET`
-- `AWS_ENDPOINT`
-- `AWS_USE_PATH_STYLE_ENDPOINT`
-
-Notas clave:
-- `CLOUD_S3_ENABLED=false` por defecto.
-- Este PR **no conecta a AWS**.
-- Este PR **no sube archivos reales**.
-- Este PR **no descarga archivos reales**.
-- S3 real se habilitará en un PR posterior.
-- No commitear secretos ni llaves reales de AWS.
-- Cuando se habilite S3 real, usar IAM dedicado con permisos mínimos (no root).
-
-## Checklist de hardening de producción
-- `docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md`
-- Incluye controles de HTTPS, cookies/sesión, CSRF, permisos, secretos, headers, rate limit, privacidad y backups para salida a producción.
-
-## Checklist de despliegue EC2/producción
-- Ver guía: `docs/deploy/EC2_PRODUCTION_CHECKLIST.md`.
-- Runbook VM Core Admin: `docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`.
-
-## Comandos rápidos
-```bash
-composer install
-composer dump-autoload
-composer smoke
-composer cron:check
-composer cron:health
-composer cron:sessions
-composer ops:monitor
-```
-
-### Cron seguro (jobs controlados)
-- `composer cron:check`: valida autoload/bootstrap y modo seguro sin tocar DB.
-- `composer cron:health`: ejecuta únicamente el job controlado `health-checks`.
-- `composer cron:sessions`: ejecuta el job controlado `session-cleanup` para revocar sesiones expiradas en `core_sessions` según `SESSION_IDLE_TIMEOUT`.
-- `cron:health` usa checks existentes del módulo System con `check_type` `db/database` y registra resultados/logs si las tablas reales están disponibles.
-- `cron:sessions` usa UPDATE seguro (`revoked_at`) y no elimina usuarios/roles/permisos ni expone tokens/hashes.
-- Requiere DB real configurada (`adbbmis1_eco`) en `.env`.
-- **No** ejecuta AWS, SMTP, procesamiento de archivos, workers permanentes ni checks HTTP externos.
-
-## Notas de seguridad para producción
-- No commitear `.env` ni secretos reales.
-- No publicar contraseñas, tokens o credenciales en README/documentación.
-- Configurar el `DocumentRoot`/`root` del servidor web hacia `public/` (no a la raíz del repositorio).
-
-## Subida controlada Cloud (PR #29)
-- Rutas: `GET /cloud/files/upload` y `POST /cloud/files/upload`.
-- Protecciones: sesión activa, permiso `cloud.manage`, CSRF en POST.
-- Variables nuevas: `CLOUD_MAX_UPLOAD_MB`, `CLOUD_ALLOWED_EXTENSIONS`, `CLOUD_UPLOAD_PREFIX`, `CLOUD_LOCAL_STORAGE_PATH`.
-- Si `CLOUD_ALLOW_UPLOADS=false`, la subida se bloquea.
-- Si `CLOUD_S3_ENABLED=false`, se usa almacenamiento local controlado en `storage/app/cloud` (nunca en `public/`).
-- Si `CLOUD_S3_ENABLED=true` sin AWS SDK, se muestra limitación segura y no se sube.
-- Se registran metadatos en `cloud_files` con columnas reales usadas por el repositorio actual.
-- No hay descarga pública ni signed URLs en este PR.
-- No guardar secretos en código/documentación.
-- Verificar permisos de escritura del directorio `storage/app/cloud` antes de habilitar uploads.
-
-## Descarga controlada Cloud (PR #30)
-- Ruta: `GET /cloud/files/{id}/download`.
-- Protecciones: sesión, permiso fino (`cloud.view` o `cloud.manage`), validación por `tenant_id` y `user_id` del archivo.
-- `CLOUD_ALLOW_DOWNLOADS=false` por defecto; con este valor la descarga se bloquea.
-- En este PR solo se descarga almacenamiento local bajo `CLOUD_LOCAL_STORAGE_PATH`.
-- No hay descarga S3 real, no hay signed URLs y no hay rutas públicas.
-- Seguridad: resolución por `id` en `cloud_files`, validación anti path traversal, headers `attachment` y `X-Content-Type-Options: nosniff`.
-- No exponer `storage/` públicamente.
-
-## Plan operativo de workers/cron (PR #31)
-- Documento: `docs/ops/WORKERS_CRON_PLAN.md`.
-- Validación segura (sin ejecutar jobs reales):
-
-```bash
-composer cron:check
-```
-
-Estado actual:
-- No hay workers activos todavía.
-- No hay colas reales todavía.
-- No se envían correos desde workers.
-- No se procesan archivos desde workers.
-- No hay sincronización AWS/S3 activa desde cron.
-
-## Onboarding ejecución segura inicial (PR #32)
-- Se agregó una capa de ejecución controlada para avanzar runs existentes paso a paso sin aprovisionamiento externo real.
-- Tipos soportados en esta fase: `action_type` vacío/null, `noop`, `manual`, `checklist`.
-- Tipos no soportados: se marcan como `skipped` con log de advertencia, sin ejecutar acciones externas.
-- Se registra trazabilidad en `onboarding_run_logs` y auditoría administrativa (`onboarding.run_started`, `onboarding.step_completed`, `onboarding.step_skipped`, `onboarding.run_completed`).
-- No hay AWS, SMTP, workers automáticos ni cron activo en esta fase.
-- La automatización completa queda para PR posterior.
-
-## Mail: envío individual (preparación PR #35)
-- Estado: **infraestructura interna lista para preview/preparación**.
-- `MAIL_SEND_ENABLED=false` por defecto.
-- `MAIL_ALLOW_TEST_SEND=false` por defecto.
-- Este PR **no envía correos reales por defecto** (modo dry-run/preparación).
-- Sin envío masivo, sin campañas, sin workers/colas de mail.
-- Adjuntos salientes: pendientes para PR posterior.
-
-
-## Envío individual controlado de borradores (PR #36)
-- Requiere `MAIL_SEND_ENABLED=true` y `MAIL_ALLOW_TEST_SEND=true`.
-- Requiere SMTP válido (`MAIL_HOST`, `MAIL_PORT`, `MAIL_FROM_ADDRESS` y credenciales si el servidor las solicita).
-- Ruta operativa: `GET /mail/messages/{id}/send-preview` y `POST /mail/messages/{id}/prepare-send`.
-- Protecciones: sesión, permiso `mail.manage`, CSRF, aislamiento por `tenant_id` y `user_id`.
-- Valida máximo 10 destinatarios, formato email válido, borrador no eliminado y contenido mínimo (asunto o cuerpo).
-- Riesgo controlado: si flags están en `false`, el envío se bloquea y no intenta SMTP.
-- Auditoría esperada: `mail.send_attempted`, `mail.sent`, `mail.send_failed`, `mail.send_blocked_by_config`.
-- No incluye envío masivo, campañas, workers, colas, reintentos, tracking ni webhooks.
-- Adjuntos salientes: pendientes para PR posterior.
-
-
-## PR #37 — Adjuntos Cloud en borradores Mail
-- Gestión de adjuntos lógicos por rutas protegidas: `GET /mail/messages/{id}/attachments` y `POST /mail/messages/{id}/attachments`.
-- Relación usada: tabla real `cloud_files` con `origin_table = 'mail_messages'` y `origin_id = mail_messages.id`.
-- Seguridad: sesión + permiso `mail.manage` + CSRF + aislamiento `tenant_id`/`user_id`; sólo se aceptan IDs (`cloud_file_ids[]`).
-- No hay subida de archivos desde Mail, no hay envío masivo, campañas, workers ni colas.
-- En este PR los adjuntos se preparan lógicamente para preview; el envío binario MIME queda pendiente para PR posterior.
-
-## Mail envío individual con adjuntos locales (PR #38)
-- Se habilita envío controlado de **un solo borrador** con adjuntos Cloud ya asociados.
-- Requiere: `MAIL_SEND_ENABLED=true` y `MAIL_ALLOW_TEST_SEND=true`.
-- Límites configurables: `MAIL_MAX_ATTACHMENTS`, `MAIL_MAX_ATTACHMENT_MB`, `MAIL_MAX_TOTAL_ATTACHMENT_MB`.
-- Se bloquea envío si hay adjuntos inválidos (inexistentes, fuera de `CLOUD_LOCAL_STORAGE_PATH`, S3-only/remotos o tamaño/cantidad excedidos).
-- No hay envío masivo, campañas, workers, colas, S3 real ni signed URLs.
-- Recomendado: probar primero con archivos pequeños y SMTP controlado.
-
-
-## Backup/Restore operativo (PR #39)
-- Ver plan: `docs/ops/BACKUP_RESTORE_PLAN.md`.
-- Check no destructivo: `composer backup:check`.
-- **No guardar backups dentro de este repositorio**.
-- **No commitear `.env` ni dumps SQL con datos reales**.
-- Todo restore debe probarse primero en un ambiente separado de producción.
-
-
-## Nota operativa de seguridad
-- No imprimir ni commitear secretos (`DB_PASSWORD`, `MAIL_PASSWORD`, `AWS_SECRET_ACCESS_KEY`).
-
-- Navegación básica read-only Drive disponible en `/cloud/drive/browse` usando metadata de `cloud_folders` y `cloud_files` (sin listar bucket real, sin exponer `prefix`/`s3_key`, sin AWS/S3).
-
-- Drive admin incluye vista protegida **read-only** `/cloud/drive/root` para resumen de raíz de usuario (tabla `cloud_user_roots`) sin exponer `root_prefix`, rutas internas ni secretos.
-- Esta vista no crea/edita raíces, no activa AWS/S3 real y no modifica base de datos.
-
-- Resumen operativo read-only de Drive (`/cloud/drive/summary`) usando metadata de `cloud_files`, `cloud_folders`, `cloud_user_roots` y `cloud_buckets`, sin exponer keys/prefixes/rutas internas ni activar AWS/S3 o modificar DB.
-
-- Política interna read-only de acceso Drive: `docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md`.
-- Auditoría read-only de visualización Drive en `core_audit` para `/cloud/drive/*` con eventos seguros (sin keys/prefixes/secretos, sin AWS/S3 real).
-
-
-- Referencia de contrato de descarga futura: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.
-
-- Referencia: `docs/project/ECOSISTEMA_DRIVE_SIGNED_URL_DRY_RUN.md`.
-\n- AWS/S3 config preparada y apagada: ver docs/project/ECOSISTEMA_DRIVE_AWS_S3_CONFIG.md
-\n- Controlled download S3 backend route añadida: /cloud/drive/files/{id}/download (bloqueada por defecto).
-
-- Drive: disponible ruta informativa `/cloud/drive/upload-dry-run` para simulación de subida S3 dry-run (sin subir archivos, sin DB/storage writes).
-
-- Versiones de archivo Drive read-only disponibles en `/cloud/drive/files/{id}/versions` usando `cloud_file_versions`, sin exponer `s3_key`/`s3_version_id` y sin download/restore real.
-
-- Share contract read-only disponible en `/cloud/drive/files/{id}/share-contract` (sin links/tokens/shares reales). Ver `docs/project/ECOSISTEMA_DRIVE_SHARE_CONTRACT.md`.
-- Logs de acceso Drive read-only disponibles en `/cloud/drive/access-logs` y `/cloud/drive/files/{id}/access-logs`. Ver `docs/project/ECOSISTEMA_DRIVE_ACCESS_LOGS.md`.
-
-- Ver también: \/docs\/project\/ECOSISTEMA_DRIVE_CONTROLLED_S3_UPLOAD.md y ruta controlada `/cloud/drive/upload`.
-
-- Uso de almacenamiento Drive read-only disponible en `/cloud/drive/storage-usage` (cloud_files + cloud_storage_usage_daily), sin snapshots write ni escaneo S3. Ver `docs/project/ECOSISTEMA_DRIVE_STORAGE_USAGE.md`.
-
-- Drive repair jobs (read-only): `docs/project/ECOSISTEMA_DRIVE_REPAIR_JOBS.md`.
-
-
-- URL Locator (read-only links): ver `docs/project/ECOSISTEMA_URL_LOCATOR_READ_ONLY_LINKS.md`.
-- URL Locator (read-only link detail): ver `docs/project/ECOSISTEMA_URL_LOCATOR_LINK_DETAIL.md`.
-
-- docs/project/ECOSISTEMA_URL_LOCATOR_CREATE_EDIT_CONTROLLED.md
-
-
-- URL→Landing attribution dry-run: `/attribution/url-landing/dry-run` (GET/POST), bloqueado por flags `ECOSISTEMA_ATTRIBUTION_ENABLED=false` y `ECOSISTEMA_ATTRIBUTION_WRITE=false`. Ver `docs/project/ECOSISTEMA_URL_LANDING_ATTRIBUTION.md`.
-- Attribution rollup dry-run: `/attribution/rollups/dry-run` (GET/POST), cálculo en memoria por rango sin escribir `browser_analytics_daily_rollups`; requiere `ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN=false` por defecto. Ver `docs/project/ECOSISTEMA_ATTRIBUTION_ROLLUP_DRY_RUN.md`.
-- CRM followup task dry-run: `/crm/leads/{id}/followup-task-dry-run` (GET/POST), simulación de tarea CRM sin INSERT y con flag `ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_CRM_FOLLOWUP_TASK_DRY_RUN.md`.
-- CRM followup task write controlado: `POST /crm/leads/{id}/followup-tasks`, requiere CSRF + permiso `modules.manage` y flag `ECOSISTEMA_CRM_FOLLOWUP_TASK_WRITE=false`. Ver `docs/project/ECOSISTEMA_CRM_FOLLOWUP_TASK_CONTROLLED.md`.
-- Attribution rollup controlado por flags: `POST /attribution/rollups/generate` (bloquea escritura si no hay idempotencia confirmada). Ver `docs/project/ECOSISTEMA_ATTRIBUTION_ROLLUP_CONTROLLED.md`.
-
-## URL Locator public redirect
-
-Se agregó redirect público controlado por flags en `GET /u/{slug}` con defaults apagados y tracking opcional. Ver `docs/project/ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECT.md`.
-
-
-- Landing Pages (read-only admin): `docs/project/ECOSISTEMA_LANDING_PAGES_READ_ONLY.md`.
-
-- docs/project/ECOSISTEMA_LANDING_VISITS_READ_ONLY.md
-
-- Landing forms read-only admin views (`/landing/forms`, `/landing/pages/{id}/forms`, `/landing/forms/{id}`) con ocultamiento de JSON sensible. Ver `docs/project/ECOSISTEMA_LANDING_FORMS_READ_ONLY.md`.
-
-
-## Landing Submissions (read-only)
-- Rutas admin: `/landing/submissions`, `/landing/forms/{id}/submissions`, `/landing/pages/{id}/submissions`, `/landing/submissions/{id}`.
-- Consulta segura de submissions con protección de PII y sin exponer adjuntos internos.
-- Ver: `docs/project/ECOSISTEMA_LANDING_SUBMISSIONS_READ_ONLY.md`.
-
-
-- Workflow ejecución controlada: `docs/project/ECOSISTEMA_WORKFLOW_EXECUTION_CONTROLLED.md`.
-
-- Platform cockpit read-only disponible en `/platform` (ver `docs/project/ECOSISTEMA_PLATFORM_COCKPIT.md`).
-
-## Auditoría de permisos por módulo (PR #118)
-- Rutas read-only: `GET /security/permissions-audit` y `GET /security/permissions-audit/modules/{code}`.
-- Security rate limit dry-run: `/security/rate-limit/dry-run` (GET/POST), simulación por endpoint/IP sin bloqueo ni escrituras; flags `ECOSISTEMA_RATE_LIMIT_ENABLED=false` y `ECOSISTEMA_RATE_LIMIT_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_RATE_LIMIT_DRY_RUN.md`.
-- Security rate limit enforcement controlado: `POST /security/rate-limit/enforce`, con escrituras opcionales solo si `ECOSISTEMA_RATE_LIMIT_ENABLED=true` y `ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS=true`. Ver `docs/project/ECOSISTEMA_RATE_LIMIT_CONTROLLED.md`.
-- Muestra permisos por módulo/rol para el tenant autenticado.
-- No crea ni modifica roles/permisos; sólo consultas `SELECT`.
-- Documento técnico: `docs/project/ECOSISTEMA_PERMISSIONS_AUDIT.md`.
-
-- Landing public render dry-run (`/landing/pages/{id}/public-render-dry-run`) bloqueado por flag `ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN.md`.
-- Landing form submit dry-run (`/landing/forms/{id}/submit-dry-run` GET/POST) valida campos requeridos/tipos/longitudes y spam básico sin escribir DB ni crear leads. Ver `docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN.md`.
-- Landing public render (`/l/{slug}`) bloqueado por flag `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false`, sin tracking de visitas en este PR. Ver `docs/project/ECOSISTEMA_LANDING_PUBLIC_RENDER_CONTROLLED.md`.
-- Landing form submit controlado (`POST /l/{slug}/forms/{id}/submit`) por flags `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false` y `ECOSISTEMA_LANDING_FORM_FILE_UPLOADS=false`, con escritura sólo en tablas de submissions. Ver `docs/project/ECOSISTEMA_LANDING_FORM_SUBMIT_CONTROLLED.md`.
-
-- Campaign cockpit read-only: rutas /campaigns y /campaigns/{id}/cockpit. Ver docs/project/ECOSISTEMA_CAMPAIGN_COCKPIT_READ_ONLY.md.
-- Campaign creation dry-run: `/campaigns/new/dry-run` (GET/POST), simulación sin escrituras de campaña/landing/short link y flag `ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN.md`.
-- Campaign creation controlled-write: `POST /campaigns` con inserción mínima en `crm_marketing_campaigns` bloqueada por default vía flags `ECOSISTEMA_CAMPAIGN_CREATION_WRITE=false`, `ECOSISTEMA_CAMPAIGN_CREATE_LANDING_DRAFT=false`, `ECOSISTEMA_CAMPAIGN_CREATE_SHORT_LINK=false`. Ver `docs/project/ECOSISTEMA_CAMPAIGN_CREATION_CONTROLLED.md`.
-- Campaign attribution read-only: rutas \/attribution\/campaigns y \/attribution\/campaigns\/{id}. Ver docs/project/ECOSISTEMA_CAMPAIGN_ATTRIBUTION_READ_ONLY.md.
-
-- CRM followups read-only: `/crm/followups` y `/crm/leads/{id}/followups`.
-- CRM lead status controlado: `GET/POST /crm/leads/{id}/status`, requiere CSRF + permiso `modules.manage` para POST y flag `ECOSISTEMA_CRM_LEAD_STATUS_WRITE=false`. Ver `docs/project/ECOSISTEMA_CRM_LEAD_STATUS_CONTROLLED.md`.
-
-- Workflow templates (read-only): `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATES_READ_ONLY.md`
-- Workflow template install dry-run: `/workflow/templates/{key}/install-dry-run` (GET/POST), sin escritura DB y con flag `ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN.md`.
-- Workflow template install controlled: `/workflow/templates/{key}/install` (POST), escribe en `workflow_rules/workflow_actions` sólo con flag `ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_WRITE=false` por defecto. Ver `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_CONTROLLED.md`.
-- Reports schema inventory (read-only): `docs/project/ECOSISTEMA_REPORTS_SCHEMA_INVENTORY.md` (inventario canónico sobre `adbbmis1_eco`, sin rutas ni escrituras en este PR).
-- Marketing funnel report (read-only): `docs/project/ECOSISTEMA_MARKETING_FUNNEL_REPORT.md`
-- `docs/project/ECOSISTEMA_LEAD_PERFORMANCE_REPORT.md` (ruta `GET /reports/marketing-funnel`, filtro por rango/campaña/landing sin escrituras).
-
-- Reports export dry-run: `/reports/exports/dry-run` (GET/POST), simulación CSV/XLSX sin crear archivo ni `reports_exports`; requiere flag `ECOSISTEMA_REPORT_EXPORT_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_REPORT_EXPORT_DRY_RUN.md`.
-- Reports export controlado: `POST /reports/exports`, valida tenant de sesión, permiso, `source_id` y PII por flags `ECOSISTEMA_REPORT_EXPORT_WRITE` / `ECOSISTEMA_REPORT_EXPORT_INCLUDE_PII`. Ver `docs/project/ECOSISTEMA_REPORT_EXPORT_CONTROLLED.md`.
-
-- Auditoría unificada read-only: ver `docs/project/ECOSISTEMA_UNIFIED_AUDIT_READ_ONLY.md` y rutas `/audit/events`.
+- Este repositorio no garantiza operación productiva de Mail, Cloud/S3, IA, Workflow, Campaigns, Reports, Landing sin habilitación explícita de flags y hardening adicional.
+- Hay capacidades administrativas útiles hoy, pero parte relevante del ecosistema está en modo controlado (read-only/dry-run/flags).
+- La narrativa operativa detallada vive en documentación de `docs/project/*`; este README se mantiene breve para onboarding rápido.

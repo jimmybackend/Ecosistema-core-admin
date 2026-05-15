@@ -2,6 +2,8 @@
 
 Checklist operativo para endurecer Core Admin antes de habilitar tráfico productivo.
 
+Referencia de auditoría por módulo: `docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`.
+
 > Fuente canónica de datos/esquema: `adbbmis1_eco`.
 > Este checklist **no** crea tablas/campos, no ejecuta migraciones y no modifica repos externos.
 

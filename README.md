@@ -81,6 +81,7 @@ No asumir productivo por existencia de vistas, docs o rutas:
 Estado y límites reales: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
 
 ## Seguridad y flags
+- Matriz de seguridad operativa (flags/permisos/CSRF/tenant/PII): `docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`
 - No subir secretos ni commitear `.env`; usar `.env.example` como plantilla.
 - Configuración por defecto segura: sin SMTP real, sin AWS/S3 real, sin proveedor IA externo.
 - Registro inicial controlado por flag: `CORE_REGISTRATION_ENABLED=false` por defecto.

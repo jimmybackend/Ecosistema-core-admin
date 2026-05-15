@@ -246,6 +246,11 @@ $requiredFiles = [
     'resources/views/pages/crm/leads.php',
     'resources/views/pages/crm/lead-detail.php',
     'docs/project/ECOSISTEMA_CRM_LEAD_DETAIL.md',
+    'app/Core/Ai/EcosistemaAiProvider.php',
+    'app/Core/Ai/EcosistemaAiAssistanceRepository.php',
+    'app/Core/Ai/EcosistemaAiAssistanceService.php',
+    'resources/views/pages/ai/assist-result.php',
+    'docs/project/ECOSISTEMA_AI_ASSISTANT_CONTROLLED.md',
     'docs/project/ECOSISTEMA_CRM_LEADS_READ_ONLY.md',
     'docs/project/ECOSISTEMA_REPORTS_SCHEMA_INVENTORY.md',
     'docs/project/ECOSISTEMA_MARKETING_FUNNEL_REPORT.md',
@@ -1642,6 +1647,22 @@ if (str_contains($queueViews, "['payload_json']")) { fail('Vistas de notificatio
 if (str_contains($routesContent, 'GET /mail-notifications/queue')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue', $criticalFailures); }
 if (str_contains($routesContent, 'GET /mail-notifications/queue/{id}')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue/{id}'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue/{id}', $criticalFailures); }
 
+
+
+$routesContentAi = @file_get_contents($root . '/routes/web.php') ?: '';
+if (str_contains($routesContentAi, "'POST /ai/assist'")) { ok('Existe ruta POST /ai/assist.'); } else { fail('No existe ruta POST /ai/assist.', $criticalFailures); }
+
+$envAi = @file_get_contents($root . '/.env.example') ?: '';
+foreach (['ECOSISTEMA_AI_ENABLED=false','ECOSISTEMA_AI_PROVIDER_ENABLED=false','ECOSISTEMA_AI_WRITE_PROPOSALS=false'] as $flagLine) {
+    if (str_contains($envAi, $flagLine)) { ok('.env.example mantiene ' . $flagLine); } else { fail('.env.example no contiene ' . $flagLine, $criticalFailures); }
+}
+
+$aiRepoContent = @file_get_contents($root . '/app/Core/Ai/EcosistemaAiAssistanceRepository.php') ?: '';
+$allAiCore = '';
+foreach (glob($root . '/app/Core/Ai/*.php') ?: [] as $f) { $allAiCore .= (string) @file_get_contents($f); }
+if (substr_count($allAiCore, 'INSERT INTO os_ai_proposals') === substr_count($aiRepoContent, 'INSERT INTO os_ai_proposals')) { ok('INSERT os_ai_proposals localizado sólo en AssistanceRepository.'); } else { fail('INSERT os_ai_proposals aparece fuera de AssistanceRepository.', $criticalFailures); }
+if (!str_contains($routesContentAi, "\$_POST['tenant_id']") && !str_contains($routesContentAi, "\$_GET['tenant_id']")) { ok('Ruta AI assist no acepta tenant_id desde request.'); } else { fail('Ruta AI assist acepta tenant_id desde request.', $criticalFailures); }
+
 if ($criticalFailures > 0) {
     report('RESULT', 'SMOKE CHECK FAILURES=' . $criticalFailures . ' WARNINGS=' . $warnings);
     exit(1);
@@ -1907,6 +1928,22 @@ if (str_contains($queueViews, "['payload_json']")) { fail('Vistas de notificatio
 
 if (str_contains($routesContent, 'GET /mail-notifications/queue')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue', $criticalFailures); }
 if (str_contains($routesContent, 'GET /mail-notifications/queue/{id}')) { ok('Ruta notifications queue detectada: GET /mail-notifications/queue/{id}'); } else { fail('Falta ruta notifications queue: GET /mail-notifications/queue/{id}', $criticalFailures); }
+
+
+
+$routesContentAi = @file_get_contents($root . '/routes/web.php') ?: '';
+if (str_contains($routesContentAi, "'POST /ai/assist'")) { ok('Existe ruta POST /ai/assist.'); } else { fail('No existe ruta POST /ai/assist.', $criticalFailures); }
+
+$envAi = @file_get_contents($root . '/.env.example') ?: '';
+foreach (['ECOSISTEMA_AI_ENABLED=false','ECOSISTEMA_AI_PROVIDER_ENABLED=false','ECOSISTEMA_AI_WRITE_PROPOSALS=false'] as $flagLine) {
+    if (str_contains($envAi, $flagLine)) { ok('.env.example mantiene ' . $flagLine); } else { fail('.env.example no contiene ' . $flagLine, $criticalFailures); }
+}
+
+$aiRepoContent = @file_get_contents($root . '/app/Core/Ai/EcosistemaAiAssistanceRepository.php') ?: '';
+$allAiCore = '';
+foreach (glob($root . '/app/Core/Ai/*.php') ?: [] as $f) { $allAiCore .= (string) @file_get_contents($f); }
+if (substr_count($allAiCore, 'INSERT INTO os_ai_proposals') === substr_count($aiRepoContent, 'INSERT INTO os_ai_proposals')) { ok('INSERT os_ai_proposals localizado sólo en AssistanceRepository.'); } else { fail('INSERT os_ai_proposals aparece fuera de AssistanceRepository.', $criticalFailures); }
+if (!str_contains($routesContentAi, "\$_POST['tenant_id']") && !str_contains($routesContentAi, "\$_GET['tenant_id']")) { ok('Ruta AI assist no acepta tenant_id desde request.'); } else { fail('Ruta AI assist acepta tenant_id desde request.', $criticalFailures); }
 
 if ($criticalFailures > 0) {
     report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");

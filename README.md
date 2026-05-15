@@ -192,6 +192,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md` (inventario canónico del esquema Workflow sobre `adbbmis1_eco`, previo a UI/lógica de ejecución).
 - `docs/project/ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md` (inventario seguro y read-only de puntos de asistencia IA sobre tablas `os_ai_*` y relacionadas en `adbbmis1_eco`, sin proveedor IA ni persistencia de prompts).
 - AI lead summary dry-run: `/ai/leads/{id}/summary-dry-run` con contexto sanitizado y sin llamada IA externa; flags `ECOSISTEMA_AI_ENABLED=false` y `ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN.md`.
+- AI assist controlado por flags: `POST /ai/assist` con sanitización de PII y escritura opcional en `os_ai_proposals` sólo con `ECOSISTEMA_AI_WRITE_PROPOSALS=true`. Ver `docs/project/ECOSISTEMA_AI_ASSISTANT_CONTROLLED.md`.
 - AI campaign insight dry-run: `/ai/campaigns/{id}/insight-dry-run` prepara métricas agregadas y contexto sanitizado de campaña sin llamada IA externa; flags `ECOSISTEMA_AI_ENABLED=false` y `ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN.md`.
 
 ## Smoke checks básicos (PR #22)

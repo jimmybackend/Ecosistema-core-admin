@@ -494,6 +494,7 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 
 - Campaign cockpit read-only: rutas /campaigns y /campaigns/{id}/cockpit. Ver docs/project/ECOSISTEMA_CAMPAIGN_COCKPIT_READ_ONLY.md.
 - Campaign creation dry-run: `/campaigns/new/dry-run` (GET/POST), simulación sin escrituras de campaña/landing/short link y flag `ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN.md`.
+- Campaign creation controlled-write: `POST /campaigns` con inserción mínima en `crm_marketing_campaigns` bloqueada por default vía flags `ECOSISTEMA_CAMPAIGN_CREATION_WRITE=false`, `ECOSISTEMA_CAMPAIGN_CREATE_LANDING_DRAFT=false`, `ECOSISTEMA_CAMPAIGN_CREATE_SHORT_LINK=false`. Ver `docs/project/ECOSISTEMA_CAMPAIGN_CREATION_CONTROLLED.md`.
 - Campaign attribution read-only: rutas \/attribution\/campaigns y \/attribution\/campaigns\/{id}. Ver docs/project/ECOSISTEMA_CAMPAIGN_ATTRIBUTION_READ_ONLY.md.
 
 - CRM followups read-only: `/crm/followups` y `/crm/leads/{id}/followups`.

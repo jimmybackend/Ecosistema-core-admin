@@ -2541,3 +2541,31 @@ if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $campaignCreateService) === 1) {
 else { ok('Servicio campaign creation dry-run sin escritura SQL.'); }
 if (str_contains($campaignCreateService, "\$_POST['tenant_id']") || str_contains($campaignCreateService, "\$_GET['tenant_id']")) { fail('Servicio campaign creation dry-run no debe leer tenant_id de request.', $criticalFailures); }
 else { ok('Servicio campaign creation dry-run no lee tenant_id desde request.'); }
+
+// PR #133 campaign creation controlled-write checks
+$requiredCampaignControlled = [
+    'app/Core/Campaigns/EcosistemaCampaignCreationRepository.php',
+    'app/Core/Campaigns/EcosistemaCampaignCreationService.php',
+    'resources/views/pages/campaigns/create-result.php',
+    'docs/project/ECOSISTEMA_CAMPAIGN_CREATION_CONTROLLED.md',
+];
+foreach ($requiredCampaignControlled as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto campaign creation controlled: ' . $requiredPath); }
+    else { fail('Falta artefacto campaign creation controlled: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false && str_contains((string) $routesContent, "'POST /campaigns'")) { ok('Ruta campaign creation controlled detectada: POST /campaigns'); }
+else { fail('Falta ruta POST /campaigns para campaign creation controlled.', $criticalFailures); }
+foreach (['ECOSISTEMA_CAMPAIGN_CREATION_WRITE=false', 'ECOSISTEMA_CAMPAIGN_CREATE_LANDING_DRAFT=false', 'ECOSISTEMA_CAMPAIGN_CREATE_SHORT_LINK=false'] as $flagNeedle) {
+    if ($envExampleContent !== false && str_contains((string) $envExampleContent, $flagNeedle)) { ok('Flag campaign creation controlled en .env.example: ' . $flagNeedle); }
+    else { fail('Falta flag en .env.example: ' . $flagNeedle, $criticalFailures); }
+}
+$campaignCreationRepo = is_file($root . '/app/Core/Campaigns/EcosistemaCampaignCreationRepository.php') ? (string) file_get_contents($root . '/app/Core/Campaigns/EcosistemaCampaignCreationRepository.php') : '';
+if (substr_count(strtoupper($campaignCreationRepo), 'INSERT INTO') === 1 && !str_contains($campaignCreationRepo, 'landing_pages') && !str_contains($campaignCreationRepo, 'url_short_links')) { ok('CampaignCreationRepository sólo contiene INSERT mínimo permitido.'); }
+else { fail('CampaignCreationRepository contiene escrituras no permitidas.', $criticalFailures); }
+if (!str_contains($campaignCreationRepo, "\$_POST['tenant_id']") && !str_contains($campaignCreationRepo, "\$_GET['tenant_id']")) { ok('CampaignCreationRepository no lee tenant_id de request.'); }
+else { fail('CampaignCreationRepository no debe leer tenant_id de request.', $criticalFailures); }
+$campaignResultView = is_file($root . '/resources/views/pages/campaigns/create-result.php') ? (string) file_get_contents($root . '/resources/views/pages/campaigns/create-result.php') : '';
+foreach (['raw_data_json', 'value_json', 'password', 'token', 'secret'] as $forbiddenNeedle) {
+    if (!str_contains($campaignResultView, $forbiddenNeedle)) { ok('Vista campaign create-result no referencia sensible: ' . $forbiddenNeedle); }
+    else { fail('Vista campaign create-result no debe referenciar sensible: ' . $forbiddenNeedle, $criticalFailures); }
+}

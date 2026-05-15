@@ -61,6 +61,11 @@ return [
         'template_install_write' => filter_var(Env::get('ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_WRITE', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
+    'ecosistema_ai' => [
+        'enabled' => filter_var(Env::get('ECOSISTEMA_AI_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'lead_summary_dry_run' => filter_var(Env::get('ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
+    ],
+
     'ecosistema_security' => [
         'rate_limit_enabled' => filter_var(Env::get('ECOSISTEMA_RATE_LIMIT_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'rate_limit_dry_run' => filter_var(Env::get('ECOSISTEMA_RATE_LIMIT_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),

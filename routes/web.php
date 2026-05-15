@@ -161,6 +161,8 @@ use App\Core\Reports\EcosistemaReportExportRepository;
 use App\Core\Reports\EcosistemaReportExportService;
 use App\Core\Audit\EcosistemaUnifiedAuditRepository;
 use App\Core\Audit\EcosistemaUnifiedAuditService;
+use App\Core\Ai\EcosistemaAiLeadSummaryRepository;
+use App\Core\Ai\EcosistemaAiLeadSummaryDryRunService;
 
 
 function startAuthSession(array $config): void
@@ -2281,6 +2283,28 @@ return [
         View::render('layouts.admin',['title'=>'CRM Followups | Ecosistema Core Admin','contentView'=>'pages/crm/followups','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('followups')]);
     },
 
+
+
+    'GET /ai/leads/{id}/summary-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $result = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaAiLeadSummaryDryRunService(new EcosistemaAiLeadSummaryRepository($pdo), (array) ($config['app']['ecosistema_ai'] ?? []));
+            $result = $service->build($tenantId, $id);
+        } catch (\Throwable) { $errorMessage = 'No se pudo preparar el contexto AI lead summary dry-run.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'AI Lead Summary Dry-Run | Ecosistema Core Admin','contentView'=>'pages/ai/lead-summary-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id','errorMessage')]);
+    },
     'GET /crm/leads/{id}/followups' => static function (array $config, array $params): void {
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

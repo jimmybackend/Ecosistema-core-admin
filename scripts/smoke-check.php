@@ -2762,6 +2762,25 @@ $rateLimitService = is_file($root . '/app/Core/Security/EcosistemaRateLimitDryRu
 if (str_contains($rateLimitService, "\$_POST['tenant_id']") || str_contains($rateLimitService, "\$_GET['tenant_id']")) { fail('Servicio rate-limit dry-run no debe aceptar tenant_id desde request.', $criticalFailures); }
 else { ok('Servicio rate-limit dry-run no acepta tenant_id desde request.'); }
 
+
+// PR #147 AI lead summary dry-run checks
+foreach (['app/Core/Ai/EcosistemaAiLeadSummaryRepository.php','app/Core/Ai/EcosistemaAiLeadSummaryDryRunService.php','resources/views/pages/ai/lead-summary-dry-run.php','docs/project/ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN.md'] as $requiredPath) {
+    checkFile($root, $requiredPath, $criticalFailures);
+}
+if ($routesContent !== false && str_contains((string) $routesContent, 'GET /ai/leads/{id}/summary-dry-run')) { ok('Ruta AI lead summary dry-run detectada: GET /ai/leads/{id}/summary-dry-run'); }
+else { fail('Falta ruta AI lead summary dry-run: GET /ai/leads/{id}/summary-dry-run', $criticalFailures); }
+if ($envContent !== false && str_contains((string) $envContent, 'ECOSISTEMA_AI_ENABLED=false') && str_contains((string) $envContent, 'ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN=false')) { ok('Flags AI lead summary dry-run en .env.example presentes y en false.'); }
+else { fail('Faltan flags ECOSISTEMA_AI_ENABLED=false o ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN=false.', $criticalFailures); }
+$aiLeadService = is_file($root . '/app/Core/Ai/EcosistemaAiLeadSummaryDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Ai/EcosistemaAiLeadSummaryDryRunService.php') : '';
+if (str_contains($aiLeadService, "\$_POST['tenant_id']") || str_contains($aiLeadService, "\$_GET['tenant_id']")) { fail('Servicio AI lead summary dry-run no debe aceptar tenant_id desde request.', $criticalFailures); }
+else { ok('Servicio AI lead summary dry-run no acepta tenant_id desde request.'); }
+$aiLeadRepo = is_file($root . '/app/Core/Ai/EcosistemaAiLeadSummaryRepository.php') ? (string) file_get_contents($root . '/app/Core/Ai/EcosistemaAiLeadSummaryRepository.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $aiLeadRepo) === 1) { fail('Repositorio AI lead summary dry-run contiene escrituras no permitidas.', $criticalFailures); }
+else { ok('Repositorio AI lead summary dry-run sin INSERT/UPDATE/DELETE.'); }
+$aiLeadView = is_file($root . '/resources/views/pages/ai/lead-summary-dry-run.php') ? (string) file_get_contents($root . '/resources/views/pages/ai/lead-summary-dry-run.php') : '';
+if (str_contains($aiLeadView, 'metadata_json') || str_contains($aiLeadView, "['email']") || str_contains($aiLeadView, "['phone']")) { fail('Vista AI lead summary dry-run expone JSON crudo o PII completa.', $criticalFailures); }
+else { ok('Vista AI lead summary dry-run evita JSON crudo y PII completa.'); }
+
 // PR #146 AI assistance schema inventory (docs-only) checks
 $aiInventoryPath = 'docs/project/ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md';
 checkFile($root, $aiInventoryPath, $criticalFailures);

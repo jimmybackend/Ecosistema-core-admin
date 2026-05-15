@@ -2,6 +2,11 @@
 
 Guía práctica para mostrar el Core Admin de forma profesional, clara y **sin vender humo**.
 
+Documentos relacionados:
+- Checklist de readiness para demo: `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`
+- Cierre operativo: `docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md`
+
+
 ## 1) Mensaje corto de producto
 
 > Core Admin es el panel operativo del ecosistema: hoy resuelve administración interna (acceso, gobierno, observabilidad y control), mientras varios módulos de crecimiento/automatización están visibles pero operan en modo **read-only**, **dry-run** o **controlled por flags**.

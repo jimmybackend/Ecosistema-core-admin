@@ -9,6 +9,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Módulos implementados](#módulos-implementados)
 - [Tablas reales usadas](#tablas-reales-usadas)
 - [Limitaciones actuales](#limitaciones-actuales)
+- [Base de datos canónica para Core Admin](#base-de-datos-canónica-para-core-admin)
 - [Documentación del proyecto](#documentación-del-proyecto)
 - [Estado operativo actual](#estado-operativo-actual)
 - [Integración futura con S3 Drive](#integración-futura-con-s3-drive)
@@ -165,7 +166,13 @@ Limitaciones vigentes de autenticación:
 - Configuración compartida y segura para integración futura: `docs/project/S3_DRIVE_SHARED_CONFIGURATION.md`.
 - Modo por defecto `contract`, sin llamadas reales al repo `s3` y sin activación AWS/S3.
 
+## Base de datos canónica para Core Admin
+- Referencia rápida: `docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md`.
+- Para esta instalación de Core Admin, la DB esperada es `adbbmis1_eco`, salvo que tu `.env` defina explícitamente otra base.
+- No se deben hardcodear nombres de base en código: el valor operativo siempre se toma de `DB_DATABASE` en `.env` (ver `config/database.php`).
+
 ## Documentación del proyecto
+- `docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md`
 - `docs/project/ECOSISTEMA_FUENTE_MAESTRA.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_ESTADO_ACTUAL.md`
 - `docs/project/ECOSISTEMA_CORE_ADMIN_QA_CHECKLIST.md`

@@ -246,6 +246,7 @@ $requiredFiles = [
     'resources/views/pages/crm/lead-detail.php',
     'docs/project/ECOSISTEMA_CRM_LEAD_DETAIL.md',
     'docs/project/ECOSISTEMA_CRM_LEADS_READ_ONLY.md',
+    'docs/project/ECOSISTEMA_REPORTS_SCHEMA_INVENTORY.md',
 ];
 
 foreach ($requiredFiles as $requiredFile) {

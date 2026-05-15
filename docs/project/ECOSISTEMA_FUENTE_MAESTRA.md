@@ -27,7 +27,7 @@ Su función es alinear al desarrollador, ChatGPT y Codex para trabajar mediante 
 
 ## `Ecosistema-bd` (solo base de datos)
 Responsabilidad exclusiva:
-- base principal `ecosistema`;
+- base operativa/canónica referenciada por Core Admin: `adbbmis1_eco` (en documentos históricos puede aparecer `ecosistema` como denominación unificada);
 - SQL unificado;
 - documentación DBA;
 - validaciones;

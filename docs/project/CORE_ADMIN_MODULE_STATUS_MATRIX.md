@@ -42,3 +42,5 @@ Matriz de estado real por módulo del Core Admin, basada en rutas declaradas, se
 ## Observaciones de consistencia
 - Existen módulos con rutas y vistas reales que van más allá del bloque “módulos implementados” resumido en el README; por eso esta matriz debe tomarse como fuente de precisión operativa.
 - Para tablas específicas de dominios (Landing, Analytics, Workflow, CRM, URL Locator, AI) se recomienda el inventario técnico de cada documento en `docs/project/` cuando en código de rutas no se ve SQL directo en este PR.
+
+- Mapa detallado por ruta/service/repository/tabla: `docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`.

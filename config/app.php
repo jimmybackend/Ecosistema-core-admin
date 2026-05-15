@@ -21,6 +21,7 @@ return [
         'enabled' => filter_var(Env::get('ECOSISTEMA_CRM_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
         'submission_to_lead_dry_run' => filter_var(Env::get('ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
         'submission_to_lead_write' => filter_var(Env::get('ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_WRITE', 'false'), FILTER_VALIDATE_BOOL),
+        'campaign_creation_dry_run' => filter_var(Env::get('ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
     ],
     'ecosistema_mail_notifications' => [
         'enabled' => filter_var(Env::get('ECOSISTEMA_MAIL_NOTIFICATIONS_ENABLED', 'false'), FILTER_VALIDATE_BOOL),

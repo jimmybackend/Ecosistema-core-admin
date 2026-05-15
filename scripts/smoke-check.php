@@ -2518,3 +2518,26 @@ foreach (['raw_data_json', 'value_json', 'access_token_hash'] as $forbiddenNeedl
     if (!str_contains($campaignCockpitView, $forbiddenNeedle)) { ok('Vista campaign cockpit no referencia sensible: ' . $forbiddenNeedle); }
     else { fail('Vista campaign cockpit no debe referenciar sensible: ' . $forbiddenNeedle, $criticalFailures); }
 }
+
+// PR #132 campaign creation dry-run checks
+foreach ([
+    'app/Core/Campaigns/EcosistemaCampaignCreationDryRunService.php',
+    'resources/views/pages/campaigns/create-dry-run.php',
+    'docs/project/ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN.md',
+] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto campaign creation dry-run: ' . $requiredPath); }
+    else { fail('Falta artefacto campaign creation dry-run: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false) {
+    foreach (['GET /campaigns/new/dry-run', 'POST /campaigns/new/dry-run'] as $routeNeedle) {
+        if (str_contains((string) $routesContent, $routeNeedle)) { ok('Ruta campaign creation dry-run detectada: ' . $routeNeedle); }
+        else { fail('Falta ruta campaign creation dry-run: ' . $routeNeedle, $criticalFailures); }
+    }
+}
+if ($envExampleContent !== false && str_contains((string) $envExampleContent, 'ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN=false')) { ok('Flag campaign creation dry-run en .env.example con default false.'); }
+else { fail('Falta flag ECOSISTEMA_CAMPAIGN_CREATION_DRY_RUN=false en .env.example.', $criticalFailures); }
+$campaignCreateService = is_file($root . '/app/Core/Campaigns/EcosistemaCampaignCreationDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Campaigns/EcosistemaCampaignCreationDryRunService.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $campaignCreateService) === 1) { fail('Servicio campaign creation dry-run contiene escritura SQL.', $criticalFailures); }
+else { ok('Servicio campaign creation dry-run sin escritura SQL.'); }
+if (str_contains($campaignCreateService, "\$_POST['tenant_id']") || str_contains($campaignCreateService, "\$_GET['tenant_id']")) { fail('Servicio campaign creation dry-run no debe leer tenant_id de request.', $criticalFailures); }
+else { ok('Servicio campaign creation dry-run no lee tenant_id desde request.'); }

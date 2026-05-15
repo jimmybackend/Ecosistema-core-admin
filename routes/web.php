@@ -1990,6 +1990,50 @@ return [
 
 
 
+    'GET /campaigns/new/dry-run' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        $auth = AuthSession::getAuth();
+        $result = null; $errorMessage = null;
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Campaign Creation Dry-Run | Ecosistema Core Admin','contentView'=>'pages/campaigns/create-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
+    'POST /campaigns/new/dry-run' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null;
+        if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $ownerUserId = (int) ($auth['auth_user_id'] ?? 0);
+        $result = null; $errorMessage = null;
+
+        try {
+            $service = new \App\Core\Campaigns\EcosistemaCampaignCreationDryRunService((array) ($config['app']['ecosistema_crm'] ?? []));
+            $result = $service->simulate($tenantId, $ownerUserId, [
+                'name' => $_POST['name'] ?? null,
+                'code' => $_POST['code'] ?? null,
+                'campaign_type' => $_POST['campaign_type'] ?? null,
+                'objective' => $_POST['objective'] ?? null,
+                'description' => $_POST['description'] ?? null,
+                'budget' => $_POST['budget'] ?? null,
+                'currency' => $_POST['currency'] ?? null,
+                'starts_at' => $_POST['starts_at'] ?? null,
+                'ends_at' => $_POST['ends_at'] ?? null,
+                'landing_title' => $_POST['landing_title'] ?? null,
+                'landing_slug' => $_POST['landing_slug'] ?? null,
+                'short_slug' => $_POST['short_slug'] ?? null,
+            ]);
+        } catch (\Throwable) { $errorMessage = 'No se pudo simular la creación de campaña.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Campaign Creation Dry-Run | Ecosistema Core Admin','contentView'=>'pages/campaigns/create-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
     'GET /campaigns' => static function (array $config): void {
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

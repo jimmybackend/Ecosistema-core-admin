@@ -3217,6 +3217,20 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title' => 'Workflow template install dry-run | Ecosistema Core Admin', 'contentView' => 'pages/workflow/template-install-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('dryRun')]);
     },
+
+    'POST /workflow/templates/{key}/install' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $key = trim((string) ($params['key'] ?? '')); if ($key === '') { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth();
+        $userId = (int) ($auth['auth_user_id'] ?? 0); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.manage') || $authorization->can($userId, $tenantId, 'modules.manage'); } catch (\Throwable) { $allowed = false; }
+        if (!$allowed) { renderError($config, 403); return; }
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowTemplateInstallService(new \App\Core\Workflow\EcosistemaWorkflowTemplateInstallRepository($pdo), (array) ($config['app']['ecosistema_workflow'] ?? [])); $result = $service->install($tenantId, $userId, $key); } catch (\Throwable) { $result = ['mode'=>'template-install','installed'=>false,'db_write'=>false,'blocked_reasons'=>['internal_error']]; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Workflow template install | Ecosistema Core Admin', 'contentView' => 'pages/workflow/template-install-result', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result')]);
+    },
+
     'GET /workflow/rules' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         $auth = AuthSession::getAuth();

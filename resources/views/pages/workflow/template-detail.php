@@ -11,4 +11,10 @@
     <li><strong>JSON sensible expuesto:</strong> No</li>
   </ul>
   <p><a href="/workflow/templates/<?= rawurlencode((string) ($template['key'] ?? '')) ?>/install-dry-run">Simular instalación (dry-run)</a></p>
+
+  <form method="post" action="/workflow/templates/<?= rawurlencode((string) ($template['key'] ?? '')) ?>/install" class="space-y-2">
+    <input type="hidden" name="_csrf" value="<?= e((string) ($csrfToken ?? '')) ?>">
+    <button type="submit">Instalar plantilla (controlado por flag)</button>
+  </form>
+
 </section>

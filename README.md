@@ -507,3 +507,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Reports schema inventory (read-only): `docs/project/ECOSISTEMA_REPORTS_SCHEMA_INVENTORY.md` (inventario canónico sobre `adbbmis1_eco`, sin rutas ni escrituras en este PR).
 - Marketing funnel report (read-only): `docs/project/ECOSISTEMA_MARKETING_FUNNEL_REPORT.md`
 - `docs/project/ECOSISTEMA_LEAD_PERFORMANCE_REPORT.md` (ruta `GET /reports/marketing-funnel`, filtro por rango/campaña/landing sin escrituras).
+
+- Reports export dry-run: `/reports/exports/dry-run` (GET/POST), simulación CSV/XLSX sin crear archivo ni `reports_exports`; requiere flag `ECOSISTEMA_REPORT_EXPORT_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_REPORT_EXPORT_DRY_RUN.md`.

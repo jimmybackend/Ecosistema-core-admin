@@ -2654,3 +2654,23 @@ foreach (['query_sql','query_json','layout_json','config_json','metadata_json'] 
     if (!str_contains($reportExportView, $forbiddenNeedle)) { ok('Vista reports export dry-run no expone: ' . $forbiddenNeedle); }
     else { fail('Vista reports export dry-run no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
 }
+
+// PR #141 reports export controlled checks
+foreach (['app/Core/Reports/EcosistemaReportExportRepository.php','app/Core/Reports/EcosistemaReportExportService.php','resources/views/pages/reports/export-result.php','docs/project/ECOSISTEMA_REPORT_EXPORT_CONTROLLED.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto reports export controlado: ' . $requiredPath); }
+    else { fail('Falta artefacto reports export controlado: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false && str_contains((string) $routesContent, 'POST /reports/exports')) { ok('Ruta reports export controlado detectada: POST /reports/exports'); }
+else { fail('Falta ruta reports export controlado: POST /reports/exports', $criticalFailures); }
+if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_REPORT_EXPORT_WRITE=false')) { ok('Flag reports export write en .env.example con default false.'); }
+else { fail('Falta ECOSISTEMA_REPORT_EXPORT_WRITE=false en .env.example.', $criticalFailures); }
+if ($envExampleContent !== false && str_contains((string)$envExampleContent, 'ECOSISTEMA_REPORT_EXPORT_INCLUDE_PII=false')) { ok('Flag reports export include pii en .env.example con default false.'); }
+else { fail('Falta ECOSISTEMA_REPORT_EXPORT_INCLUDE_PII=false en .env.example.', $criticalFailures); }
+$reportExportControlledService = is_file($root . '/app/Core/Reports/EcosistemaReportExportService.php') ? (string) file_get_contents($root . '/app/Core/Reports/EcosistemaReportExportService.php') : '';
+if (str_contains($reportExportControlledService, "\$_POST['tenant_id']") || str_contains($reportExportControlledService, "\$_GET['tenant_id']")) { fail('Servicio reports export controlado no debe leer tenant_id desde request.', $criticalFailures); }
+else { ok('Servicio reports export controlado no lee tenant_id desde request.'); }
+$reportExportControlledView = is_file($root . '/resources/views/pages/reports/export-result.php') ? (string) file_get_contents($root . '/resources/views/pages/reports/export-result.php') : '';
+foreach (['query_sql','query_json','layout_json','config_json','metadata_json','password','token_hash'] as $forbiddenNeedle) {
+    if (!str_contains($reportExportControlledView, $forbiddenNeedle)) { ok('Vista reports export controlado no expone: ' . $forbiddenNeedle); }
+    else { fail('Vista reports export controlado no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
+}

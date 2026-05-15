@@ -3268,14 +3268,40 @@ return [
             $result = $service->simulate(
                 $tenantId,
                 $_POST,
-                filter_var((string) ($config['app']['features']['ecosistema_rate_limit_enabled'] ?? false), FILTER_VALIDATE_BOOL),
-                filter_var((string) ($config['app']['features']['ecosistema_rate_limit_dry_run'] ?? false), FILTER_VALIDATE_BOOL),
+                filter_var((string) ($config['app']['ecosistema_security']['rate_limit_enabled'] ?? false), FILTER_VALIDATE_BOOL),
+                filter_var((string) ($config['app']['ecosistema_security']['rate_limit_dry_run'] ?? false), FILTER_VALIDATE_BOOL),
             );
         } catch (\Throwable) {
             $errorMessage = 'No se pudo calcular la simulación de rate limit.';
         }
         View::render('layouts.admin', ['title' => 'Security Rate Limit Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/security/rate-limit-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage', 'input')]);
     },
+
+    'POST /security/rate-limit/enforce' => static function (array $config): void {
+        startAuthSession($config); if (!requirePermission($config, 'permissions.view')) { return; }
+        $auth = AuthSession::getAuth();
+        verifyCsrfOrAbort();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $userId = (int) ($auth['auth_user_id'] ?? 0);
+        $errorMessage = null;
+        $result = null;
+        $input = ['path' => (string) ($_POST['path'] ?? ''), 'ip_address' => (string) ($_POST['ip_address'] ?? ''), 'window_minutes' => (string) ($_POST['window_minutes'] ?? ''), 'max_requests' => (string) ($_POST['max_requests'] ?? ''), 'max_login_failures' => (string) ($_POST['max_login_failures'] ?? ''), 'block_minutes' => (string) ($_POST['block_minutes'] ?? '')];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaRateLimitService(new EcosistemaRateLimitRepository($pdo));
+            $result = $service->enforce(
+                $tenantId,
+                $userId,
+                $_POST,
+                (bool) ($config['app']['ecosistema_security']['rate_limit_enabled'] ?? false),
+                (bool) ($config['app']['ecosistema_security']['rate_limit_write_blocks'] ?? false),
+            );
+        } catch (\Throwable) {
+            $errorMessage = 'No se pudo ejecutar el enforcement de rate limit.';
+        }
+        View::render('layouts.admin', ['title' => 'Security Rate Limit Enforcement | Ecosistema Core Admin', 'contentView' => 'pages/security/rate-limit-result', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage', 'input')]);
+    },
+
     'GET /security/permissions-audit' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }

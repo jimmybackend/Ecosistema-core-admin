@@ -2726,6 +2726,24 @@ ok('Vistas de auditoría no exponen JSON/campos sensibles canónicos.');
 
 
 // PR #144 security rate limit dry-run checks
+
+// PR #145 security rate limit controlled enforcement checks
+foreach (['app/Core/Security/EcosistemaRateLimitRepository.php','app/Core/Security/EcosistemaRateLimitService.php','resources/views/pages/security/rate-limit-result.php','docs/project/ECOSISTEMA_RATE_LIMIT_CONTROLLED.md'] as $requiredPath) {
+    checkFile($root, $requiredPath, $criticalFailures);
+}
+if ($routesContent !== false && str_contains((string) $routesContent, 'POST /security/rate-limit/enforce')) { ok('Ruta security rate-limit enforcement detectada: POST /security/rate-limit/enforce'); }
+else { fail('Falta ruta security rate-limit enforcement: POST /security/rate-limit/enforce', $criticalFailures); }
+if ($envContent !== false && str_contains((string) $envContent, 'ECOSISTEMA_RATE_LIMIT_ENABLED=false') && str_contains((string) $envContent, 'ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS=false')) { ok('Flags rate limit enforcement en .env.example presentes y en false.'); }
+else { fail('Faltan flags ECOSISTEMA_RATE_LIMIT_ENABLED=false o ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS=false.', $criticalFailures); }
+$rateLimitControlledService = is_file($root . '/app/Core/Security/EcosistemaRateLimitService.php') ? (string) file_get_contents($root . '/app/Core/Security/EcosistemaRateLimitService.php') : '';
+if (str_contains($rateLimitControlledService, "\$_POST['tenant_id']") || str_contains($rateLimitControlledService, "\$_GET['tenant_id']")) { fail('Servicio rate-limit controlado no debe aceptar tenant_id desde request.', $criticalFailures); }
+else { ok('Servicio rate-limit controlado no acepta tenant_id desde request.'); }
+$rateLimitControlledView = is_file($root . '/resources/views/pages/security/rate-limit-result.php') ? (string) file_get_contents($root . '/resources/views/pages/security/rate-limit-result.php') : '';
+foreach (['old_values','new_values','before_json','after_json','metadata_json','key_hash','scopes_json','user_agent','email'] as $forbiddenNeedle) {
+    if (!str_contains($rateLimitControlledView, $forbiddenNeedle)) { ok('Vista rate-limit controlado no expone: ' . $forbiddenNeedle); }
+    else { fail('Vista rate-limit controlado no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
+}
+
 foreach (['app/Core/Security/EcosistemaRateLimitDryRunRepository.php','app/Core/Security/EcosistemaRateLimitDryRunService.php','resources/views/pages/security/rate-limit-dry-run.php','docs/project/ECOSISTEMA_RATE_LIMIT_DRY_RUN.md'] as $requiredPath) {
     checkFile($root, $requiredPath, $criticalFailures);
 }

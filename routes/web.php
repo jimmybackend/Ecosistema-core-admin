@@ -151,6 +151,8 @@ use App\Core\Security\EcosistemaPermissionAuditRepository;
 use App\Core\Security\EcosistemaPermissionAuditService;
 use App\Core\Reports\EcosistemaMarketingFunnelReportRepository;
 use App\Core\Reports\EcosistemaMarketingFunnelReportService;
+use App\Core\Reports\EcosistemaLeadPerformanceReportRepository;
+use App\Core\Reports\EcosistemaLeadPerformanceReportService;
 
 
 function startAuthSession(array $config): void
@@ -1994,6 +1996,16 @@ return [
 
 
 
+
+    'GET /reports/lead-performance' => static function (array $config): void {
+        if (!requirePermission($config, 'campaigns.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $data = ['filters'=>[],'by_source'=>[],'by_campaign'=>[],'by_status'=>[],'score_temperature'=>[],'mode'=>'read-only'];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaLeadPerformanceReportService(new EcosistemaLeadPerformanceReportRepository($pdo)); $data = $service->build($tenantId, $_GET); } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Reporte desempeño de leads | Ecosistema Core Admin','contentView'=>'pages/reports/lead-performance','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>$data]);
+    },
 
     'GET /reports/marketing-funnel' => static function (array $config): void {
         if (!requirePermission($config, 'campaigns.view')) { return; }

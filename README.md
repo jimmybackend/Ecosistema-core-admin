@@ -76,6 +76,7 @@ Limitaciones vigentes de autenticación:
 - Onboarding: `/onboarding`
 - URL Locator (read-only): `/url/locator`, `/url/locator/links`, `/url/locator/clicks`, `/url/locator/links/{id}`, `/url/locator/links/{id}/clicks`, `/url/locator/links/{id}/redirect-dry-run`
 - Browser Analytics (read-only): `/browser/analytics`
+- Reports: `/reports/marketing-funnel`, `/reports/lead-performance`
 - Workflow runs (read-only): `/workflow/runs`, `/workflow/runs/{id}`, `/workflow/rules/{id}/runs`
 - Workflow dry-run: `/workflow/dry-run`, `/workflow/rules/{id}/dry-run`
 - Platform health read-only: `/platform/health`, `/platform/health/modules/{code}`
@@ -504,4 +505,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 - Workflow template install dry-run: `/workflow/templates/{key}/install-dry-run` (GET/POST), sin escritura DB y con flag `ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_DRY_RUN.md`.
 - Workflow template install controlled: `/workflow/templates/{key}/install` (POST), escribe en `workflow_rules/workflow_actions` sólo con flag `ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_WRITE=false` por defecto. Ver `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_CONTROLLED.md`.
 - Reports schema inventory (read-only): `docs/project/ECOSISTEMA_REPORTS_SCHEMA_INVENTORY.md` (inventario canónico sobre `adbbmis1_eco`, sin rutas ni escrituras en este PR).
-- Marketing funnel report (read-only): `docs/project/ECOSISTEMA_MARKETING_FUNNEL_REPORT.md` (ruta `GET /reports/marketing-funnel`, filtro por rango/campaña/landing sin escrituras).
+- Marketing funnel report (read-only): `docs/project/ECOSISTEMA_MARKETING_FUNNEL_REPORT.md`
+- `docs/project/ECOSISTEMA_LEAD_PERFORMANCE_REPORT.md` (ruta `GET /reports/marketing-funnel`, filtro por rango/campaña/landing sin escrituras).

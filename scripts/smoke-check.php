@@ -251,6 +251,10 @@ $requiredFiles = [
     'resources/views/pages/reports/marketing-funnel.php',
     'app/Core/Reports/EcosistemaMarketingFunnelReportService.php',
     'app/Core/Reports/EcosistemaMarketingFunnelReportRepository.php',
+    'app/Core/Reports/EcosistemaLeadPerformanceReportService.php',
+    'app/Core/Reports/EcosistemaLeadPerformanceReportRepository.php',
+    'resources/views/pages/reports/lead-performance.php',
+    'docs/project/ECOSISTEMA_LEAD_PERFORMANCE_REPORT.md',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
@@ -261,6 +265,12 @@ foreach ($requiredFiles as $requiredFile) {
 $routesPath = $root . '/routes/web.php';
 if (is_file($routesPath)) {
     $routesContent = (string) file_get_contents($routesPath);
+    if (strpos($routesContent, "'GET /reports/lead-performance'") === false) {
+        fail('No existe ruta requerida GET /reports/lead-performance.', $criticalFailures);
+    } else {
+        ok('Existe ruta requerida GET /reports/lead-performance.');
+    }
+
     if (strpos($routesContent, "'GET /reports/marketing-funnel'") === false) {
         fail('No existe ruta requerida GET /reports/marketing-funnel.', $criticalFailures);
     } else {
@@ -271,6 +281,15 @@ if (is_file($routesPath)) {
 $reportServicePath = $root . '/app/Core/Reports/EcosistemaMarketingFunnelReportService.php';
 if (is_file($reportServicePath)) {
     $reportServiceContent = (string) file_get_contents($reportServicePath);
+    $leadReportServiceContent = @file_get_contents($root . '/app/Core/Reports/EcosistemaLeadPerformanceReportService.php');
+    if (!is_string($leadReportServiceContent)) {
+        fail('No se pudo leer EcosistemaLeadPerformanceReportService.', $criticalFailures);
+    } elseif (str_contains($leadReportServiceContent, "['tenant_id']") || str_contains($leadReportServiceContent, "\$_GET['tenant_id']") || str_contains($leadReportServiceContent, "\$_POST['tenant_id']")) {
+        fail('Lead performance report service no debe aceptar tenant_id desde request.', $criticalFailures);
+    } else {
+        ok('Lead performance report service no acepta tenant_id desde request.');
+    }
+
     if (strpos($reportServiceContent, "tenant_id") !== false) {
         warn('Revisa manualmente que no se consuma tenant_id desde request en marketing funnel.', $warnings);
     } else {

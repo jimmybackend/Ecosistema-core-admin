@@ -4,5 +4,6 @@
   <ul>
     <li><a href="/workflow/rules">Ver reglas Workflow</a></li>
       <li><a href="/workflow/runs">Ver ejecuciones Workflow</a></li>
+    <li><a href="/workflow/templates">Ver plantillas Workflow</a></li>
 </ul>
 </section>

@@ -3170,6 +3170,29 @@ return [
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title' => 'Workflow | Ecosistema Core Admin', 'contentView' => 'pages/workflow/index', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => []]);
     },
+
+    'GET /workflow/templates' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $auth = AuthSession::getAuth();
+        $userId = (int) ($auth['auth_user_id'] ?? 0); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.view') || $authorization->can($userId, $tenantId, 'modules.view'); } catch (\Throwable) { $allowed = false; }
+        if (!$allowed) { renderError($config, 403); return; }
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowTemplateService(); $templates = $service->listTemplates($tenantId); } catch (\Throwable) { $templates = ['items'=>[],'mode'=>'read-only','db_write'=>false]; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Workflow Templates | Ecosistema Core Admin', 'contentView' => 'pages/workflow/templates', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('templates')]);
+    },
+    'GET /workflow/templates/{key}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        $key = trim((string) ($params['key'] ?? '')); if ($key === '') { renderError($config, 404); return; }
+        $auth = AuthSession::getAuth();
+        $userId = (int) ($auth['auth_user_id'] ?? 0); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        try { $pdo = PdoFactory::make($config['database']); $authorization = new AuthorizationService(new AuthorizationRepository($pdo)); $allowed = $authorization->can($userId, $tenantId, 'workflow.view') || $authorization->can($userId, $tenantId, 'modules.view'); } catch (\Throwable) { $allowed = false; }
+        if (!$allowed) { renderError($config, 403); return; }
+        try { $service = new \App\Core\Workflow\EcosistemaWorkflowTemplateService(); $template = $service->findTemplateByKey($tenantId, $key); } catch (\Throwable) { $template = null; }
+        if (!is_array($template)) { renderError($config, 404); return; }
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title' => 'Workflow Template Detail | Ecosistema Core Admin', 'contentView' => 'pages/workflow/template-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('template')]);
+    },
     'GET /workflow/rules' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         $auth = AuthSession::getAuth();

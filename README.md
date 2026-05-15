@@ -499,3 +499,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 
 - CRM followups read-only: `/crm/followups` y `/crm/leads/{id}/followups`.
 - CRM lead status controlado: `GET/POST /crm/leads/{id}/status`, requiere CSRF + permiso `modules.manage` para POST y flag `ECOSISTEMA_CRM_LEAD_STATUS_WRITE=false`. Ver `docs/project/ECOSISTEMA_CRM_LEAD_STATUS_CONTROLLED.md`.
+
+- Workflow templates (read-only): `docs/project/ECOSISTEMA_WORKFLOW_TEMPLATES_READ_ONLY.md`

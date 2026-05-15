@@ -1422,14 +1422,17 @@ $workflowFiles = [
     'resources/views/pages/workflow/runs.php',
     'resources/views/pages/workflow/run-detail.php',
     'resources/views/pages/workflow/rule-runs.php',
+    'resources/views/pages/workflow/templates.php',
+    'resources/views/pages/workflow/template-detail.php',
     'docs/project/ECOSISTEMA_WORKFLOW_RULES_READ_ONLY.md',
     'docs/project/ECOSISTEMA_WORKFLOW_RUNS_READ_ONLY.md',
+    'docs/project/ECOSISTEMA_WORKFLOW_TEMPLATES_READ_ONLY.md',
 ];
 foreach ($workflowFiles as $workflowFile) {
     if (is_file($root . '/' . $workflowFile)) { ok('Existe archivo Workflow: ' . $workflowFile); } else { fail('No existe archivo Workflow: ' . $workflowFile, $criticalFailures); }
 }
 
-foreach (['GET /workflow', 'GET /workflow/rules', 'GET /workflow/rules/{id}', 'GET /workflow/runs', 'GET /workflow/runs/{id}', 'GET /workflow/rules/{id}/runs'] as $requiredRoute) {
+foreach (['GET /workflow', 'GET /workflow/rules', 'GET /workflow/rules/{id}', 'GET /workflow/runs', 'GET /workflow/runs/{id}', 'GET /workflow/rules/{id}/runs', 'GET /workflow/templates', 'GET /workflow/templates/{key}'] as $requiredRoute) {
     if ($routesContent !== false && str_contains($routesContent, $requiredRoute)) { ok('routes/web.php contiene ruta Workflow: ' . $requiredRoute); } else { fail('Falta ruta Workflow: ' . $requiredRoute, $criticalFailures); }
 }
 
@@ -1452,6 +1455,8 @@ $workflowViews = [
     $root . '/resources/views/pages/workflow/runs.php',
     $root . '/resources/views/pages/workflow/run-detail.php',
     $root . '/resources/views/pages/workflow/rule-runs.php',
+    $root . '/resources/views/pages/workflow/templates.php',
+    $root . '/resources/views/pages/workflow/template-detail.php',
 ];
 foreach ($workflowViews as $workflowView) {
     $content = is_file($workflowView) ? file_get_contents($workflowView) : false;

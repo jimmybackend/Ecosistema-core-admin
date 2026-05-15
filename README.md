@@ -16,6 +16,7 @@ Aplicación administrativa operativa del ecosistema para gestión interna (etapa
 - [Mapeo DB Cloud/S3](#mapeo-db-clouds3)
 - [Configuración compartida S3 Drive](#configuración-compartida-s3-drive)
 - [Checklist de despliegue EC2/producción](#checklist-de-despliegue-ec2producción)
+- [Checklist de hardening de producción](#checklist-de-hardening-de-producción)
 - [Comandos rápidos](#comandos-rápidos)
 - [Notas de seguridad para producción](#notas-de-seguridad-para-producción)
 - [Registro inicial controlado en VM](#registro-inicial-controlado-en-vm)
@@ -295,6 +296,10 @@ Notas clave:
 - S3 real se habilitará en un PR posterior.
 - No commitear secretos ni llaves reales de AWS.
 - Cuando se habilite S3 real, usar IAM dedicado con permisos mínimos (no root).
+
+## Checklist de hardening de producción
+- `docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md`
+- Incluye controles de HTTPS, cookies/sesión, CSRF, permisos, secretos, headers, rate limit, privacidad y backups para salida a producción.
 
 ## Checklist de despliegue EC2/producción
 - Ver guía: `docs/deploy/EC2_PRODUCTION_CHECKLIST.md`.

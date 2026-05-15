@@ -155,6 +155,7 @@ $requiredFiles = [
     'docs/ops/WORKERS_CRON_PLAN.md',
     'docs/ops/BACKUP_RESTORE_PLAN.md',
     'docs/ops/MONITORING_OPERATIONS_PLAN.md',
+    'docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md',
     'docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md',
     'docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md',
     'docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md',
@@ -482,6 +483,26 @@ if (is_file($setupScriptPath)) {
     }
 }
 
+
+
+$hardeningChecklistPath = $root . '/docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md';
+if (is_file($hardeningChecklistPath)) {
+    $hardeningChecklistContent = (string) file_get_contents($hardeningChecklistPath);
+    $hardeningExpectedKeywords = ['HTTPS', 'CSRF', 'SESSION_SECURE', 'rate limit', 'privacy', 'backup'];
+    $missingHardeningKeywords = [];
+
+    foreach ($hardeningExpectedKeywords as $keyword) {
+        if (stripos($hardeningChecklistContent, $keyword) === false) {
+            $missingHardeningKeywords[] = $keyword;
+        }
+    }
+
+    if ($missingHardeningKeywords === []) {
+        ok('Checklist de hardening contiene secciones mínimas esperadas.');
+    } else {
+        fail('Checklist de hardening incompleto. Faltan keywords: ' . implode(', ', $missingHardeningKeywords), $criticalFailures);
+    }
+}
 
 $deployChecklistPaths = [
     'docs/deploy/EC2_PRODUCTION_CHECKLIST.md',

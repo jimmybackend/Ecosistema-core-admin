@@ -2761,3 +2761,19 @@ else { ok('Repositorio rate-limit dry-run sin INSERT/UPDATE/DELETE.'); }
 $rateLimitService = is_file($root . '/app/Core/Security/EcosistemaRateLimitDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Security/EcosistemaRateLimitDryRunService.php') : '';
 if (str_contains($rateLimitService, "\$_POST['tenant_id']") || str_contains($rateLimitService, "\$_GET['tenant_id']")) { fail('Servicio rate-limit dry-run no debe aceptar tenant_id desde request.', $criticalFailures); }
 else { ok('Servicio rate-limit dry-run no acepta tenant_id desde request.'); }
+
+// PR #146 AI assistance schema inventory (docs-only) checks
+$aiInventoryPath = 'docs/project/ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md';
+checkFile($root, $aiInventoryPath, $criticalFailures);
+
+$aiInventoryContent = is_file($root . '/' . $aiInventoryPath) ? (string) file_get_contents($root . '/' . $aiInventoryPath) : '';
+foreach (['os_ai_proposals', 'os_human_responses', 'os_knowledge_packs', 'chat_threads', 'chat_messages', 'adbbmis1_eco'] as $requiredNeedle) {
+    if (str_contains($aiInventoryContent, $requiredNeedle)) { ok('Inventario AI referencia: ' . $requiredNeedle); }
+    else { fail('Inventario AI no referencia: ' . $requiredNeedle, $criticalFailures); }
+}
+
+if ($readmeContent !== false && str_contains((string) $readmeContent, 'ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md')) {
+    ok('README.md referencia inventario AI assistance.');
+} else {
+    fail('README.md no referencia ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md', $criticalFailures);
+}

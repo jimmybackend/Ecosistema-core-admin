@@ -247,10 +247,35 @@ $requiredFiles = [
     'docs/project/ECOSISTEMA_CRM_LEAD_DETAIL.md',
     'docs/project/ECOSISTEMA_CRM_LEADS_READ_ONLY.md',
     'docs/project/ECOSISTEMA_REPORTS_SCHEMA_INVENTORY.md',
+    'docs/project/ECOSISTEMA_MARKETING_FUNNEL_REPORT.md',
+    'resources/views/pages/reports/marketing-funnel.php',
+    'app/Core/Reports/EcosistemaMarketingFunnelReportService.php',
+    'app/Core/Reports/EcosistemaMarketingFunnelReportRepository.php',
 ];
 
 foreach ($requiredFiles as $requiredFile) {
     checkFile($root, $requiredFile, $criticalFailures);
+}
+
+
+$routesPath = $root . '/routes/web.php';
+if (is_file($routesPath)) {
+    $routesContent = (string) file_get_contents($routesPath);
+    if (strpos($routesContent, "'GET /reports/marketing-funnel'") === false) {
+        fail('No existe ruta requerida GET /reports/marketing-funnel.', $criticalFailures);
+    } else {
+        ok('Existe ruta requerida GET /reports/marketing-funnel.');
+    }
+}
+
+$reportServicePath = $root . '/app/Core/Reports/EcosistemaMarketingFunnelReportService.php';
+if (is_file($reportServicePath)) {
+    $reportServiceContent = (string) file_get_contents($reportServicePath);
+    if (strpos($reportServiceContent, "tenant_id") !== false) {
+        warn('Revisa manualmente que no se consuma tenant_id desde request en marketing funnel.', $warnings);
+    } else {
+        ok('Marketing funnel no consume tenant_id desde request.');
+    }
 }
 
 $leadRepositoryPath = $root . '/app/Core/Crm/EcosistemaCrmLeadRepository.php';

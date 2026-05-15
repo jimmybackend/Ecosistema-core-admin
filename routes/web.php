@@ -149,6 +149,8 @@ use App\Core\Platform\EcosistemaPlatformHealthRepository;
 use App\Core\Platform\EcosistemaPlatformHealthService;
 use App\Core\Security\EcosistemaPermissionAuditRepository;
 use App\Core\Security\EcosistemaPermissionAuditService;
+use App\Core\Reports\EcosistemaMarketingFunnelReportRepository;
+use App\Core\Reports\EcosistemaMarketingFunnelReportService;
 
 
 function startAuthSession(array $config): void
@@ -1991,6 +1993,17 @@ return [
     },
 
 
+
+
+    'GET /reports/marketing-funnel' => static function (array $config): void {
+        if (!requirePermission($config, 'campaigns.view')) { return; }
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $data = ['filters'=>[],'campaigns'=>[],'landings'=>[],'funnel'=>[],'conversion_rates'=>[],'mode'=>'read-only'];
+        try { $pdo = PdoFactory::make($config['database']); $service = new EcosistemaMarketingFunnelReportService(new EcosistemaMarketingFunnelReportRepository($pdo)); $data = $service->build($tenantId, $_GET); } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin', ['title'=>'Reporte embudo marketing | Ecosistema Core Admin','contentView'=>'pages/reports/marketing-funnel','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>$data]);
+    },
 
     'GET /campaigns/new/dry-run' => static function (array $config): void {
         startAuthSession($config);

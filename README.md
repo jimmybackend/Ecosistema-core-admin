@@ -191,6 +191,7 @@ Limitaciones vigentes de autenticación:
 - `docs/project/ECOSISTEMA_MAIL_NOTIFICATIONS_SCHEMA_INVENTORY.md` (inventario canónico de Mail/Notifications y URL Message sobre `adbbmis1_eco`, previo a implementación funcional).
 - `docs/project/ECOSISTEMA_WORKFLOW_SCHEMA_INVENTORY.md` (inventario canónico del esquema Workflow sobre `adbbmis1_eco`, previo a UI/lógica de ejecución).
 - `docs/project/ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md` (inventario seguro y read-only de puntos de asistencia IA sobre tablas `os_ai_*` y relacionadas en `adbbmis1_eco`, sin proveedor IA ni persistencia de prompts).
+- AI lead summary dry-run: `/ai/leads/{id}/summary-dry-run` con contexto sanitizado y sin llamada IA externa; flags `ECOSISTEMA_AI_ENABLED=false` y `ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_AI_LEAD_SUMMARY_DRY_RUN.md`.
 
 ## Smoke checks básicos (PR #22)
 Ejecutar:

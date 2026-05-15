@@ -163,6 +163,8 @@ use App\Core\Audit\EcosistemaUnifiedAuditRepository;
 use App\Core\Audit\EcosistemaUnifiedAuditService;
 use App\Core\Ai\EcosistemaAiLeadSummaryRepository;
 use App\Core\Ai\EcosistemaAiLeadSummaryDryRunService;
+use App\Core\Ai\EcosistemaAiCampaignInsightDryRunRepository;
+use App\Core\Ai\EcosistemaAiCampaignInsightDryRunService;
 
 
 function startAuthSession(array $config): void
@@ -2284,6 +2286,29 @@ return [
     },
 
 
+
+
+
+    'GET /ai/campaigns/{id}/insight-dry-run' => static function (array $config, array $params): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.view')) { return; }
+
+        $id = isset($params['id']) ? (int) $params['id'] : 0;
+        if ($id <= 0) { renderError($config, 404); return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $result = null; $errorMessage = null;
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaAiCampaignInsightDryRunService(new EcosistemaAiCampaignInsightDryRunRepository($pdo), (array) ($config['app']['ecosistema_ai'] ?? []));
+            $result = $service->build($tenantId, $id);
+        } catch (\Throwable) { $errorMessage = 'No se pudo preparar el contexto AI campaign insight dry-run.'; }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'AI Campaign Insight Dry-Run | Ecosistema Core Admin','contentView'=>'pages/ai/campaign-insight-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','id','errorMessage')]);
+    },
 
     'GET /ai/leads/{id}/summary-dry-run' => static function (array $config, array $params): void {
         startAuthSession($config);

@@ -2796,3 +2796,18 @@ if ($readmeContent !== false && str_contains((string) $readmeContent, 'ECOSISTEM
 } else {
     fail('README.md no referencia ECOSISTEMA_AI_ASSISTANCE_SCHEMA_INVENTORY.md', $criticalFailures);
 }
+
+// PR #148 AI campaign insight dry-run checks
+foreach (['app/Core/Ai/EcosistemaAiCampaignInsightDryRunRepository.php','app/Core/Ai/EcosistemaAiCampaignInsightDryRunService.php','resources/views/pages/ai/campaign-insight-dry-run.php','docs/project/ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN.md'] as $requiredPath) {
+    if (is_file($root . '/' . $requiredPath)) { ok('Existe artefacto AI campaign insight dry-run: ' . $requiredPath); }
+    else { fail('Falta artefacto AI campaign insight dry-run: ' . $requiredPath, $criticalFailures); }
+}
+if ($routesContent !== false && str_contains((string) $routesContent, 'GET /ai/campaigns/{id}/insight-dry-run')) { ok('Ruta AI campaign insight dry-run detectada: GET /ai/campaigns/{id}/insight-dry-run'); }
+else { fail('Falta ruta AI campaign insight dry-run: GET /ai/campaigns/{id}/insight-dry-run', $criticalFailures); }
+if ($envExampleContent !== false && str_contains((string) $envExampleContent, 'ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN=false')) { ok('Flag AI campaign insight dry-run en .env.example con default false.'); }
+else { fail('Falta flag ECOSISTEMA_AI_CAMPAIGN_INSIGHT_DRY_RUN=false en .env.example.', $criticalFailures); }
+$aiCampaignService = is_file($root . '/app/Core/Ai/EcosistemaAiCampaignInsightDryRunService.php') ? (string) file_get_contents($root . '/app/Core/Ai/EcosistemaAiCampaignInsightDryRunService.php') : '';
+if (preg_match('/\b(INSERT|UPDATE|DELETE)\b/i', $aiCampaignService) === 1) { fail('Servicio AI campaign insight dry-run contiene escritura SQL.', $criticalFailures); }
+else { ok('Servicio AI campaign insight dry-run sin escritura SQL.'); }
+if (str_contains($aiCampaignService, "\$_POST['tenant_id']") || str_contains($aiCampaignService, "\$_GET['tenant_id']")) { fail('Servicio AI campaign insight dry-run no debe leer tenant_id desde request.', $criticalFailures); }
+else { ok('Servicio AI campaign insight dry-run no lee tenant_id desde request.'); }

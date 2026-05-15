@@ -1,0 +1,5 @@
+<?php $event=(array)($event??[]); $changes=(array)($changes??[]); $links=(array)($links??[]); ?>
+<section><h1>Evento #<?= (int)($event['id']??0) ?></h1><p><?= htmlspecialchars((string)($event['module_code']??'')) ?> · <?= htmlspecialchars((string)($event['action']??'')) ?> · <?= htmlspecialchars((string)($event['created_at']??'')) ?></p><p>IP: <?= htmlspecialchars((string)($event['ip_preview']??'')) ?> · UA: <?= htmlspecialchars((string)($event['user_agent_preview']??'')) ?></p>
+<h2>Cambios de entidad</h2><ul><?php foreach($changes as $c): ?><li>#<?= (int)$c['id'] ?> <?= htmlspecialchars((string)$c['entity_table']) ?> <?= htmlspecialchars((string)$c['change_type']) ?> · before_json: <?= $c['before_json_present']?'sí':'no' ?> · after_json: <?= $c['after_json_present']?'sí':'no' ?></li><?php endforeach; ?></ul>
+<h2>Links de módulo</h2><ul><?php foreach($links as $l): ?><li>#<?= (int)$l['id'] ?> <?= htmlspecialchars((string)$l['module_code']) ?> <?= htmlspecialchars((string)$l['relation_type']) ?> · metadata_json: <?= $l['metadata_json_present']?'sí':'no' ?></li><?php endforeach; ?></ul>
+<p><a href="/audit/events">← volver</a></p></section>

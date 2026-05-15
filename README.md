@@ -510,3 +510,5 @@ Se agregó redirect público controlado por flags en `GET /u/{slug}` con default
 
 - Reports export dry-run: `/reports/exports/dry-run` (GET/POST), simulación CSV/XLSX sin crear archivo ni `reports_exports`; requiere flag `ECOSISTEMA_REPORT_EXPORT_DRY_RUN=false`. Ver `docs/project/ECOSISTEMA_REPORT_EXPORT_DRY_RUN.md`.
 - Reports export controlado: `POST /reports/exports`, valida tenant de sesión, permiso, `source_id` y PII por flags `ECOSISTEMA_REPORT_EXPORT_WRITE` / `ECOSISTEMA_REPORT_EXPORT_INCLUDE_PII`. Ver `docs/project/ECOSISTEMA_REPORT_EXPORT_CONTROLLED.md`.
+
+- Auditoría unificada read-only: ver `docs/project/ECOSISTEMA_UNIFIED_AUDIT_READ_ONLY.md` y rutas `/audit/events`.

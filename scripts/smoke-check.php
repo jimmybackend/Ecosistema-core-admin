@@ -2674,3 +2674,31 @@ foreach (['query_sql','query_json','layout_json','config_json','metadata_json','
     if (!str_contains($reportExportControlledView, $forbiddenNeedle)) { ok('Vista reports export controlado no expone: ' . $forbiddenNeedle); }
     else { fail('Vista reports export controlado no debe exponer: ' . $forbiddenNeedle, $criticalFailures); }
 }
+
+
+$unifiedAuditFiles = [
+    'app/Core/Audit/EcosistemaUnifiedAuditRepository.php',
+    'app/Core/Audit/EcosistemaUnifiedAuditService.php',
+    'resources/views/pages/audit/events.php',
+    'resources/views/pages/audit/event-detail.php',
+    'docs/project/ECOSISTEMA_UNIFIED_AUDIT_READ_ONLY.md',
+];
+foreach ($unifiedAuditFiles as $f) { checkFile($root, $f, $criticalFailures); }
+if (is_string($routesContent)) {
+    foreach (['GET /audit', 'GET /audit/events', 'GET /audit/events/{id}'] as $route) {
+        if (str_contains($routesContent, $route)) { ok('routes/web.php contiene ' . $route . '.'); } else { fail('No se encontró ' . $route . '.', $criticalFailures); }
+    }
+    if (str_contains($routesContent, "\$_GET['tenant_id']") || str_contains($routesContent, "\$_POST['tenant_id']")) {
+        fail('Rutas de auditoría no deben aceptar tenant_id desde request.', $criticalFailures);
+    } else {
+        ok('No hay aceptación explícita de tenant_id desde request para auditoría unificada.');
+    }
+}
+$eventView = @file_get_contents($root . '/resources/views/pages/audit/events.php') ?: '';
+$detailView = @file_get_contents($root . '/resources/views/pages/audit/event-detail.php') ?: '';
+foreach (['old_values','new_values','before_json','after_json','metadata_json','key_hash','scopes_json'] as $forbidden) {
+    if (str_contains($eventView, $forbidden) || str_contains($detailView, $forbidden)) {
+        fail('Vista de auditoría expone campo sensible: ' . $forbidden, $criticalFailures);
+    }
+}
+ok('Vistas de auditoría no exponen JSON/campos sensibles canónicos.');

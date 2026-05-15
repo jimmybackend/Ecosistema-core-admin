@@ -157,6 +157,8 @@ use App\Core\Reports\EcosistemaReportExportDryRunRepository;
 use App\Core\Reports\EcosistemaReportExportDryRunService;
 use App\Core\Reports\EcosistemaReportExportRepository;
 use App\Core\Reports\EcosistemaReportExportService;
+use App\Core\Audit\EcosistemaUnifiedAuditRepository;
+use App\Core\Audit\EcosistemaUnifiedAuditService;
 
 
 function startAuthSession(array $config): void
@@ -3158,6 +3160,27 @@ return [
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Auditoría | Ecosistema Core Admin','contentView'=>'pages/system/audit','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('audits','errorMessage')]);
     },
 
+
+
+    'GET /audit' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'system.view')) { return; }
+        header('Location: /audit/events');
+    },
+    'GET /audit/events' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'system.view')) { return; }
+        $auth=AuthSession::getAuth(); $events=[]; $filters=['module_code'=>'','action'=>'','from'=>'','to'=>''];
+        try { $pdo=PdoFactory::make($config['database']); $service=new EcosistemaUnifiedAuditService(new EcosistemaUnifiedAuditRepository($pdo)); $data=$service->listEvents((int)($auth['auth_tenant_id']??0), $_GET); $events=$data['events']; $filters=$data['filters']; } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Unified Audit | Ecosistema Core Admin','contentView'=>'pages/audit/events','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('events','filters')]);
+    },
+    'GET /audit/events/{id}' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'system.view')) { return; }
+        $auth=AuthSession::getAuth(); $id=(int)($params['id']??0); if($id<=0){ renderError($config,404); return; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new EcosistemaUnifiedAuditService(new EcosistemaUnifiedAuditRepository($pdo)); $detail=$service->findDetail((int)($auth['auth_tenant_id']??0), $id); if($detail===null){ renderError($config,404); return; } } catch (\Throwable) { renderError($config,500); return; }
+        extract($detail); header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Audit Event | Ecosistema Core Admin','contentView'=>'pages/audit/event-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('event','changes','links')]);
+    },
 
     'GET /onboarding' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

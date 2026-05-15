@@ -140,6 +140,8 @@ use App\Core\Crm\EcosistemaCrmLeadStatusService;
 use App\Core\Crm\EcosistemaCrmLeadStatusRepository;
 use App\Core\Campaigns\EcosistemaCampaignCockpitRepository;
 use App\Core\Campaigns\EcosistemaCampaignCockpitService;
+use App\Core\Campaigns\EcosistemaCampaignCreationRepository;
+use App\Core\Campaigns\EcosistemaCampaignCreationService;
 use App\Core\Platform\EcosistemaPlatformAdapter;
 use App\Core\Platform\EcosistemaPlatformCockpitRepository;
 use App\Core\Platform\EcosistemaPlatformCockpitService;
@@ -2032,6 +2034,42 @@ return [
 
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',['title'=>'Campaign Creation Dry-Run | Ecosistema Core Admin','contentView'=>'pages/campaigns/create-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result','errorMessage')]);
+    },
+
+
+
+    'POST /campaigns' => static function (array $config): void {
+        startAuthSession($config);
+        if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'modules.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null;
+        if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+
+        $auth = AuthSession::getAuth();
+        $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
+        $ownerUserId = (int) ($auth['auth_user_id'] ?? 0);
+        $result = null;
+
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new EcosistemaCampaignCreationService(new EcosistemaCampaignCreationRepository($pdo), (array) ($config['app']['ecosistema_crm'] ?? []));
+            $result = $service->create($tenantId, $ownerUserId, [
+                'name' => $_POST['name'] ?? null,
+                'code' => $_POST['code'] ?? null,
+                'campaign_type' => $_POST['campaign_type'] ?? null,
+                'objective' => $_POST['objective'] ?? null,
+                'description' => $_POST['description'] ?? null,
+                'budget' => $_POST['budget'] ?? null,
+                'currency' => $_POST['currency'] ?? null,
+                'starts_at' => $_POST['starts_at'] ?? null,
+                'ends_at' => $_POST['ends_at'] ?? null,
+            ]);
+        } catch (\Throwable) {
+            $result = ['created' => false, 'campaign_id' => null, 'blocked_reasons' => ['write_failed'], 'warnings' => []];
+        }
+
+        header('Content-Type: text/html; charset=UTF-8');
+        View::render('layouts.admin',['title'=>'Campaign Creation Result | Ecosistema Core Admin','contentView'=>'pages/campaigns/create-result','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('result')]);
     },
 
     'GET /campaigns' => static function (array $config): void {

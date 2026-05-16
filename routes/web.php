@@ -2285,7 +2285,7 @@ return [
 
         $auth = AuthSession::getAuth();
         $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
-        $userId = (int) ($auth['user_id'] ?? 0);
+        $userId = (int) ($auth['auth_user_id'] ?? $auth['user_id'] ?? 0);
         $leadId = isset($_POST['lead_id']) ? (int) $_POST['lead_id'] : 0;
 
         $result = null; $errorMessage = null;

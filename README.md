@@ -8,6 +8,7 @@ Core Admin tiene un núcleo estable para autenticación/sesión y administració
 El estado canónico por módulo está documentado en:
 - `docs/project/CORE_ADMIN_MODULE_STATUS.md`
 - `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`
+- `docs/project/ECOSISTEMA_DOCS_CODE_ALIGNMENT_REPORT.md`
 
 ## 2) Estado operativo real
 - **Base estable**: Auth/sesión, dashboard, health DB, núcleo CRUD administrativo y auditoría/logs del sistema.

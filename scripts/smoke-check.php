@@ -2899,27 +2899,24 @@ if (str_contains($rolePermissionService, "\$_POST['tenant_id']") || str_contains
     ok('RolePermissionService no acepta tenant_id desde request.');
 }
 
-$schemaCheckOptIn = getenv('SMOKE_SCHEMA_COMPAT_CHECK');
-if (is_string($schemaCheckOptIn) && in_array(strtolower($schemaCheckOptIn), ['1', 'true', 'yes', 'on'], true)) {
-    $schemaCheckScript = $root . '/scripts/schema-compatibility-check.php';
-    if (is_file($schemaCheckScript)) {
-        $schemaOutput = [];
-        $schemaExitCode = 0;
-        exec('php ' . escapeshellarg($schemaCheckScript) . ' 2>&1', $schemaOutput, $schemaExitCode);
-        foreach ($schemaOutput as $line) {
-            report('SCHEMA', $line);
-        }
+$schemaCheckScript = $root . '/scripts/schema-compatibility-check.php';
+if (is_file($schemaCheckScript)) {
+    $schemaOutput = [];
+    $schemaExitCode = 0;
+    exec('php ' . escapeshellarg($schemaCheckScript) . ' 2>&1', $schemaOutput, $schemaExitCode);
+    foreach ($schemaOutput as $line) {
+        report('SCHEMA', $line);
+    }
 
-        if ($schemaExitCode === 0) {
-            ok('Chequeo opcional de compatibilidad de esquema finalizó sin incompatibilidades críticas.');
-        } else {
-            fail('Chequeo opcional de compatibilidad de esquema detectó incompatibilidades críticas.', $criticalFailures);
-        }
+    if ($schemaExitCode === 0) {
+        ok('Chequeo opcional de compatibilidad de esquema finalizó sin incompatibilidades críticas.');
+    } elseif ($schemaExitCode === 2) {
+        warn('Chequeo de compatibilidad de esquema omitido por configuración/alcance de DB.', $warnings);
     } else {
-        warn('SMOKE_SCHEMA_COMPAT_CHECK activo pero no existe scripts/schema-compatibility-check.php', $warnings);
+        fail('Chequeo opcional de compatibilidad de esquema detectó incompatibilidades críticas.', $criticalFailures);
     }
 } else {
-    warn('Chequeo de compatibilidad de esquema omitido (usa SMOKE_SCHEMA_COMPAT_CHECK=1 para activarlo).', $warnings);
+    warn('No existe scripts/schema-compatibility-check.php; se omite chequeo opcional de esquema.', $warnings);
 }
 
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));

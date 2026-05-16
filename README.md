@@ -90,6 +90,7 @@ Estado y límites reales: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
 - No subir secretos ni commitear `.env`; usar `.env.example` como plantilla.
 - Configuración por defecto segura: sin SMTP real, sin AWS/S3 real, sin proveedor IA externo.
 - Registro inicial controlado por flag: `CORE_REGISTRATION_ENABLED=false` por defecto.
+- Asignación de permisos de rol alineada al esquema canónico: `core_role_permissions` se reemplaza usando `tenant_id` resuelto del rol (sin `tenant_id` libre desde request).
 
 Referencia: `.env.example`.
 

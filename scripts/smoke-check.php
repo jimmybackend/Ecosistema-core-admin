@@ -2887,6 +2887,17 @@ if (str_contains($rolePermissionsRepo, 'WHERE role_id=:role_id AND tenant_id=:te
 } else {
     fail('Consultas de role-permissions no filtran por tenant_id.', $criticalFailures);
 }
+$rolePermissionService = is_file($root . '/app/Core/Permissions/RolePermissionService.php') ? (string) file_get_contents($root . '/app/Core/Permissions/RolePermissionService.php') : '';
+if (str_contains($rolePermissionService, 'findRole($roleId)')) {
+    ok('RolePermissionService valida existencia de rol antes de reemplazar permisos.');
+} else {
+    fail('RolePermissionService no valida rol antes de reemplazar permisos.', $criticalFailures);
+}
+if (str_contains($rolePermissionService, "\$_POST['tenant_id']") || str_contains($rolePermissionService, "\$_GET['tenant_id']") || str_contains($rolePermissionService, "\$_REQUEST['tenant_id']")) {
+    fail('RolePermissionService no debe aceptar tenant_id desde request.', $criticalFailures);
+} else {
+    ok('RolePermissionService no acepta tenant_id desde request.');
+}
 
 $schemaCheckOptIn = getenv('SMOKE_SCHEMA_COMPAT_CHECK');
 if (is_string($schemaCheckOptIn) && in_array(strtolower($schemaCheckOptIn), ['1', 'true', 'yes', 'on'], true)) {

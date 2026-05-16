@@ -35,6 +35,33 @@ Objetivo: centralizar una vista auditable de módulos sensibles en Core Admin, i
 | Rate limit enforcement | `ECOSISTEMA_RATE_LIMIT_ENABLED`, `ECOSISTEMA_RATE_LIMIT_DRY_RUN`, `ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS` | `false` | Sí para persistir bloqueos (`WRITE_BLOCKS`) | Config operativa interna (no sólo UI) | N/A (policy transversal) | Depende del contexto de evaluación (login/público/admin) | IPs bloqueadas, patrones de abuso, metadata de intentos | Bloqueos agresivos (falsos positivos) o protección insuficiente (falsos negativos) |
 | AI provider / write proposals | `ECOSISTEMA_AI_ENABLED`, `ECOSISTEMA_AI_PROVIDER_ENABLED`, `ECOSISTEMA_AI_WRITE_PROPOSALS`, `ECOSISTEMA_AI_*_DRY_RUN` | `false` | Sí cuando escribe propuestas/recomendaciones | Endpoint admin (`POST /ai/assist`) bajo permisos del módulo | Sí en POST admin autenticado | Sí | Prompts con PII, respuestas con datos sensibles, claves/provider config | Fuga de datos a proveedor externo, alucinaciones con impacto operativo |
 
+## Tabla canónica de feature flags (alineada env/config/docs)
+
+| Flag | Default (`.env.example`) | Config donde se lee | Módulo | Riesgo | ¿Habilita write? | Ruta afectada |
+|---|---|---|---|---|---|---|
+| `MAIL_SEND_ENABLED` | `false` | `config/mail.php` (`send_enabled`) | Mail/SMTP | Envío no autorizado/fuga de PII | Sí, envío SMTP real | `POST /mail/messages/{id}/prepare-send` |
+| `ECOSISTEMA_SMTP_ENABLED` | `false` | **documental/no conectada en config/** (se lee directo en adapter) | Mail notifications | Activación de canal SMTP sin hardening | Sí, envío SMTP real | `POST /mail-notifications/{id}/send` |
+| `CLOUD_S3_ENABLED` | `false` | `config/cloud.php` (`s3_enabled`) | Cloud/S3 | Acceso remoto a storage/costos | Sí, junto con uploads/downloads | `/cloud`, `/cloud/drive/*` |
+| `CLOUD_ALLOW_UPLOADS` | `false` | `config/cloud.php` (`allow_uploads`) | Cloud/S3 | Escritura de archivos no gobernada | Sí | `POST /cloud/drive/upload` |
+| `CLOUD_ALLOW_DOWNLOADS` | `false` | `config/cloud.php` (`allow_downloads`) | Cloud/S3 | Exfiltración de archivos | No (lectura externa) | `GET /cloud/drive/files/{id}/download` |
+| `S3_DRIVE_ALLOW_REMOTE_UPLOADS` | `false` | `config/s3_drive.php` | S3 Drive | Subidas remotas/costos | Sí | `POST /cloud/drive/upload` |
+| `S3_DRIVE_ALLOW_REMOTE_DOWNLOADS` | `false` | `config/s3_drive.php` | S3 Drive | Descargas remotas no controladas | No (lectura externa) | `GET /cloud/drive/files/{id}/download-contract` |
+| `ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS` | `false` | `config/ecosistema_drive.php` | Ecosistema Drive | Escritura remota en bucket/proveedor | Sí | `POST /cloud/drive/upload` |
+| `ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS` | `false` | `config/ecosistema_drive.php` | Ecosistema Drive | Descarga remota no controlada | No (lectura externa) | `GET /cloud/drive/download-contract` |
+| `ECOSISTEMA_URL_LOCATOR_ADMIN_WRITE_ENABLED` | `false` | `config/url_locator.php` | URL Locator | Edición de links/redirecciones | Sí | `POST /url/locator/links/*` |
+| `ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECTS` | `false` | `config/url_locator.php` | URL Locator | Open redirect abuse | No (redirect público) | `GET /u/{slug}` |
+| `ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE` | `false` | `config/browser_analytics.php` | Browser Analytics | Escritura de eventos/PII | Sí | `POST /browser/analytics/collector` |
+| `ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_WRITE` | `false` | `config/app.php` (`ecosistema_crm`) | CRM | Contaminación de pipeline | Sí | `POST /crm/submissions/{id}/to-lead` |
+| `ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED` | `false` | `config/app.php` (`ecosistema_workflow`) | Workflow | Side effects masivos | Sí, al ejecutar acciones | `POST /workflow/runs/{id}/execute` |
+| `ECOSISTEMA_WORKFLOW_TEMPLATE_INSTALL_WRITE` | `false` | `config/app.php` (`ecosistema_workflow`) | Workflow | Escritura de templates/reglas | Sí | `POST /workflow/templates/install` |
+| `ECOSISTEMA_REPORT_EXPORT_WRITE` | `false` | `config/app.php` | Reports | Exfiltración de dataset | Sí | `POST /reports/*/export` |
+| `ECOSISTEMA_AI_PROVIDER_ENABLED` | `false` | `config/app.php` (`ecosistema_ai`) | AI | Fuga a proveedor externo | No por sí sola | `POST /ai/assist` |
+| `ECOSISTEMA_AI_WRITE_PROPOSALS` | `false` | `config/app.php` (`ecosistema_ai`) | AI | Escritura automática no validada | Sí | `POST /ai/assist` |
+| `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED` | `false` | **documental/no conectada en config/** (se lee directo en rutas) | Landing público | Exposición pública de landings | No | `GET /l/{slug}` |
+| `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED` | `false` | **documental/no conectada en config/** (se lee directo en rutas) | Landing público | Ingesta de spam/PII | Sí (submissions) | `POST /l/{slug}/forms/{id}/submit` |
+| `ECOSISTEMA_LANDING_FORM_FILE_UPLOADS` | `false` | **documental/no conectada en config/** (se lee directo en rutas) | Landing público | Uploads públicos maliciosos | Sí | `POST /l/{slug}/forms/{id}/submit` |
+
+
 ## Hallazgos de contradicción / pendientes
 
 1. `ECOSISTEMA_URL_LOCATOR_COLLECT_USER_AGENT` está en `true` en `.env.example`; aunque no habilita por sí mismo redirects/tracking, sí supone recolección de UA si el flujo queda activo. Se deja como **pendiente de revisión de privacidad** para decidir default más conservador (`false`) o justificación explícita.

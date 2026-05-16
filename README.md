@@ -116,6 +116,7 @@ Estado explícito de cron/workers: `docs/ops/WORKERS_CRON_CURRENT_STATE.md`.
 - `docs/checklist_presentacion_publica.md`
 - `docs/project/CORE_ADMIN_SHOWCASE_RELEASE_NOTES.md`
 - `docs/project/ECOSISTEMA_RISK_H_CLOSURE.md`
+- `docs/project/ECOSISTEMA_CONTRADICTIONS_G_CLOSURE.md`
 - `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`
 - `docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`
 - `docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`

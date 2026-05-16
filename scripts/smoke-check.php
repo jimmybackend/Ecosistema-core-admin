@@ -2908,6 +2908,11 @@ if (str_contains($rolePermissionsRepo, 'INSERT INTO core_role_permissions (tenan
 } else {
     fail('Asignación de permisos a rol no incluye tenant_id en INSERT de core_role_permissions.', $criticalFailures);
 }
+if (preg_match('/INSERT\s+INTO\s+core_role_permissions\s*\((?![^)]*\btenant_id\b)/i', $rolePermissionsRepo) === 1) {
+    fail('Se detectó INSERT a core_role_permissions sin tenant_id en listado de columnas.', $criticalFailures);
+} else {
+    ok('No se detectan INSERTs a core_role_permissions sin tenant_id.');
+}
 if (str_contains($rolePermissionsRepo, 'WHERE role_id=:role_id AND tenant_id=:tenant_id')) {
     ok('Consultas de role-permissions filtran por tenant_id cuando aplica.');
 } else {
@@ -2923,6 +2928,11 @@ if (str_contains($rolePermissionService, "\$_POST['tenant_id']") || str_contains
     fail('RolePermissionService no debe aceptar tenant_id desde request.', $criticalFailures);
 } else {
     ok('RolePermissionService no acepta tenant_id desde request.');
+}
+if (str_contains($rolePermissionService, '$sessionTenantId') && str_contains($rolePermissionService, '!==$roleTenantId')) {
+    ok('RolePermissionService valida consistencia tenant sesión vs tenant del rol.');
+} else {
+    fail('RolePermissionService no valida consistencia tenant sesión vs tenant del rol.', $criticalFailures);
 }
 
 $schemaCheckScript = $root . '/scripts/schema-compatibility-check.php';

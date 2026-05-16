@@ -17,6 +17,10 @@ Documentación complementaria:
 - Contrato de descarga controlada de Drive: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.
 - Mapa técnico ruta-service-tabla: `docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`.
 
+## Material visual
+- Diagramas base para presentación (sin datos reales): `docs/diagramas.md`.
+- Reglas de assets y privacidad para material visual: `assets/README.md`.
+
 ## Instalación local
 ```bash
 composer install

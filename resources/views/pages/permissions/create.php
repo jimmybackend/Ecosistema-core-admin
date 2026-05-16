@@ -4,7 +4,4 @@
 <label>Code</label><input class="eco-form-control" type="text" name="code" required>
 <label>Name</label><input class="eco-form-control" type="text" name="name" required>
 <label>Description</label><textarea class="eco-form-control" name="description"></textarea>
-<label>Action</label><input class="eco-form-control" type="text" name="action" required>
-<label>Resource</label><input class="eco-form-control" type="text" name="resource" required>
-<label>Status</label><select class="eco-form-control" name="status" required><option>active</option><option>inactive</option><option>deleted</option></select>
 <p><button class="eco-button btn" type="submit">Guardar</button></p></form></section>

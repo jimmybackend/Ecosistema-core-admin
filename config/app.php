@@ -40,6 +40,19 @@ return [
         'rollup_write' => filter_var(Env::get('ECOSISTEMA_ATTRIBUTION_ROLLUP_WRITE', 'false'), FILTER_VALIDATE_BOOL),
     ],
 
+
+    'ecosistema_url_locator' => [
+        'tracking_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_TRACKING_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'collect_ip_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_COLLECT_IP', 'false'), FILTER_VALIDATE_BOOL),
+        'collect_user_agent_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_COLLECT_USER_AGENT', 'false'), FILTER_VALIDATE_BOOL),
+    ],
+
+    'ecosistema_browser_analytics' => [
+        'enabled' => filter_var(Env::get('ECOSISTEMA_BROWSER_ANALYTICS_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
+        'collector_write' => filter_var(Env::get('ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE', 'false'), FILTER_VALIDATE_BOOL),
+        'collect_ip' => filter_var(Env::get('ECOSISTEMA_BROWSER_ANALYTICS_COLLECT_IP', 'false'), FILTER_VALIDATE_BOOL),
+        'collect_user_agent' => filter_var(Env::get('ECOSISTEMA_BROWSER_ANALYTICS_COLLECT_USER_AGENT', 'false'), FILTER_VALIDATE_BOOL),
+    ],
     'ecosistema_landing' => [
         'public_render_dry_run' => filter_var(Env::get('ECOSISTEMA_LANDING_PUBLIC_RENDER_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),
         'form_submit_dry_run' => filter_var(Env::get('ECOSISTEMA_LANDING_FORM_SUBMIT_DRY_RUN', 'false'), FILTER_VALIDATE_BOOL),

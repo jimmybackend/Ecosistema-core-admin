@@ -977,7 +977,7 @@ return [
         View::render('layouts.admin', ['title' => 'URL Message Template Detail | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/url-message-template-detail', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('template', 'errorMessage')]);
     },
     'GET /mail-notifications/templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
-        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.view')) { return; }
         $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
         try {
             $pdo = PdoFactory::make($config['database']); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
@@ -989,7 +989,7 @@ return [
         View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
     },
     'POST /mail-notifications/templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
-        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.view')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
         $variables = isset($_POST['variables']) && is_array($_POST['variables']) ? $_POST['variables'] : [];
@@ -1003,7 +1003,7 @@ return [
         View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
     },
     'GET /mail-notifications/url-message-templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
-        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.view')) { return; }
         $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
         try {
             $pdo = PdoFactory::make($config['database']); $tenantId = (int) ($auth['auth_tenant_id'] ?? 0);
@@ -1015,7 +1015,7 @@ return [
         View::render('layouts.admin', ['title' => 'Message Preview Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/message-preview-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('preview', 'errorMessage', 'id')]);
     },
     'POST /mail-notifications/url-message-templates/{id}/preview-dry-run' => static function (array $config, array $params): void {
-        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.view')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth = AuthSession::getAuth(); $id = (int) ($params['id'] ?? 0); $preview = null; $errorMessage = null;
         $variables = isset($_POST['variables']) && is_array($_POST['variables']) ? $_POST['variables'] : [];
@@ -1030,7 +1030,7 @@ return [
     },
 
     'GET /mail-notifications/send-dry-run' => static function (array $config): void {
-        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.view')) { return; }
         $auth = AuthSession::getAuth();
         $result = null;
         $errorMessage = null;
@@ -1038,7 +1038,7 @@ return [
         View::render('layouts.admin', ['title' => 'Send Notification Dry-Run | Ecosistema Core Admin', 'contentView' => 'pages/mail-notifications/send-dry-run', 'auth' => $auth, 'csrfToken' => AuthSession::getCsrfToken(), 'contentData' => compact('result', 'errorMessage')]);
     },
     'POST /mail-notifications/send-dry-run' => static function (array $config): void {
-        startAuthSession($config); if (!requirePermission($config, 'mail.view')) { return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.view')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth = AuthSession::getAuth();
         $result = null; $errorMessage = null;
@@ -1059,7 +1059,7 @@ return [
     },
 
     'POST /mail-notifications/send' => static function (array $config): void {
-        startAuthSession($config); if (!requirePermission($config, 'mail.manage')) { return; }
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth = AuthSession::getAuth();
         $result = null; $errorMessage = null;

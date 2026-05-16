@@ -81,7 +81,7 @@ Listado de referencia de etapa (macro-hitos):
 ## Qué NO está implementado todavía
 - Autorización fina global por permisos (enforcement transversal).
 - Asignación integral usuario↔rol (según reglas finales del modelo real).
-- Envío real SMTP, lectura IMAP/POP, adjuntos productivos en Mail.
+- Envío SMTP **controlado por flags** y orientado a pruebas/manual individual; sin worker masivo productivo por defecto.
 - Subida/descarga real a S3 ni integración AWS SDK en Cloud.
 - Workers, cron, colas y procesos en segundo plano.
 - Aprovisionamiento real en Onboarding.
@@ -102,7 +102,7 @@ Listado de referencia de etapa (macro-hitos):
 ## Próximos pasos recomendados
 1. Implementar autorización fina por permisos (middleware/checks por ruta).
 2. Definir y cerrar flujo de asignación de roles a usuarios.
-3. Completar Mail productivo (SMTP + colas + adjuntos).
+3. Mantener Mail/Notifications en modo seguro por defecto y documentar activación explícita por flags.
 4. Completar Cloud productivo (upload/download real + SDK AWS).
 5. Mejorar auditoría automática en acciones críticas.
 6. Incorporar suite de tests automatizados.

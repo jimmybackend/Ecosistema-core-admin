@@ -104,6 +104,7 @@ Estado y límites reales: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
 ## Seguridad y flags
 - Matriz de seguridad operativa (flags/permisos/CSRF/tenant/PII): `docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`
 - Matriz de defaults seguros de flags controlled: `docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md`
+- Reglas de consentimiento/privacidad para analytics/tracking/IP/geo: `docs/project/ECOSISTEMA_ANALYTICS_PRIVACY_CONSENT.md`
 - No subir secretos ni commitear `.env`; usar `.env.example` como plantilla.
 - Configuración por defecto segura: sin SMTP real, sin AWS/S3 real, sin proveedor IA externo.
 - Registro inicial controlado por flag: `CORE_REGISTRATION_ENABLED=false` por defecto.

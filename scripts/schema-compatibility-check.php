@@ -49,25 +49,32 @@ try {
     /** @var PDO $pdo */
     $pdo = PdoFactory::make($config);
 } catch (Throwable $exception) {
-    warn('DB no disponible, se omite verificación de esquema: ' . $exception->getMessage(), $warnings);
-    exit(0);
+    warn('DB no disponible, se omite verificación de esquema (read-only).', $warnings);
+    exit(2);
 }
 
 $dbName = (string) (($config['connections']['mysql']['database'] ?? ''));
 if ($dbName === '') {
-    warn('DB_DATABASE no configurado. Se omite verificación de esquema.', $warnings);
-    exit(0);
+    warn('DB_DATABASE no configurado. Se omite verificación de esquema read-only.', $warnings);
+    exit(2);
 }
 
 $criticalColumns = [
+    'core_users' => ['id', 'tenant_id', 'email', 'username', 'password_hash', 'status'],
+    'core_sessions' => ['id', 'tenant_id', 'user_id', 'session_token_hash', 'expires_at'],
+    'core_tenants' => ['id', 'name', 'slug', 'status'],
+    'core_roles' => ['id', 'tenant_id', 'slug', 'name', 'is_system'],
+    'core_permissions' => ['id', 'module_id', 'code', 'name'],
     'core_role_permissions' => ['tenant_id', 'role_id', 'permission_id'],
-    'core_users' => ['tenant_id'],
-    'core_sessions' => ['session_token_hash'],
-    'core_audit' => ['action'],
-    'cloud_files' => ['tenant_id'],
-    'mail_messages' => ['tenant_id'],
-    'crm_marketing_campaigns' => ['tenant_id'],
-    'reports_exports' => ['tenant_id'],
+    'core_user_roles' => ['tenant_id', 'user_id', 'role_id', 'assigned_by_user_id'],
+    'core_modules' => ['id', 'code', 'name'],
+    'core_audit' => ['id', 'tenant_id', 'user_id', 'action', 'entity_type'],
+    'cloud_files' => ['id', 'tenant_id', 'user_id', 'original_name', 'stored_name', 's3_key', 'status'],
+    'cloud_folders' => ['id', 'tenant_id', 'user_id', 'name', 'status'],
+    'mail_messages' => ['id', 'tenant_id', 'user_id', 'subject', 'status', 'created_at'],
+    'notifications_queue' => ['id', 'tenant_id', 'user_id', 'channel_id', 'status', 'created_at'],
+    'crm_leads' => ['id', 'tenant_id', 'email', 'status', 'created_at'],
+    'crm_marketing_campaigns' => ['id', 'tenant_id', 'name', 'code', 'status'],
 ];
 
 $statement = $pdo->prepare(
@@ -76,7 +83,7 @@ $statement = $pdo->prepare(
 
 if ($statement === false) {
     warn('No fue posible preparar consulta INFORMATION_SCHEMA. Se omite verificación.', $warnings);
-    exit(0);
+    exit(2);
 }
 
 foreach ($criticalColumns as $table => $columns) {
@@ -106,5 +113,5 @@ if ($failures > 0) {
     exit(1);
 }
 
-out('SUMMARY', 'Compatibilidad de esquema crítica OK. No se realizaron escrituras.');
+out('SUMMARY', 'Compatibilidad de esquema crítica OK (modo read-only: INFORMATION_SCHEMA/SELECT). No se realizaron escrituras.');
 exit(0);

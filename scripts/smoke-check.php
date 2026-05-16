@@ -2861,3 +2861,29 @@ if (str_contains($rolePermissionsRepo, 'WHERE role_id=:role_id AND tenant_id=:te
 } else {
     fail('Consultas de role-permissions no filtran por tenant_id.', $criticalFailures);
 }
+
+$schemaCheckOptIn = getenv('SMOKE_SCHEMA_COMPAT_CHECK');
+if (is_string($schemaCheckOptIn) && in_array(strtolower($schemaCheckOptIn), ['1', 'true', 'yes', 'on'], true)) {
+    $schemaCheckScript = $root . '/scripts/schema-compatibility-check.php';
+    if (is_file($schemaCheckScript)) {
+        $schemaOutput = [];
+        $schemaExitCode = 0;
+        exec('php ' . escapeshellarg($schemaCheckScript) . ' 2>&1', $schemaOutput, $schemaExitCode);
+        foreach ($schemaOutput as $line) {
+            report('SCHEMA', $line);
+        }
+
+        if ($schemaExitCode === 0) {
+            ok('Chequeo opcional de compatibilidad de esquema finalizó sin incompatibilidades críticas.');
+        } else {
+            fail('Chequeo opcional de compatibilidad de esquema detectó incompatibilidades críticas.', $criticalFailures);
+        }
+    } else {
+        warn('SMOKE_SCHEMA_COMPAT_CHECK activo pero no existe scripts/schema-compatibility-check.php', $warnings);
+    }
+} else {
+    warn('Chequeo de compatibilidad de esquema omitido (usa SMOKE_SCHEMA_COMPAT_CHECK=1 para activarlo).', $warnings);
+}
+
+report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
+exit($criticalFailures > 0 ? 1 : 0);

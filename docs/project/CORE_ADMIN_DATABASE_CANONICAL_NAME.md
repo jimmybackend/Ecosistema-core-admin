@@ -4,11 +4,11 @@
 
 Aclarar qué nombre de base debe usar **Core Admin** en instalación, demo y operación diaria.
 
-## Regla operativa para este repositorio
+## Regla documental única para este repositorio
 
 - Core Admin **no hardcodea** el nombre de base de datos en código.
 - El nombre efectivo siempre se toma desde `.env` mediante `DB_DATABASE` (ver `config/database.php`).
-- Para esta instalación/referencia actual, el valor esperado es `adbbmis1_eco`.
+- Para esta instalación/referencia operativa actual (VM/producción documentada), el valor esperado es `adbbmis1_eco`.
 
 ## Valor recomendado en plantillas
 

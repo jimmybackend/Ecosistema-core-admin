@@ -28,6 +28,14 @@ composer dump-autoload
 composer smoke
 ```
 
+
+## Regla única de base de datos runtime
+- En Core Admin, el nombre de base de datos **efectivo en runtime** se toma únicamente de `DB_DATABASE` en `.env` (`config/database.php`).
+- Para la referencia operativa actual de VM/producción de este repositorio, el valor canónico documentado es `adbbmis1_eco`.
+- `ecosistema` puede aparecer como denominación histórica/conceptual del sistema, pero **no** debe usarse como instrucción operativa de conexión.
+- Si un entorno usa otro nombre físico de base, debe ajustarse solo en su `.env` local/deploy, nunca hardcodeado en código o docs operativas contradictorias.
+
+
 ## Estado por módulo (fuente oficial)
 Para evitar duplicidad y promesas incorrectas, usa la matriz oficial:
 - `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`

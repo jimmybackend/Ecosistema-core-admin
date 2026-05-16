@@ -2961,5 +2961,20 @@ foreach ($dangerousUseMentions as $relativePath) {
     }
 }
 
+
+
+// PR #171 workers/cron current-state doc checks
+$workersStatePath = 'docs/ops/WORKERS_CRON_CURRENT_STATE.md';
+if (checkFile($root, $workersStatePath, $criticalFailures)) {
+    $workersStateContent = (string) file_get_contents($root . '/' . $workersStatePath);
+    foreach (['No hay workers productivos activos todavía', 'No ejecuta AWS/S3 real', 'No envía correos masivos'] as $requiredPhrase) {
+        if (str_contains($workersStateContent, $requiredPhrase)) {
+            ok('WORKERS_CRON_CURRENT_STATE contiene frase clave: ' . $requiredPhrase);
+        } else {
+            fail('WORKERS_CRON_CURRENT_STATE no contiene frase clave: ' . $requiredPhrase, $criticalFailures);
+        }
+    }
+}
+
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
 exit($criticalFailures > 0 ? 1 : 0);

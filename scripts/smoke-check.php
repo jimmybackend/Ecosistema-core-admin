@@ -394,7 +394,25 @@ if ($envContent !== false && str_contains($envContent, 'ECOSISTEMA_BROWSER_ANALY
 }
 
 
-    $requiredDisabled = ['ECOSISTEMA_DRIVE_AWS_ENABLED=false', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS=false', 'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=false'];
+    $requiredDisabled = [
+        'MAIL_SEND_ENABLED=false',
+        'MAIL_ALLOW_TEST_SEND=false',
+        'CLOUD_S3_ENABLED=false',
+        'CLOUD_ALLOW_UPLOADS=false',
+        'CLOUD_ALLOW_DOWNLOADS=false',
+        'ECOSISTEMA_DRIVE_AWS_ENABLED=false',
+        'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=false',
+        'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS=false',
+        'ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECTS=false',
+        'ECOSISTEMA_URL_LOCATOR_TRACKING_ENABLED=false',
+        'ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false',
+        'ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false',
+        'ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE=false',
+        'ECOSISTEMA_AI_PROVIDER_ENABLED=false',
+        'ECOSISTEMA_AI_WRITE_PROPOSALS=false',
+        'ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED=false',
+        'ECOSISTEMA_REPORT_EXPORT_WRITE=false',
+    ];
     foreach ($requiredDisabled as $disabledFlag) {
         if ($envContent !== false && str_contains($envContent, $disabledFlag)) {
             ok('.env.example mantiene apagado por defecto: ' . $disabledFlag);

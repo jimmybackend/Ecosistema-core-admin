@@ -4,5 +4,6 @@
 <?php if(!$downloadsEnabled): ?><div class="eco-alert">Descargas deshabilitadas por configuración.</div><?php endif; ?>
 <?php if($downloadsEnabled && (string)($file['status']??'')==='active' && (int)($file['found_in_s3']??0)===0): ?><a class="eco-button btn" href="/cloud/files/<?= e((string)$file['id']) ?>/download">Descargar</a><?php endif; ?>
 <ul>
-<?php foreach(['original_name','mime_type','extension','size_bytes','checksum_sha256','etag','storage_class','origin_module','origin_table','origin_id','access_type','secure_hint','encrypted','found_in_s3','virus_scan_status','status','uploaded_at','updated_at'] as $k): ?><li><strong><?= e($k) ?>:</strong> <?= e((string)($file[$k]??'')) ?></li><?php endforeach; ?>
+<?php foreach(['original_name','mime_type','extension','size_bytes','checksum_sha256','etag','storage_class','origin_module','origin_table','origin_id','access_type','encrypted','found_in_s3','virus_scan_status','status','uploaded_at','updated_at'] as $k): ?><li><strong><?= e($k) ?>:</strong> <?= e((string)($file[$k]??'')) ?></li><?php endforeach; ?>
+<li><strong>secure_hint:</strong> <span class="eco-badge">present=<?= !empty($file['secure_hint']) ? 'true' : 'false' ?></span> / exposed=false</li>
 </ul><?php endif; ?></div>

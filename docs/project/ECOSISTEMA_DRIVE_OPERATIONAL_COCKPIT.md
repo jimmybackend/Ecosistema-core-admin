@@ -20,7 +20,7 @@ Panel operativo central en `/cloud/drive` para administración segura de Ecosist
 No delete/restore/repair/share públicos reales, no public links, no signed URLs reales, no escaneo/listado S3, no subida/descarga real si faltan flags.
 
 ## Qué no expone
-No expone `s3_key`, `stored_name`, `prefix`, `root_prefix`, `old_s3_key`, `new_s3_key`, `config_json`, `metadata_json` crudos ni secretos de entorno.
+No expone `s3_key`, `stored_name`, `prefix`, `root_prefix`, `old_s3_key`, `new_s3_key`, `password_hash`, `secure_hint`, `config_json`, `metadata_json` crudos ni secretos de entorno.
 
 ## Validación en VM
 1. `composer dump-autoload`

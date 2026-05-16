@@ -64,3 +64,10 @@ ORDER BY p.code;
 - El tenant para asignación se toma del rol (`core_roles.tenant_id`) cargado en repositorio/servicio.
 - No se acepta `tenant_id` desde request para este flujo.
 - Las lecturas y borrados de `core_role_permissions` en la pantalla de asignación filtran por `role_id` + `tenant_id`.
+
+
+## Matriz de estado (UI vs esquema real)
+- `core_roles`: no existe columna `status`. En UI puede mostrarse `status` **derivado** solo como etiqueta informativa.
+- `core_permissions`: no existe columna `status`. No deben exponerse acciones de cambio de estado.
+- `core_modules`: sí existe columna `status`; las acciones de cambio de estado son válidas.
+- `roles.code` es alias visual de `core_roles.slug`.

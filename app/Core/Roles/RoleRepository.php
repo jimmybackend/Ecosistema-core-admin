@@ -16,7 +16,7 @@ final readonly class RoleRepository
     public function create(array $data): bool { $stmt=$this->pdo->prepare('INSERT INTO core_roles (tenant_id, slug, name, description, is_system, created_at, updated_at) VALUES (:tenant_id, :slug, :name, :description, :is_system, NOW(), NOW())'); return $stmt->execute($data); }
     public function update(int $id, array $data): bool { $data[':id']=$id; $stmt=$this->pdo->prepare('UPDATE core_roles SET tenant_id = :tenant_id, slug = :slug, name = :name, description = :description, is_system = :is_system, updated_at = NOW() WHERE id = :id'); return $stmt->execute($data); }
     public function updateNameDescriptionStatus(int $id, array $data): bool { $data[':id']=$id; $stmt=$this->pdo->prepare('UPDATE core_roles SET name = :name, description = :description, updated_at = NOW() WHERE id = :id'); return $stmt->execute($data); }
-    public function updateStatus(int $id, string $status): bool { return true; }
+    public function updateStatus(int $id, string $status): bool { return false; }
 
     private function mapRole(array $role): array { $role['code'] = $role['slug'] ?? ''; $role['status'] = 'active'; return $role; }
 }

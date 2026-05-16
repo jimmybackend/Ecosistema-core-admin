@@ -7,5 +7,4 @@
 <label>Description</label><textarea class="eco-form-control" name="description"></textarea>
 <label>Scope</label><select class="eco-form-control" name="scope" required><option value="global">global</option><option value="tenant">tenant</option><option value="module">module</option></select>
 <label>is_system</label><select class="eco-form-control" name="is_system" required><option value="0">0</option><option value="1">1</option></select>
-<label>Status</label><select class="eco-form-control" name="status" required><option value="active">active</option><option value="inactive">inactive</option><option value="deleted">deleted</option></select>
 <button class="eco-button btn" type="submit">Guardar</button></form></section>

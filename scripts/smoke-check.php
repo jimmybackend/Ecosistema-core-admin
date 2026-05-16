@@ -158,6 +158,7 @@ $requiredFiles = [
     'docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md',
     'docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md',
     'docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md',
+    'docs/project/ECOSISTEMA_UI_SCHEMA_ALIASES.md',
     'docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md',
     'docs/project/CLOUD_S3_DATABASE_MAPPING.md',
     'docs/auth/CONTROLLED_INITIAL_REGISTRATION.md',

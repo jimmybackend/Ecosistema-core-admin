@@ -72,6 +72,7 @@ $requiredFiles = [
     'app/Core/Cloud/EcosistemaDriveSummaryService.php',
     'app/Core/Cloud/EcosistemaDriveAuditLogger.php',
     'docs/project/ECOSISTEMA_DRIVE_ACCESS_POLICY.md',
+    'docs/project/ECOSISTEMA_FEATURE_FLAGS_AUDIT.md',
     'docs/project/ECOSISTEMA_DRIVE_READ_ONLY_AUDIT.md',
     'docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md',
     'resources/views/pages/cloud/drive-download-contract.php',
@@ -419,7 +420,12 @@ if ($envContent !== false && str_contains($envContent, 'ECOSISTEMA_BROWSER_ANALY
         'ECOSISTEMA_AI_PROVIDER_ENABLED=false',
         'ECOSISTEMA_AI_WRITE_PROPOSALS=false',
         'ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED=false',
+        'ECOSISTEMA_CRM_SUBMISSION_TO_LEAD_WRITE=false',
+        'ECOSISTEMA_CAMPAIGN_CREATION_WRITE=false',
+        'ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS=false',
+        'CORE_REGISTRATION_ENABLED=false',
         'ECOSISTEMA_REPORT_EXPORT_WRITE=false',
+        'ECOSISTEMA_REPORT_EXPORT_INCLUDE_PII=false',
     ];
     foreach ($requiredDisabled as $disabledFlag) {
         if ($envContent !== false && str_contains($envContent, $disabledFlag)) {
@@ -458,6 +464,19 @@ if (is_file($vmEnvExamplePath)) {
         ok('.env.vm.example contiene placeholder seguro para DB_PASSWORD.');
     } else {
         fail('.env.vm.example no contiene DB_PASSWORD=CAMBIAR_EN_VM_NO_COMMIT.', $criticalFailures);
+    }
+
+
+    if ($vmEnvContent !== false && str_contains($vmEnvContent, 'CORE_REGISTRATION_INVITE_CODE=CAMBIAR_EN_VM_NO_COMMIT')) {
+        ok('.env.vm.example contiene placeholder seguro para CORE_REGISTRATION_INVITE_CODE.');
+    } else {
+        fail('.env.vm.example no contiene CORE_REGISTRATION_INVITE_CODE=CAMBIAR_EN_VM_NO_COMMIT.', $criticalFailures);
+    }
+
+    if ($vmEnvContent !== false && str_contains($vmEnvContent, 'MAIL_PASSWORD=change-me')) {
+        ok('.env.vm.example contiene placeholder seguro para MAIL_PASSWORD.');
+    } else {
+        fail('.env.vm.example no contiene MAIL_PASSWORD=change-me.', $criticalFailures);
     }
 
     if ($vmEnvContent !== false && str_contains($vmEnvContent, 'CORE_REGISTRATION_INVITE_CODE=CAMBIAR_EN_VM_NO_COMMIT')) {

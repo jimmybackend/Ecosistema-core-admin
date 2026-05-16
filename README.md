@@ -84,6 +84,14 @@ Por defecto `.env.example` mantiene la mayoría de integraciones avanzadas en `f
 - Workflow ejecución real: `ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED=false`
 - URL Locator, Landing, Campaigns, Reports, CRM, Notifications: flags `*_ENABLED`, `*_DRY_RUN`, `*_WRITE` en `false` por defecto.
 
+## Estado real de cron/workers (sin ambigüedad)
+- Estado actual documentado: `docs/ops/WORKERS_CRON_CURRENT_STATE.md`.
+- `cron-runner` solo tiene dos jobs controlados (health checks y limpieza de sesiones).
+- **No hay workers productivos activos todavía**.
+- **No ejecuta AWS/S3 real**.
+- **No envía correos masivos**.
+- No hay colas productivas activas para IA/webhooks/procesamiento real de archivos.
+
 ## Features roadmap / no activas
 No asumir productivo por existencia de vistas, docs o rutas:
 - Envío masivo productivo

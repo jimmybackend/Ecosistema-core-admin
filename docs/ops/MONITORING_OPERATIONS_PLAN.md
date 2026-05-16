@@ -124,3 +124,7 @@ composer ops:monitor
 - Monitoreo automático avanzado (APM/alertas externas) pendiente.
 - No crea servicios systemd, Docker ni CI/CD.
 - No habilita nuevos cron automáticamente.
+
+
+## Referencia de estado real
+- Ver `docs/ops/WORKERS_CRON_CURRENT_STATE.md` para la separación explícita entre jobs seguros actuales y workers/colas productivas aún no activas.

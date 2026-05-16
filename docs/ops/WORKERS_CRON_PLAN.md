@@ -89,3 +89,7 @@ Definir y habilitar la primera ejecución controlada de cron en Core Admin con e
 - Este repositorio mantiene monitoreo básico/manual y checks locales no destructivos.
 - Monitoreo automático avanzado (alertas externas/APM) sigue pendiente.
 - En este PR no se activa ningún cron nuevo.
+
+
+## Referencia de estado real
+- Ver `docs/ops/WORKERS_CRON_CURRENT_STATE.md` para la separación explícita entre jobs seguros actuales y workers/colas productivas aún no activas.

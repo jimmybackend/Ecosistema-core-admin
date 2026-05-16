@@ -9,6 +9,7 @@ Aplicación administrativa interna del ecosistema. Este README resume **estado o
 - Guía de demo/showcase honesta: `docs/project/CORE_ADMIN_SHOWCASE_DEMO_GUIDE.md`.
 - Checklist de preparación para demo controlada: `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`.
 - Notas de release para showcase controlado: `docs/project/CORE_ADMIN_SHOWCASE_RELEASE_NOTES.md`.
+- Checklist de cierre de riesgos técnicos H: `docs/project/ECOSISTEMA_RISK_H_CLOSURE.md`.
 - Contrato de descarga controlada de Drive: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.
 - Mapa técnico ruta-service-tabla: `docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`.
 

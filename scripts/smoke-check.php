@@ -1663,6 +1663,19 @@ foreach (glob($root . '/app/Core/Ai/*.php') ?: [] as $f) { $allAiCore .= (string
 if (substr_count($allAiCore, 'INSERT INTO os_ai_proposals') === substr_count($aiRepoContent, 'INSERT INTO os_ai_proposals')) { ok('INSERT os_ai_proposals localizado sólo en AssistanceRepository.'); } else { fail('INSERT os_ai_proposals aparece fuera de AssistanceRepository.', $criticalFailures); }
 if (!str_contains($routesContentAi, "\$_POST['tenant_id']") && !str_contains($routesContentAi, "\$_GET['tenant_id']")) { ok('Ruta AI assist no acepta tenant_id desde request.'); } else { fail('Ruta AI assist acepta tenant_id desde request.', $criticalFailures); }
 
+$aiAssistView = @file_get_contents($root . '/resources/views/pages/ai/assist-result.php');
+if ($aiAssistView === false) {
+    fail('No se pudo leer vista AI assist result.', $criticalFailures);
+} elseif (!str_contains($aiAssistView, 'htmlspecialchars(')) {
+    fail('Vista AI assist result debe escapar salida.', $criticalFailures);
+} elseif (str_contains($aiAssistView, 'json_encode($result') || str_contains($aiAssistView, 'print_r($result') || str_contains($aiAssistView, 'var_dump($result')) {
+    fail('Vista AI assist result no debe imprimir JSON crudo del resultado.', $criticalFailures);
+} else {
+    ok('Vista AI assist result no expone JSON crudo y escapa salida.');
+}
+if (!str_contains($routesContentAi, "verifyCsrfOrAbort()")) { fail('Ruta AI assist debe validar CSRF en POST.', $criticalFailures); } else { ok('Ruta AI assist valida CSRF en POST.'); }
+if (!str_contains($routesContentAi, "requirePermission($config, 'modules.view')")) { fail('Ruta AI assist debe exigir permiso modules.view.', $criticalFailures); } else { ok('Ruta AI assist exige permiso modules.view.'); }
+
 if ($criticalFailures > 0) {
     report('RESULT', 'SMOKE CHECK FAILURES=' . $criticalFailures . ' WARNINGS=' . $warnings);
     exit(1);
@@ -1944,6 +1957,8 @@ $allAiCore = '';
 foreach (glob($root . '/app/Core/Ai/*.php') ?: [] as $f) { $allAiCore .= (string) @file_get_contents($f); }
 if (substr_count($allAiCore, 'INSERT INTO os_ai_proposals') === substr_count($aiRepoContent, 'INSERT INTO os_ai_proposals')) { ok('INSERT os_ai_proposals localizado sólo en AssistanceRepository.'); } else { fail('INSERT os_ai_proposals aparece fuera de AssistanceRepository.', $criticalFailures); }
 if (!str_contains($routesContentAi, "\$_POST['tenant_id']") && !str_contains($routesContentAi, "\$_GET['tenant_id']")) { ok('Ruta AI assist no acepta tenant_id desde request.'); } else { fail('Ruta AI assist acepta tenant_id desde request.', $criticalFailures); }
+if (!str_contains($routesContentAi, "verifyCsrfOrAbort()")) { fail('Ruta AI assist debe validar CSRF en POST.', $criticalFailures); } else { ok('Ruta AI assist valida CSRF en POST.'); }
+if (!str_contains($routesContentAi, "requirePermission($config, 'modules.view')")) { fail('Ruta AI assist debe exigir permiso modules.view.', $criticalFailures); } else { ok('Ruta AI assist exige permiso modules.view.'); }
 
 if ($criticalFailures > 0) {
     report('RESULT', "Smoke check finalizó con {$criticalFailures} fallos críticos y {$warnings} advertencias.");

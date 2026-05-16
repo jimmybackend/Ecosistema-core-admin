@@ -12,7 +12,7 @@ return [
     'tracking_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_TRACKING_ENABLED', 'false'), FILTER_VALIDATE_BOOL),
     'language_redirects_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_LANGUAGE_REDIRECTS', 'false'), FILTER_VALIDATE_BOOL),
     'collect_ip_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_COLLECT_IP', 'false'), FILTER_VALIDATE_BOOL),
-    'collect_user_agent_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_COLLECT_USER_AGENT', 'true'), FILTER_VALIDATE_BOOL),
+    'collect_user_agent_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_COLLECT_USER_AGENT', 'false'), FILTER_VALIDATE_BOOL),
     'smart_links_enabled' => filter_var(Env::get('ECOSISTEMA_URL_LOCATOR_SMART_LINKS', 'false'), FILTER_VALIDATE_BOOL),
     'public_redirect_status' => (int) Env::get('ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECT_STATUS', '302'),
     'public_tenant_id' => (int) Env::get('ECOSISTEMA_URL_LOCATOR_PUBLIC_TENANT_ID', '0'),

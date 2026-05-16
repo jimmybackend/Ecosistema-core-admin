@@ -1102,6 +1102,7 @@ $sensitivePatterns = [
     'refresh_token_hash',
     'DB_PASSWORD',
     'AWS_SECRET',
+    'MAIL_PASSWORD',
     'SECRET',
 ];
 
@@ -1163,8 +1164,6 @@ if (is_file($routesPath)) {
 if ($secretHits === 0) {
     ok('Check de seguridad estática sin exposiciones sensibles en vistas/rutas.');
 }
-
-
 
 $versionRepoPath = $root . '/app/Core/Cloud/EcosistemaDriveFileVersionRepository.php';
 $versionServicePath = $root . '/app/Core/Cloud/EcosistemaDriveFileVersionService.php';

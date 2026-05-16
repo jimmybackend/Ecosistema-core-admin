@@ -2919,5 +2919,29 @@ if (is_file($schemaCheckScript)) {
     warn('No existe scripts/schema-compatibility-check.php; se omite chequeo opcional de esquema.', $warnings);
 }
 
+
+// PR #169 database canonical-name doc safety checks
+$dangerousUseMentions = [
+    'README.md',
+    '.env.example',
+    '.env.vm.example',
+    'docs/deploy/CORE_ADMIN_VM_RUNBOOK.md',
+    'docs/deploy/EC2_PRODUCTION_CHECKLIST.md',
+    'docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md',
+];
+foreach ($dangerousUseMentions as $relativePath) {
+    $content = is_file($root . '/' . $relativePath) ? (string) file_get_contents($root . '/' . $relativePath) : '';
+    if ($content === '') {
+        fail('No se pudo leer artefacto documental para check DB canónica: ' . $relativePath, $criticalFailures);
+        continue;
+    }
+
+    if (preg_match('/USE\s+ecosistema\s*;/i', $content) === 1) {
+        fail('Mención peligrosa detectada (`USE ecosistema;`) en: ' . $relativePath, $criticalFailures);
+    } else {
+        ok('Sin mención peligrosa `USE ecosistema;` en: ' . $relativePath);
+    }
+}
+
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
 exit($criticalFailures > 0 ? 1 : 0);

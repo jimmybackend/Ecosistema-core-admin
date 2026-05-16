@@ -19,6 +19,7 @@ cp .env.example .env
 
 ## 3) Configurar variables de entorno (`.env`)
 Revisar y ajustar como mínimo:
+- **Regla runtime de DB:** el nombre efectivo de base se define solo por `DB_DATABASE` en `.env` (Core Admin no hardcodea nombre de DB).
 - `APP_ENV=production`
 - `APP_DEBUG=false`
 - `APP_URL=https://tu-dominio.example`

@@ -50,13 +50,18 @@ Editar `.env` localmente en la VM (nunca commitear `.env` real):
 - `SESSION_SECURE=false` **solo** para pruebas locales HTTP.
 
 ### Base de datos (DB real existente)
-Configurar conexión a `adbbmis1_eco`:
+Regla operativa: Core Admin toma el nombre de base **solo** desde `DB_DATABASE` en `.env` (runtime).
+
+Para la referencia operativa actual de VM/producción de este repositorio, usar:
 - `DB_CONNECTION=mysql`
 - `DB_HOST=<host-db-real>`
 - `DB_PORT=3306`
 - `DB_DATABASE=adbbmis1_eco`
 - `DB_USERNAME=<usuario-db>`
 - `DB_PASSWORD=<password-db>`
+
+Si tu entorno usa otro nombre físico, cambia únicamente `DB_DATABASE` en ese `.env` de despliegue.
+`ecosistema` puede aparecer como nombre histórico/conceptual, pero no sustituye `DB_DATABASE` como fuente runtime.
 
 ### Endurecimiento Cloud/Drive (sin AWS/S3 real)
 Asegurar:

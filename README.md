@@ -80,6 +80,7 @@ composer smoke
 - No workers productivos completos activos.
 - Flags avanzados en `false` por defecto (`.env.example`).
 - No usar datos reales ni secretos en repositorio/entornos de demo.
+- Referencia de contacto público aprobado: `contacto.md` y `docs/politica_contacto_publico.md`.
 
 ## Estado real de cron/workers (sin ambigüedad)
 - Estado actual documentado: `docs/ops/WORKERS_CRON_CURRENT_STATE.md`.

@@ -1,27 +1,131 @@
 # Ecosistema Core Admin
 
-Aplicación administrativa interna del ecosistema. Este README prioriza el **estado operativo real** y separa con claridad lo estable de lo que está en read-only, dry-run, controlled por flags o solo documental.
+Aplicación administrativa interna del ecosistema.
 
-## Resumen operativo real
-- Núcleo administrativo funcional para autenticación/sesión, dashboard, tenants, users, roles, permissions, modules y superficies de salud/auditoría.
-- Existen módulos adicionales visibles por rutas y documentación (Mail, Cloud/Drive, URL Locator, Browser Analytics, Landing, CRM, Workflow, Reports, Campaigns, AI), pero su operación real depende de modo read-only, dry-run o flags desactivados por defecto.
-- Estado canónico por módulo: `docs/project/CORE_ADMIN_MODULE_STATUS.md`.
-- Matriz técnica extendida: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
+## 1) Resumen corto
+Core Admin tiene un núcleo estable para autenticación/sesión y administración base (tenants, users, roles, permissions y modules), con módulos adicionales en diferentes estados operativos (`read-only`, `dry-run`, `controlled` por flags o `roadmap`).
 
-Documentación complementaria:
-- Matriz comercial pública de estado: `docs/estado_modulos.md`.
-- Guía de demo/showcase honesta: `docs/project/CORE_ADMIN_SHOWCASE_DEMO_GUIDE.md`.
-- Guion comercial/técnico de demo honesto (10–15 min): `docs/demo_guion.md`.
-- Checklist de preparación para demo controlada: `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`.
-- Checklist final de presentación pública controlada: `docs/checklist_presentacion_publica.md`.
-- Notas de release para showcase controlado: `docs/project/CORE_ADMIN_SHOWCASE_RELEASE_NOTES.md`.
-- Checklist de cierre de riesgos técnicos H: `docs/project/ECOSISTEMA_RISK_H_CLOSURE.md`.
-- Contrato de descarga controlada de Drive: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.
-- Mapa técnico ruta-service-tabla: `docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`.
+El estado canónico por módulo está documentado en:
+- `docs/project/CORE_ADMIN_MODULE_STATUS.md`
+- `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`
+
+## 2) Estado operativo real
+- **Base estable**: Auth/sesión, dashboard, health DB, núcleo CRUD administrativo y auditoría/logs del sistema.
+- **Parcial/controlado**: Mail, Notifications, Cloud local, Ecosistema Drive, URL Locator, Landing, Browser Analytics, CRM/Campaigns, Workflow, Reports, Security (rate limit), Audit unificada, AI assistance.
+- **No productivo completo / pendiente**: Workers/Cron productivos completos, Billing, Integrations, Support end-to-end.
+
+Este repositorio **no debe interpretarse** como integración productiva completa con AWS/S3, SMTP, IA externa, workers o billing cuando las flags están apagadas o en modo contractual/dry-run.
+
+## 3) Estado por módulo
+
+| Módulo | Estado real | Nota operativa |
+|---|---|---|
+| Auth / sesión | Estable / base operativa | Login/logout/sesión/timeout y dashboard operativo. |
+| Core tenants/users/roles/permissions/modules | Estable / base operativa | CRUD administrativo del núcleo. |
+| System health/logs/audit | Estable / base operativa | Health, logs y auditoría del core disponibles. |
+| Mail | Controlled por flags + dry-run | Envío real sujeto a `MAIL_SEND_ENABLED`, `ECOSISTEMA_MAIL_SEND_ENABLED`, `ECOSISTEMA_SMTP_ENABLED`. |
+| Notifications | Controlled por flags + dry-run | Cola/preview/envío condicionados por flags de mail notifications. |
+| Cloud local | Read-only / controlled | Navegación/resumen disponible; upload/download real bloqueado por default. |
+| Ecosistema Drive | Controlled + contractual/dry-run | Adaptador preparado; remoto/S3 y signed URLs sujetos a flags. |
+| URL Locator | Read-only + dry-run + controlled | Redirect público/track/escritura condicionados por flags. |
+| Landing | Read-only + dry-run + controlled | Render público/submit/uploads controlados por flags. |
+| Browser Analytics | Read-only + dry-run + controlled | Collector/write y recolección de IP/UA apagados por default. |
+| CRM / Campaigns | Read-only + dry-run + controlled | Escritura de leads/campañas sujeta a flags. |
+| Workflow | Read-only + dry-run + controlled | Ejecución real y acciones externas desactivadas por default. |
+| Reports | Read-only + dry-run + controlled | Export write e inclusión de PII condicionadas por flags. |
+| Security / Rate limit | Controlled por flags | Rate limit bloqueante desactivado por default. |
+| Audit unificada | Estable / base operativa | Superficie de auditoría unificada disponible en core. |
+| AI assistance | Dry-run + controlled por flags | Proveedor externo y escritura de propuestas apagados por default. |
+| Workers/Cron | Roadmap / pendiente (parcial mínimo actual) | Estado actual: jobs controlados, sin workers productivos completos. |
+| Billing | Roadmap / pendiente | Documental/parcial; no declarar producción completa. |
+| Integrations | Roadmap / pendiente | Integraciones parciales/controladas, no end-to-end productivo. |
+| Support | Roadmap / pendiente | Estado documental/parcial. |
+
+## 4) Rutas principales agrupadas por estado
+
+### Estable / base operativa
+- Auth/base: `/login`, `POST /login`, `POST /logout`, `/dashboard`, `/health/db`
+- Core admin: `/tenants`, `/users`, `/roles`, `/permissions`, `/modules`
+- System: `/system/health`, `/system/logs`, `/system/audit`, `/audit/events`
+
+### Read-only / consulta operativa
+- Cloud/Drive: `/cloud`, `/cloud/drive`, `/cloud/drive/files`, `/cloud/drive/folders`, `/cloud/drive/summary`
+- Workflow: `/workflow`, `/workflow/runs`
+- Reports/Campaigns/CRM/Analytics/Landing/URL: `/reports/marketing-funnel`, `/reports/lead-performance`, `/campaigns`, `/crm`, `/browser/analytics`, `/landing`, `/url/locator`
+
+### Dry-run / controlled
+- Workflow dry-run: `/workflow/dry-run`
+- AI assistance (controlado por flags): `POST /ai/assist`
+
+Referencia completa y vigente: `routes/web.php`.
+
+## 5) Flags críticas apagadas por defecto
+Fuente: `.env.example`.
+
+- **Mail/SMTP**: `MAIL_SEND_ENABLED=false`, `ECOSISTEMA_MAIL_SEND_ENABLED=false`, `ECOSISTEMA_SMTP_ENABLED=false`
+- **Cloud/S3/Drive remoto**: `CLOUD_S3_ENABLED=false`, `S3_DRIVE_ENABLED=false`, `S3_DRIVE_ALLOW_REMOTE_CALLS=false`, `ECOSISTEMA_DRIVE_ENABLED=false`, `ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=false`
+- **URL Locator**: `ECOSISTEMA_URL_LOCATOR_ENABLED=false`, `ECOSISTEMA_URL_LOCATOR_ADMIN_WRITE_ENABLED=false`, `ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECTS=false`
+- **Landing**: `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false`, `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false`
+- **Browser Analytics**: `ECOSISTEMA_BROWSER_ANALYTICS_ENABLED=false`, `ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE=false`
+- **CRM/Workflow/Reports/Campaigns**: `ECOSISTEMA_CRM_ENABLED=false`, `ECOSISTEMA_WORKFLOW_ENABLED=false`, `ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED=false`, `ECOSISTEMA_REPORT_EXPORT_WRITE=false`, `ECOSISTEMA_CAMPAIGN_CREATION_WRITE=false`
+- **Security / rate limit**: `ECOSISTEMA_RATE_LIMIT_ENABLED=false`, `ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS=false`
+- **AI externa**: `ECOSISTEMA_AI_ENABLED=false`, `ECOSISTEMA_AI_PROVIDER_ENABLED=false`, `ECOSISTEMA_AI_WRITE_PROPOSALS=false`
+- **Registro**: `CORE_REGISTRATION_ENABLED=false`
+
+## 6) Qué sí valida `composer smoke`
+```bash
+composer smoke
+# o
+php scripts/smoke-check.php
+```
+- Carga/autoload y estructura base.
+- Validaciones de sintaxis/arranque del core.
+- Chequeos básicos operativos sin activar integraciones externas.
+- Incluye `composer schema:check` como validación opcional read-only cuando hay DB disponible.
+
+## 7) Qué no valida `composer smoke`
+- No valida comportamiento funcional end-to-end de todos los módulos.
+- No valida workers productivos, colas reales ni cron de producción completo.
+- No valida integración real con SMTP/AWS/S3/IA externa.
+- No valida performance, FKs, índices, triggers ni hardening completo.
+- No reemplaza pruebas de integración, QA funcional ni auditoría de seguridad.
+
+## 8) Limitaciones conocidas
+- Sin SMTP real por defecto.
+- Sin AWS/S3 real por defecto.
+- Sin proveedor IA externo por defecto.
+- Sin workers productivos completos activos.
+- Múltiples módulos operan en modo `read-only`, `dry-run` o `controlled` según flags.
+- Para demo/showcase, no usar datos reales ni secretos.
+
+Estado explícito de cron/workers: `docs/ops/WORKERS_CRON_CURRENT_STATE.md`.
+
+## 9) Checklist para demo/showcase
+1. Confirmar flags en `.env` y mantener por defecto en modo seguro salvo prueba controlada.
+2. Ejecutar `composer smoke` y revisar warnings no bloqueantes.
+3. Verificar rutas demo que sí están estables (auth/core/system).
+4. Si se demuestra módulo controlled, documentar qué flag se encendió y por cuánto tiempo.
+5. Evitar claims de “producción completa” para módulos en read-only/dry-run/controlled.
+6. Validar contacto y política pública vigentes (`contacto.md`, `docs/politica_contacto_publico.md`).
+
+## Referencias operativas complementarias
+- `docs/estado_modulos.md`
+- `docs/project/CORE_ADMIN_SHOWCASE_DEMO_GUIDE.md`
+- `docs/demo_guion.md`
+- `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`
+- `docs/checklist_presentacion_publica.md`
+- `docs/project/CORE_ADMIN_SHOWCASE_RELEASE_NOTES.md`
+- `docs/project/ECOSISTEMA_RISK_H_CLOSURE.md`
+- `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`
+- `docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`
+- `docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`
+- `docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md`
+- `docs/project/ECOSISTEMA_ANALYTICS_PRIVACY_CONSENT.md`
+- `docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md`
 
 ## Material visual
-- Diagramas base para presentación (sin datos reales): `docs/diagramas.md`.
-- Reglas de assets y privacidad para material visual: `assets/README.md`.
+- Diagramas base para presentación (sin datos reales): `docs/diagramas.md`
+- Reglas de assets y privacidad para material visual: `assets/README.md`
 
 ## Instalación local
 ```bash
@@ -30,123 +134,3 @@ cp .env.example .env
 # Configura DB_* según tu entorno
 php -S 127.0.0.1:8000 -t public
 ```
-
-Nota de base de datos (canónica para Core Admin): `docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md`.
-
-Comandos útiles:
-```bash
-composer dump-autoload
-composer smoke
-```
-
-## Regla única de base de datos runtime
-- En Core Admin, el nombre de base de datos **efectivo en runtime** se toma únicamente de `DB_DATABASE` en `.env` (`config/database.php`).
-- Para la referencia operativa actual de VM/producción de este repositorio, el valor canónico documentado es `adbbmis1_eco`.
-- `ecosistema` puede aparecer como denominación histórica/conceptual del sistema, pero **no** debe usarse como instrucción operativa de conexión.
-- Si un entorno usa otro nombre físico de base, debe ajustarse solo en su `.env` local/deploy, nunca hardcodeado en código o docs operativas contradictorias.
-
-## Estado del proyecto por tipo de operación
-
-### Operativo base
-- Core/Auth: login, logout, sesión, dashboard y health DB.
-- Tenants/Users/Roles/Permissions: CRUD administrativo del núcleo.
-- Security/Audit: superficies de health, logs y auditoría de eventos.
-- Base Modules: catálogo/base de módulos administrativos.
-
-### Read-only
-- Workflow: runs y vistas operativas principalmente de consulta.
-- Reports: foco actual en lectura/diagnóstico administrativo.
-- Cloud/Drive: parte de la navegación/summary/contratos opera como consulta controlada.
-- URL Locator, Landing Pages, Browser Analytics, CRM/Campaigns: varias vistas y listados se usan en modo lectura según flags y matriz.
-
-### Dry-run
-- Workflow: simulaciones en `/workflow/dry-run` y dry-run por regla.
-- URL Locator: redirect dry-run.
-- Landing Pages: rutas `*dry-run*` para render/submit controlado.
-- Reports y Campaigns: exportación/creación dry-run.
-- AI: propuestas/insights de prueba sin operación autónoma productiva.
-
-### Controlled por flags
-- Mail/Notifications: SMTP real y envíos efectivos sujetos a flags.
-- Cloud/Drive: llamadas remotas y AWS/S3 reales sujetos a flags.
-- AI: proveedor externo y escritura de propuestas sujetos a flags.
-- Workflow: ejecución real sujeta a flag de ejecución.
-- CRM/Campaigns, URL Locator, Landing Pages, Browser Analytics, Reports: activación y escritura sujetas a flags `*_ENABLED`, `*_DRY_RUN`, `*_WRITE`.
-
-### Documental / roadmap
-- Billing: documentado, no declarado como completo/productivo en este repositorio.
-- Integrations: superficies parciales/documentales; no asumir operación productiva end-to-end.
-- Support: estado documental/parcial, sin promesa de completitud operativa.
-- Privacy/Compliance: políticas y lineamientos documentados; implementación operativa depende de hardening/configuración por entorno.
-- Jobs/Workers productivos completos: objetivo de roadmap, no estado actual.
-
-### Limitaciones vigentes
-- No SMTP real por defecto.
-- No AWS/S3 real por defecto.
-- No workers productivos completos activos.
-- Flags avanzados en `false` por defecto (`.env.example`).
-- No usar datos reales ni secretos en repositorio/entornos de demo.
-- Referencia de contacto público aprobado: `contacto.md` y `docs/politica_contacto_publico.md`.
-
-## Estado real de cron/workers (sin ambigüedad)
-- Estado actual documentado: `docs/ops/WORKERS_CRON_CURRENT_STATE.md`.
-- `cron-runner` solo tiene dos jobs controlados (health checks y limpieza de sesiones).
-- **No hay workers productivos activos todavía**.
-- **No ejecuta AWS/S3 real**.
-- **No envía correos masivos**.
-- No hay colas productivas activas para IA/webhooks/procesamiento real de archivos.
-
-## Rutas principales reales (referencia corta)
-- Auth y base: `/login`, `POST /login`, `POST /logout`, `/dashboard`, `/health/db`.
-- Core admin: `/tenants`, `/users`, `/roles`, `/permissions`, `/modules`.
-- System: `/system/health`, `/system/logs`, `/system/audit`, `/audit/events`.
-- Cloud/Drive: `/cloud`, `/cloud/drive`, `/cloud/drive/files`, `/cloud/drive/folders`, `/cloud/drive/summary`.
-- Mail: `/mail`, `/mail/compose`, `/mail-notifications`.
-- Workflow: `/workflow`, `/workflow/runs`, `/workflow/dry-run`.
-- Reports/Campaigns: `/reports/marketing-funnel`, `/reports/lead-performance`, `/campaigns`.
-- Landing/URL/Analytics/CRM/AI (operación condicionada): `/landing`, `/url/locator`, `/browser/analytics`, `/crm`, `POST /ai/assist`.
-
-Referencia completa de rutas: `routes/web.php`.
-
-## Seguridad y flags
-- Matriz de seguridad operativa (flags/permisos/CSRF/tenant/PII): `docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`.
-- Matriz de defaults seguros de flags controlled: `docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md`.
-- Reglas de consentimiento/privacidad para analytics/tracking/IP/geo: `docs/project/ECOSISTEMA_ANALYTICS_PRIVACY_CONSENT.md`.
-- No subir secretos ni commitear `.env`; usar `.env.example` como plantilla.
-- Configuración por defecto segura: sin SMTP real, sin AWS/S3 real, sin proveedor IA externo.
-- Registro inicial controlado por flag: `CORE_REGISTRATION_ENABLED=false` por defecto.
-- Asignación de permisos de rol alineada al esquema canónico: `core_role_permissions` se reemplaza usando `tenant_id` resuelto del rol (sin `tenant_id` libre desde request).
-
-Referencia: `.env.example`.
-
-## Pruebas / smoke
-Ejecuta:
-```bash
-composer smoke
-# o directamente
-php scripts/smoke-check.php
-```
-
-El smoke valida estructura/carga/sintaxis y controles básicos; no reemplaza pruebas funcionales completas ni activa integraciones externas.
-
-## Verificación opcional de compatibilidad de esquema DB
-`composer smoke` ejecuta además un chequeo opcional **read-only** para detectar desalineaciones críticas entre código y esquema real cuando la DB está disponible:
-
-```bash
-composer schema:check
-# o
-php scripts/schema-compatibility-check.php
-```
-
-Qué valida:
-- Existencia de columnas críticas en `INFORMATION_SCHEMA.COLUMNS` para tablas clave del Core Admin.
-- Mínimos críticos en tablas reales: `core_users`, `core_sessions`, `core_tenants`, `core_roles`, `core_permissions`, `core_role_permissions`, `core_user_roles`, `core_modules`, `core_audit`, `cloud_files`, `cloud_folders`, `mail_messages`, `notifications_queue`, `crm_leads`, `crm_marketing_campaigns`.
-
-Qué **no** valida:
-- Tipos de datos, índices, FKs, triggers ni performance de consultas.
-- No reemplaza migraciones, pruebas funcionales ni auditorías de integridad completas.
-
-Garantías de seguridad:
-- No ejecuta `INSERT`, `UPDATE`, `DELETE`, migraciones, seeds ni DDL.
-- Solo usa consultas de lectura (`INFORMATION_SCHEMA`/`SELECT`).
-- Si la DB no está disponible o no está configurada, emite `WARN` y termina sin fatal para no bloquear smoke normal.

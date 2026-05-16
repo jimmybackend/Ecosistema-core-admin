@@ -1,30 +1,64 @@
 # Flujo operativo del ecosistema
 
-## Visión integrada (flujo ideal)
+## 1) Flujo ideal del producto
 
-El flujo punta-a-punta de producto se mantiene como visión objetivo:
+El recorrido objetivo (punta-a-punta) sigue siendo:
 
-**Campaña → Short link → Click → Landing page → Visita → Formulario → Submission → Lead CRM → Notificación → Workflow → Reporte → IA operativa**
+**Campaña → Short link → Click → Landing → Visita → Formulario → Submission → Lead CRM → Notificación → Workflow → Reporte → IA**
 
-Este recorrido representa la integración esperada entre módulos cuando el ecosistema esté plenamente habilitado en operación productiva.
+Esta es la **visión integrada** del ecosistema cuando todos los módulos estén habilitados en modo productivo con sus controles completos.
 
-## Estado actual del flujo
+## 2) Flujo disponible actualmente por etapas
 
-| Etapa | Módulo relacionado | Estado actual | Qué se puede demostrar | Limitación actual |
-|---|---|---|---|---|
-| Campaña | Campaigns | Parcial | Cockpit, vistas y revisión de campañas | Creación/operación completa depende de flags y controles |
-| Short link | URL Locator | Controlled por flags | Consulta de links, detalle y simulación de redirect | Edición/redirección real sujeta a permisos y flags |
-| Click | Browser Analytics | Read-only | Trazas de eventos y pageviews en dashboards | Sin operación de escritura ni acciones activas desde admin |
-| Landing page | Landing | Parcial | Superficies de páginas y render de experiencias de demo | Publicación completa no abierta por defecto |
-| Visita | Browser Analytics | Read-only | Lectura de navegación y actividad capturada | No habilita acciones automatizadas de ejecución |
-| Formulario | Landing | Parcial | Estructura y flujo de formularios para demo | Operación integral depende de modo y permisos |
-| Submission | CRM / Landing | Dry-run | Simulación de envío y trazabilidad del evento | No siempre escribe en destino final en todos los entornos |
-| Lead CRM | CRM | Parcial | Listado, detalle y seguimiento básico de leads | Lifecycle completo y automatizaciones avanzadas aún parciales |
-| Notificación | Notifications / Mail | Controlled por flags | Plantillas, previsualización y estado de cola | Envío SMTP real desactivado por defecto |
-| Workflow | Workflow | Controlled por flags | Reglas, ejecuciones simuladas y monitoreo de runs | Ejecución productiva completa no activa por defecto |
-| Reporte | Reports | Parcial | Métricas y reportes administrativos visibles | Exportaciones/escritura aún condicionadas por modo |
-| IA operativa | AI Assistant | Dry-run | Asistencia y propuestas no destructivas para operación | Sin automatización autónoma full en producción |
+Hoy el producto combina etapas en distintos niveles de madurez:
 
-> El flujo completo representa la visión integrada del ecosistema. La implementación avanza por módulos seguros: primero lectura, luego simulación, después ejecución controlada por permisos y flags.
+- **Operación parcial**: hay funcionalidad visible y usable, pero no toda la cadena está abierta por defecto.
+- **Read-only**: se observa información, sin ejecutar acciones de escritura u operación activa desde admin.
+- **Dry-run**: se puede simular comportamiento sin impacto operativo final.
+- **Controlled**: la acción existe, pero depende de flags, permisos y contexto operativo.
 
-Para el detalle comercial/técnico por módulo, ver también [Matriz comercial de estado por módulo](./estado_modulos.md).
+## 3) Estado real por tramo
+
+| Tramo | Estado | Explicación clara para demo |
+|---|---|---|
+| Campaña | Parcial | Se puede mostrar cockpit, revisión y seguimiento de campañas; la operación total depende de controles habilitados. |
+| Short link | Controlled | Es demostrable la consulta y trazabilidad del link; redirección/edición real sujeta a flags y permisos. |
+| Click tracking | Read-only | El tracking se presenta desde vistas analíticas de eventos y navegación, sin acciones activas desde admin. |
+| Landing render | Parcial | Se puede enseñar render y experiencia de landing en contexto demo; publicación total no está abierta en todos los casos. |
+| Form submit | Parcial | El flujo de formulario es visible y demostrable; su operación completa depende del modo activo y permisos. |
+| Submission | Dry-run | Hay simulación y trazabilidad del envío; no siempre implica escritura final en todos los entornos. |
+| Lead CRM | Parcial | Existe visualización y seguimiento base de leads; automatizaciones de ciclo completo continúan por etapas. |
+| Notification | Controlled | Se puede mostrar plantilla, cola y estado; envío real permanece condicionado por configuración operativa. |
+| Workflow | Controlled | Reglas y corridas pueden demostrarse en modo controlado/simulado; ejecución productiva total no está abierta por defecto. |
+| Reports | Parcial | Los reportes y métricas administrativas son enseñables; ciertas salidas/acciones siguen condicionadas por modo. |
+| AI assistance | Dry-run | IA funciona como apoyo para resumir, sugerir y asistir; no ejecuta acciones autónomas en operación real. |
+
+## 4) Nota de seguridad operativa
+
+Las acciones con impacto real se habilitan de forma progresiva y controlada. Según el caso, requieren:
+
+- **flags de feature**,
+- **permisos por rol**,
+- y **aprobación humana** antes de ejecutar cambios o envíos en producción.
+
+## 5) Qué se puede mostrar en demo hoy
+
+Para una demo comercial honesta y defendible, hoy se puede enfatizar:
+
+- Visión completa del recorrido de negocio.
+- Evidencia de trazabilidad (campaña, link, click, visita, lead, reporte).
+- Simulación controlada en tramos sensibles (submission, notification, workflow).
+- IA como copiloto operativo (resumen, propuesta y asistencia), no como ejecutor autónomo.
+
+## 6) Qué viene después
+
+Siguiente avance esperado del flujo:
+
+- Apertura gradual de etapas hoy controladas.
+- Mayor continuidad entre eventos y automatizaciones de punta-a-punta.
+- Más capacidades de ejecución con controles de seguridad y auditoría.
+- Evolución de IA desde asistencia a recomendaciones más contextualizadas, manteniendo revisión humana.
+
+---
+
+Para alinear mensajes de presentación, alcances y límites de operación, ver también [FAQ](./faq.md).

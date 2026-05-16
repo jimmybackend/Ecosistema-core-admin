@@ -2770,6 +2770,17 @@ foreach (['app/Core/Security/EcosistemaRateLimitRepository.php','app/Core/Securi
 }
 if ($routesContent !== false && str_contains((string) $routesContent, 'POST /security/rate-limit/enforce')) { ok('Ruta security rate-limit enforcement detectada: POST /security/rate-limit/enforce'); }
 else { fail('Falta ruta security rate-limit enforcement: POST /security/rate-limit/enforce', $criticalFailures); }
+
+if ($routesContent !== false && preg_match("/'POST \/security\/rate-limit\/dry-run'.{0,260}ensureValidCsrfToken/s", (string) $routesContent) === 1) {
+    ok('Ruta POST /security/rate-limit/dry-run mantiene ensureValidCsrfToken.');
+} else {
+    fail('Ruta POST /security/rate-limit/dry-run no evidencia ensureValidCsrfToken.', $criticalFailures);
+}
+if ($routesContent !== false && preg_match("/'POST \/security\/rate-limit\/enforce'.{0,260}ensureValidCsrfToken/s", (string) $routesContent) === 1) {
+    ok('Ruta POST /security/rate-limit/enforce mantiene ensureValidCsrfToken.');
+} else {
+    fail('Ruta POST /security/rate-limit/enforce no evidencia ensureValidCsrfToken.', $criticalFailures);
+}
 if ($envContent !== false && str_contains((string) $envContent, 'ECOSISTEMA_RATE_LIMIT_ENABLED=false') && str_contains((string) $envContent, 'ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS=false')) { ok('Flags rate limit enforcement en .env.example presentes y en false.'); }
 else { fail('Faltan flags ECOSISTEMA_RATE_LIMIT_ENABLED=false o ECOSISTEMA_RATE_LIMIT_WRITE_BLOCKS=false.', $criticalFailures); }
 $rateLimitControlledService = is_file($root . '/app/Core/Security/EcosistemaRateLimitService.php') ? (string) file_get_contents($root . '/app/Core/Security/EcosistemaRateLimitService.php') : '';

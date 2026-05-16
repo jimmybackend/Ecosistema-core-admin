@@ -18,6 +18,7 @@
     "cron:health": "php scripts/cron-runner.php --run=health-checks",
     "cron:sessions": "php scripts/cron-runner.php --run=session-cleanup",
     "backup:check": "php scripts/backup-check.php",
-    "ops:monitor": "php scripts/ops-monitor-check.php"
+    "ops:monitor": "php scripts/ops-monitor-check.php",
+    "schema:check": "php scripts/schema-compatibility-check.php"
   }
 }

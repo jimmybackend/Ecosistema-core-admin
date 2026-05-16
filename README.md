@@ -104,3 +104,29 @@ El smoke valida estructura/carga/sintaxis y controles básicos; no reemplaza pru
 - Este repositorio no garantiza operación productiva de Mail, Cloud/S3, IA, Workflow, Campaigns, Reports, Landing sin habilitación explícita de flags y hardening adicional.
 - Hay capacidades administrativas útiles hoy, pero parte relevante del ecosistema está en modo controlado (read-only/dry-run/flags).
 - La narrativa operativa detallada vive en documentación de `docs/project/*`; este README se mantiene breve para onboarding rápido.
+
+## Verificación opcional de compatibilidad de esquema DB
+Chequeo opcional para detectar desalineaciones críticas entre código y esquema (solo lectura):
+
+```bash
+composer schema:check
+# o
+php scripts/schema-compatibility-check.php
+```
+
+Qué valida:
+- Existencia de columnas críticas en `INFORMATION_SCHEMA.COLUMNS` para tablas clave del Core Admin.
+- Mínimos críticos: `core_role_permissions.(tenant_id, role_id, permission_id)`, `core_users.tenant_id`, `core_sessions.session_token_hash`, `core_audit.action`, `cloud_files.tenant_id`, `mail_messages.tenant_id`, `crm_marketing_campaigns.tenant_id`, `reports_exports.tenant_id`.
+
+Qué **no** valida:
+- Tipos de datos, índices, FKs, triggers ni performance de consultas.
+- No reemplaza migraciones, pruebas funcionales ni auditorías de integridad completas.
+
+Garantías de seguridad:
+- No ejecuta `INSERT`, `UPDATE`, `DELETE` ni DDL.
+- Si la DB no está disponible o no está configurada, emite `WARN` y termina sin fatal para no bloquear smoke normal.
+
+Para integrarlo en smoke de forma opt-in:
+```bash
+SMOKE_SCHEMA_COMPAT_CHECK=1 composer smoke
+```

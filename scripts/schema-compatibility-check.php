@@ -59,6 +59,13 @@ if ($dbName === '') {
     exit(2);
 }
 
+$canonicalDbName = 'adbbmis1_eco';
+if ($dbName === $canonicalDbName) {
+    ok("DB canónica configurada: {$canonicalDbName}");
+} else {
+    warn("DB configurada ({$dbName}) distinta a la canónica esperada ({$canonicalDbName}).", $warnings);
+}
+
 $criticalColumns = [
     'core_users' => ['id', 'tenant_id', 'email', 'username', 'password_hash', 'status'],
     'core_sessions' => ['id', 'tenant_id', 'user_id', 'session_token_hash', 'expires_at'],
@@ -75,6 +82,11 @@ $criticalColumns = [
     'notifications_queue' => ['id', 'tenant_id', 'user_id', 'channel_id', 'status', 'created_at'],
     'crm_leads' => ['id', 'tenant_id', 'email', 'status', 'created_at'],
     'crm_marketing_campaigns' => ['id', 'tenant_id', 'name', 'code', 'status'],
+    'workflow_rules' => ['id', 'tenant_id', 'name', 'trigger_module', 'trigger_event', 'is_active'],
+    'workflow_actions' => ['id', 'tenant_id', 'rule_id', 'action_type', 'is_active'],
+    'workflow_runs' => ['id', 'tenant_id', 'rule_id', 'status', 'started_at', 'created_at'],
+    'workflow_run_logs' => ['id', 'tenant_id', 'run_id', 'level', 'message', 'created_at'],
+    'os_ai_proposals' => ['id', 'tenant_id', 'module_code', 'entity_table', 'entity_id', 'status', 'created_at'],
 ];
 
 $statement = $pdo->prepare(

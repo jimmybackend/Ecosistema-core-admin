@@ -65,9 +65,15 @@ final class AuthSession
 
     public static function getAuth(): array
     {
+        $authUserId = $_SESSION['auth_user_id'] ?? null;
+        $authTenantId = $_SESSION['auth_tenant_id'] ?? null;
+
         return [
-            'auth_user_id' => $_SESSION['auth_user_id'] ?? null,
-            'auth_tenant_id' => $_SESSION['auth_tenant_id'] ?? null,
+            'auth_user_id' => $authUserId,
+            'auth_tenant_id' => $authTenantId,
+            // Backward-compatible aliases used by legacy routes/services.
+            'user_id' => $authUserId,
+            'tenant_id' => $authTenantId,
             'auth_email' => $_SESSION['auth_email'] ?? null,
             'auth_display_name' => $_SESSION['auth_display_name'] ?? null,
             'auth_core_session_id' => $_SESSION['auth_core_session_id'] ?? null,

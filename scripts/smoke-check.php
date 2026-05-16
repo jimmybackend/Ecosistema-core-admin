@@ -2977,6 +2977,26 @@ foreach ($dangerousUseMentions as $relativePath) {
     } else {
         ok('Sin mención peligrosa `USE ecosistema;` en: ' . $relativePath);
     }
+
+    if (preg_match('/adbbmis1_eco/', $content) === 1) {
+        ok('Artefacto documental referencia nombre canónico `adbbmis1_eco`: ' . $relativePath);
+    } else {
+        fail('Artefacto documental no referencia `adbbmis1_eco`: ' . $relativePath, $criticalFailures);
+    }
+}
+
+$canonicalDocPath = $root . '/docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md';
+if (is_file($canonicalDocPath)) {
+    $canonicalDocContent = (string) file_get_contents($canonicalDocPath);
+    foreach (['## Nombre canónico de base de datos', 'conceptual/legacy', 'Regla de oro'] as $needle) {
+        if (str_contains($canonicalDocContent, $needle)) {
+            ok('CORE_ADMIN_DATABASE_CANONICAL_NAME.md contiene: ' . $needle);
+        } else {
+            fail('CORE_ADMIN_DATABASE_CANONICAL_NAME.md no contiene: ' . $needle, $criticalFailures);
+        }
+    }
+} else {
+    fail('No existe docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md para validar nombre canónico de DB.', $criticalFailures);
 }
 
 

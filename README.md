@@ -13,6 +13,7 @@ Documentación complementaria:
 - Guía de demo/showcase honesta: `docs/project/CORE_ADMIN_SHOWCASE_DEMO_GUIDE.md`.
 - Guion comercial/técnico de demo honesto (10–15 min): `docs/demo_guion.md`.
 - Checklist de preparación para demo controlada: `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`.
+- Checklist final de presentación pública controlada: `docs/checklist_presentacion_publica.md`.
 - Notas de release para showcase controlado: `docs/project/CORE_ADMIN_SHOWCASE_RELEASE_NOTES.md`.
 - Checklist de cierre de riesgos técnicos H: `docs/project/ECOSISTEMA_RISK_H_CLOSURE.md`.
 - Contrato de descarga controlada de Drive: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.

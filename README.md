@@ -8,6 +8,9 @@ Aplicación administrativa interna del ecosistema. Este README resume **estado o
 - Matriz canónica de estado por módulo: `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`.
 - Guía de demo/showcase honesta: `docs/project/CORE_ADMIN_SHOWCASE_DEMO_GUIDE.md`.
 - Checklist de preparación para demo controlada: `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`.
+- Notas de release para showcase controlado: `docs/project/CORE_ADMIN_SHOWCASE_RELEASE_NOTES.md`.
+- Contrato de descarga controlada de Drive: `docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`.
+- Mapa técnico ruta-service-tabla: `docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`.
 
 ## Instalación local
 ```bash

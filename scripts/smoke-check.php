@@ -157,6 +157,7 @@ $requiredFiles = [
     'docs/ops/MONITORING_OPERATIONS_PLAN.md',
     'docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md',
     'docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md',
+    'docs/project/ECOSISTEMA_RISK_H_CLOSURE.md',
     'docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md',
     'docs/project/ECOSISTEMA_UI_SCHEMA_ALIASES.md',
     'docs/project/S3_DRIVE_TECHNICAL_INVENTORY.md',
@@ -2981,6 +2982,36 @@ if (checkFile($root, $workersStatePath, $criticalFailures)) {
             fail('WORKERS_CRON_CURRENT_STATE no contiene frase clave: ' . $requiredPhrase, $criticalFailures);
         }
     }
+}
+
+
+// PR #174 risk-H closure checklist doc checks
+$riskClosurePath = 'docs/project/ECOSISTEMA_RISK_H_CLOSURE.md';
+if (checkFile($root, $riskClosurePath, $criticalFailures)) {
+    $riskClosureContent = (string) file_get_contents($root . '/' . $riskClosurePath);
+    $riskNeedles = [
+        'Fallo runtime en permisos por `tenant_id` faltante',
+        'Smoke-check sin compatibilidad real contra DB',
+        'Nombre de base inconsistente',
+        'Flags controlled con defaults productivos',
+        'Workers/cron no productivos completos',
+        'Analytics/IP/geolocalización/consentimiento',
+        'Aliases UI sobre columnas reales',
+    ];
+
+    foreach ($riskNeedles as $riskNeedle) {
+        if (str_contains($riskClosureContent, $riskNeedle)) {
+            ok('Checklist risk H contiene riesgo: ' . $riskNeedle);
+        } else {
+            fail('Checklist risk H no contiene riesgo: ' . $riskNeedle, $criticalFailures);
+        }
+    }
+}
+
+if ($readmeContent !== false && str_contains((string) $readmeContent, 'ECOSISTEMA_RISK_H_CLOSURE.md')) {
+    ok('README.md referencia checklist de cierre de riesgos H.');
+} else {
+    fail('README.md no referencia docs/project/ECOSISTEMA_RISK_H_CLOSURE.md', $criticalFailures);
 }
 
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));

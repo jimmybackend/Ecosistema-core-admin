@@ -1,4 +1,30 @@
-<?php $dryRun = $contentData['dryRun'] ?? null; $id = (int)($contentData['id'] ?? 0); $errorMessage = $contentData['errorMessage'] ?? null; ?>
+<?php
+$dryRun = $contentData['dryRun'] ?? null;
+$id = (int)($contentData['id'] ?? 0);
+$errorMessage = $contentData['errorMessage'] ?? null;
+
+$maskPii = static function (string $field, mixed $value): string {
+    $raw = trim((string) $value);
+    if ($raw == '') { return '-'; }
+    if ($field === 'email') {
+        $parts = explode('@', $raw, 2);
+        if (count($parts) !== 2) { return '***'; }
+        $local = $parts[0]; $domain = $parts[1];
+        $localMask = strlen($local) <= 2 ? substr($local, 0, 1) . '*' : substr($local, 0, 2) . str_repeat('*', max(1, strlen($local)-2));
+        $domainParts = explode('.', $domain);
+        $domainName = $domainParts[0] ?? '';
+        $tld = $domainParts[1] ?? '';
+        $domainMask = ($domainName === '') ? '***' : substr($domainName, 0, 1) . '***';
+        return $domainMask . ($tld !== '' ? '.' . $tld : '') . ' (' . $localMask . '@...)';
+    }
+    if ($field === 'phone') {
+        $digits = preg_replace('/\D+/', '', $raw) ?? '';
+        if ($digits === '') { return '***'; }
+        return str_repeat('*', max(0, strlen($digits)-2)) . substr($digits, -2);
+    }
+    return mb_substr($raw, 0, 3) . '***';
+};
+?>
 <section class="eco-card">
     <h1>CRM Submission to Lead Dry-Run</h1>
     <p><strong>Modo:</strong> simulación segura (sin INSERT/UPDATE).</p>
@@ -23,7 +49,7 @@
         <?php $mf = (array)($dryRun['mapped_fields'] ?? []); ?>
         <table class="eco-table"><tbody>
             <?php foreach (['contact_name','email','phone','company_name','interest','message'] as $field): ?>
-                <tr><th><?= htmlspecialchars($field) ?></th><td><?= htmlspecialchars((string)($mf[$field] ?? '-')) ?></td></tr>
+                <tr><th><?= htmlspecialchars($field) ?></th><td><?= htmlspecialchars($maskPii($field, $mf[$field] ?? '')) ?></td></tr>
             <?php endforeach; ?>
         </tbody></table>
 

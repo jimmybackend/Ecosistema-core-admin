@@ -1,5 +1,23 @@
 <?php
 $usage = (array) ($contentData['usage'] ?? []);
+$maskText = static function (mixed $value, int $visible = 2): string {
+  $raw = trim((string) $value);
+  if ($raw === '') {
+    return '—';
+  }
+  return mb_substr($raw, 0, $visible) . '***';
+};
+$maskEmail = static function (mixed $value) use ($maskText): string {
+  $raw = trim((string) $value);
+  if ($raw === '') {
+    return '—';
+  }
+  $parts = explode('@', $raw, 2);
+  if (count($parts) !== 2) {
+    return $maskText($raw, 1);
+  }
+  return $maskText($parts[0], 2) . '@' . $maskText($parts[1], 1);
+};
 ?>
 <div class="eco-card">
   <h1>Uso de almacenamiento Drive</h1>
@@ -23,8 +41,8 @@ $usage = (array) ($contentData['usage'] ?? []);
   </tbody></table>
 
   <h2>Por usuario</h2>
-  <table class="eco-table"><thead><tr><th>user_id</th><th>email / display_name</th><th>file_count</th><th>total</th></tr></thead><tbody>
-  <?php foreach (($usage['by_user'] ?? []) as $row): ?><tr><td><?= e((string)($row['user_id'] ?? '')) ?></td><td><?= e(trim((string)($row['email'] ?? ''))) ?> <?= e(trim((string)($row['display_name'] ?? ''))) ?></td><td><?= e((string)($row['file_count'] ?? 0)) ?></td><td><?= e((string)($row['total_human'] ?? '0 B')) ?></td></tr><?php endforeach; ?>
+  <table class="eco-table"><thead><tr><th>user_id</th><th>email_preview / display_name_preview</th><th>file_count</th><th>total</th></tr></thead><tbody>
+  <?php foreach (($usage['by_user'] ?? []) as $row): ?><tr><td><?= e((string)($row['user_id'] ?? '')) ?></td><td><?= e($maskEmail($row['email'] ?? '')) ?> · <?= e($maskText($row['display_name'] ?? '', 2)) ?></td><td><?= e((string)($row['file_count'] ?? 0)) ?></td><td><?= e((string)($row['total_human'] ?? '0 B')) ?></td></tr><?php endforeach; ?>
   </tbody></table>
 
   <h2>Por extensión</h2>

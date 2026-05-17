@@ -68,6 +68,9 @@ final readonly class EcosistemaDriveS3UploadService
         $shape = $this->s3KeyValidator->validateShape($s3Key);
         if (($shape['key_shape_status'] ?? 'invalid') !== 'valid') { return $result + ['blocked_reason' => 'invalid_generated_s3_key']; }
 
+        $bucketId = $this->resolveBucketId($tenantId, $userId);
+        if ($bucketId <= 0) { return $result + ['blocked_reason' => 'bucket_not_resolved']; }
+
         try {
             /** @var \Aws\S3\S3Client $client */
             $client = new \Aws\S3\S3Client([
@@ -89,7 +92,7 @@ final readonly class EcosistemaDriveS3UploadService
             $stmt = $this->pdo->prepare('INSERT INTO cloud_files (tenant_id, user_id, bucket_id, original_name, stored_name, s3_key, mime_type, extension, size_bytes, status, access_type, encrypted, found_in_s3, origin_module, uploaded_by_user_id, uploaded_at, updated_at) VALUES (:tenant_id,:user_id,:bucket_id,:original_name,:stored_name,:s3_key,:mime_type,:extension,:size_bytes,:status,:access_type,:encrypted,:found_in_s3,:origin_module,:uploaded_by_user_id,NOW(),NOW())');
             $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
             $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
-            $stmt->bindValue(':bucket_id', 1, PDO::PARAM_INT);
+            $stmt->bindValue(':bucket_id', $bucketId, PDO::PARAM_INT);
             $stmt->bindValue(':original_name', $safeOriginalName);
             $stmt->bindValue(':stored_name', $storedName);
             $stmt->bindValue(':s3_key', $s3Key);
@@ -97,7 +100,7 @@ final readonly class EcosistemaDriveS3UploadService
             $stmt->bindValue(':extension', $extension);
             $stmt->bindValue(':size_bytes', $size, PDO::PARAM_INT);
             $stmt->bindValue(':status', 'active');
-            $stmt->bindValue(':access_type', 'private');
+            $stmt->bindValue(':access_type', 'normal');
             $stmt->bindValue(':encrypted', 0, PDO::PARAM_INT);
             $stmt->bindValue(':found_in_s3', 1, PDO::PARAM_INT);
             $stmt->bindValue(':origin_module', 'drive_controlled_upload');
@@ -114,6 +117,21 @@ final readonly class EcosistemaDriveS3UploadService
         }
     }
 
+
+    private function resolveBucketId(int $tenantId, int $userId): int
+    {
+        $rootStmt = $this->pdo->prepare('SELECT bucket_id FROM cloud_user_roots WHERE tenant_id = :tenant_id AND user_id = :user_id AND status = :status ORDER BY id DESC LIMIT 1');
+        $rootStmt->execute([':tenant_id' => $tenantId, ':user_id' => $userId, ':status' => 'active']);
+        $rootBucketId = (int) ($rootStmt->fetchColumn() ?: 0);
+        if ($rootBucketId > 0) {
+            return $rootBucketId;
+        }
+
+        $bucketStmt = $this->pdo->prepare('SELECT id FROM cloud_buckets WHERE tenant_id = :tenant_id AND is_default = 1 ORDER BY id DESC LIMIT 1');
+        $bucketStmt->execute([':tenant_id' => $tenantId]);
+
+        return (int) ($bucketStmt->fetchColumn() ?: 0);
+    }
     /** @return array<int,string> */
     private function allowedExtensions(): array
     {

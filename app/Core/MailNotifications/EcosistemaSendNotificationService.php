@@ -67,7 +67,7 @@ final readonly class EcosistemaSendNotificationService
                 ':title' => $subject,
                 ':body' => $bodyPreview,
                 ':payload_json' => $payloadJson,
-                ':status' => $smtpWrite ? 'queued' : 'blocked',
+                ':status' => $smtpWrite ? 'pending' : 'canceled',
                 ':scheduled_at' => date('Y-m-d H:i:s'),
             ]);
 
@@ -75,16 +75,16 @@ final readonly class EcosistemaSendNotificationService
                 $mailMessageId = $this->repository->createMailMessage([
                     ':tenant_id' => $tenantId,
                     ':mailbox_id' => $mailboxId,
-                    ':folder_id' => 0,
+                    ':folder_id' => null,
                     ':user_id' => $authUserId,
                     ':source_module' => 'mail_notifications',
                     ':source_table' => 'notifications_queue',
                     ':source_id' => $queueId,
                     ':message_uuid' => $this->uuidv4(),
                     ':direction' => 'outbound',
-                    ':mail_scope' => 'transactional',
+                    ':mail_scope' => 'system',
                     ':from_address' => (string) ($smtp['username'] ?? ''),
-                    ':to_addresses' => $this->safePreview($toAddress, 255),
+                    ':to_addresses' => json_encode([$toAddress], JSON_UNESCAPED_UNICODE),
                     ':subject' => $subject,
                     ':body_text' => $bodyPreview,
                     ':body_html' => '',

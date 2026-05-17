@@ -1,31 +1,20 @@
-# Flujo operativo para demo pública
+# Flujo operativo (anexo técnico de Core Admin)
 
-## Flujo objetivo (visión)
+La narrativa de demo/presentación del flujo end-to-end es canónica en:
 
-**Campaña → Short link → Click → Landing → Visita → Formulario → Submission → Lead CRM → Notificación → Workflow → Reporte → IA**
+- `jimmybackend/Ecosistema-presentacion`
 
-## Flujo demostrable actual
+Este documento conserva únicamente el alcance operativo interno.
 
-- El flujo se puede contar de punta a punta como visión.
-- En ejecución real, distintos tramos están en `read-only`, `dry-run` o `controlled`.
-- Las acciones sensibles requieren flags, permisos y aprobación humana.
+## Alcance operativo en Core Admin
 
-## Tabla por tramo
+- El flujo funcional está segmentado por modo (`read-only`, `dry-run`, `controlled`, productivo por entorno).
+- Las acciones sensibles requieren permisos, flags y trazabilidad.
+- La habilitación productiva se realiza por etapas y con controles de riesgo.
 
-| Módulo | Qué se puede mostrar | Estado | Qué no se debe prometer | Próximo paso |
-|---|---|---|---|---|
-| Campaigns | Cockpit y seguimiento | Parcial | Gestión total sin controles | Activar create/edit por fases |
-| URL Locator | Consulta y simulación de redirect | Read-only + dry-run + controlled | Redirect full abierto por defecto | Endurecer flujo con auditoría |
-| Landing | Render y formularios en demo | Parcial/controlled | Publicación y submit productivos totales | Activación gradual por entorno |
-| CRM | Lead list/detail y seguimiento base | Parcial/controlled | Lifecycle completo automatizado | Completar reglas y QA |
-| Notifications | Preview/cola y trazabilidad | Controlled + dry-run | Envío real siempre activo | Guardrails por entorno |
-| Workflow | Definiciones y ejecución simulada | Dry-run + controlled | Ejecución full productiva | Apertura progresiva con controles |
-| Reports | Métricas y consultas | Parcial/read-only | Export total sin restricciones | Habilitar salidas controladas |
-| AI assistance | Resumen/propuesta con operador | Dry-run + controlled | IA actuando sola | Más casos con revisión humana |
+## Referencias técnicas
 
-## Mensajes obligatorios durante la demo
-
-- No se exponen datos reales.
-- No se activan flags productivas por defecto.
-- No se presenta como SaaS completo.
-- La IA está gobernada por humanos.
+- `docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md`
+- `docs/project/ECOSISTEMA_FEATURE_FLAGS_AUDIT.md`
+- `docs/project/ECOSISTEMA_ROUTE_SERVICE_VIEW_MATRIX.md`
+- `docs/project/PRESENTATION_REPOSITORY_POINTERS.md`

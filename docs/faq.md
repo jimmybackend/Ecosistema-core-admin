@@ -1,16 +1,18 @@
-# FAQ
+# FAQ interna de alcance (Core Admin)
 
-## ¿Todos los módulos del ecosistema ya están terminados?
-No. Algunos módulos están disponibles, otros en estado parcial y otros en roadmap. Revisa la matriz oficial: `docs/estado_modulos.md`.
+## ¿Dónde vive la FAQ pública/comercial?
+En `jimmybackend/Ecosistema-presentacion` (fuente canónica para público externo).
 
-## ¿Por qué hay módulos visibles pero con capacidades limitadas?
-Porque se prioriza una adopción segura por etapas: varios flujos operan en modo read-only, dry-run o controlled hasta completar hardening funcional y operativo.
+## ¿Qué conserva esta FAQ en Core Admin?
+Solo aclaraciones de alcance técnico-operativo del panel admin.
 
-## ¿Ya está listo para clientes?
-Está listo para demos y validación operativa controlada. La salida comercial amplia depende del estado de cada módulo (operativo, read-only, dry-run o controlled).
+## ¿Core Admin representa un SaaS comercial completo?
+No. Core Admin documenta y opera capacidades reales por modo (read-only, dry-run, controlled y productivo según módulo/entorno).
 
-## ¿Ya cobra, ya envía correos y ya conecta S3?
-No debe comunicarse como capacidad productiva completa por defecto. Billing sigue en roadmap/documentación y correo/S3 real dependen de flags y configuración segura por entorno.
+## ¿Dónde revisar estado real y no narrativa comercial?
+- `docs/estado_real.md`
+- `docs/project/CORE_ADMIN_MODULE_STATUS.md`
+- `docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`
 
-## ¿Ya usa IA real?
-Existen superficies y flujos de IA, pero la operación externa real depende de habilitación por flags, proveedor y controles del ambiente.
+## ¿Qué pasa si falta contenido en presentación?
+No borrar material técnico útil. Marcar el caso como `requiere_revision_manual` y resolver canonicidad antes de retirar documentación local.

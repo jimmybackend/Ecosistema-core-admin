@@ -1,25 +1,13 @@
-# Assets — reglas y plan de uso
+# Assets en Core Admin (alcance técnico)
 
-Esta carpeta almacena recursos visuales para demo y presentación pública controlada.
+Los assets de presentación/comunicación pública son canónicos en:
 
-## Reglas obligatorias
+- `jimmybackend/Ecosistema-presentacion`
 
-- Usar **solo imágenes públicas aprobadas** para comunicación externa.
-- Prohibido incluir credenciales, tokens, llaves o secretos en cualquier asset.
-- Prohibido subir capturas con PII (datos personales identificables).
-- Prohibido incluir URLs privadas, endpoints internos o paneles restringidos.
-- Prohibido incluir datos de clientes (nombres, correos, teléfonos, IDs, contratos, etc.).
-- No usar logos de terceros sin autorización documentada.
-- No subir exportaciones PDF finales en esta fase.
+En este repositorio se conservan únicamente assets técnicos mínimos que apoyan:
 
-## Estado actual
+- documentación operativa,
+- diagramas de arquitectura/flujo real,
+- mantenimiento interno.
 
-- Se habilita estructura base de diagramas en `assets/diagrams/`.
-- Los diagramas fuente viven en `docs/diagramas.md` y opcionalmente en `.mmd`.
-- Cualquier imagen futura debe pasar revisión de privacidad antes de publicarse.
-
-## Próximos pasos
-
-1. Convertir diagramas base a assets visuales aprobados (SVG/PNG) sin datos reales.
-2. Preparar versión para demo comercial y versión técnica interna.
-3. Definir checklist de revisión legal/compliance para publicación externa.
+Si aparece material principalmente comercial en `assets/`, tratarlo como `requiere_revision_manual` antes de mantenerlo en Core Admin.

@@ -1,17 +1,11 @@
-# Contacto oficial
+# Contacto público — referencia canónica
 
-> **Aviso de publicación pública**
->
-> Los datos de contacto publicados en este repositorio deben corresponder únicamente a canales oficiales aprobados para atención pública.
+La información pública/comercial de contacto se administra de forma canónica en:
 
-## Canales oficiales públicos
+- `jimmybackend/Ecosistema-presentacion`
 
-- Correo oficial: `contacto@ecosistema.local` *(canal oficial público)*
-- Teléfono / WhatsApp: disponible bajo solicitud por correo oficial.
+Este repositorio (`Ecosistema-core-admin`) evita centralizar contenido de contacto público para reducir drift con el material de presentación.
 
-## Alcance y control
+Si se requiere revisar criterios de publicación de datos de contacto, consultar:
 
-- Este documento no debe incluir teléfonos personales, correos privados ni direcciones físicas privadas.
-- Cualquier cambio a canales de contacto debe seguir la política de contacto público.
-
-Política: [`docs/politica_contacto_publico.md`](docs/politica_contacto_publico.md).
+- `docs/politica_contacto_publico.md` (`requiere_revision_manual` de ownership/ubicación definitiva).

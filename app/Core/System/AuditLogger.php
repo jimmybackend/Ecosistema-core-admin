@@ -16,17 +16,18 @@ final readonly class AuditLogger
     {
         try {
             $stmt = $this->pdo->prepare(
-                'INSERT INTO core_audit (tenant_id, user_id, entity_type, entity_id, action, before_data, after_data, ip_address, user_agent)
-                 VALUES (:tenant_id, :user_id, :entity_type, :entity_id, :action, :before_data, :after_data, :ip_address, :user_agent)'
+                'INSERT INTO core_audit (tenant_id, user_id, module_code, action, entity_table, entity_id, old_values, new_values, ip_address, user_agent)
+                 VALUES (:tenant_id, :user_id, :module_code, :action, :entity_table, :entity_id, :old_values, :new_values, :ip_address, :user_agent)'
             );
             $stmt->execute([
                 ':tenant_id' => $data['tenant_id'] ?? null,
                 ':user_id' => $data['user_id'] ?? null,
-                ':entity_type' => $data['entity_type'] ?? null,
+                ':module_code' => $data['module_code'] ?? null,
+                ':entity_table' => $data['entity_table'] ?? ($data['entity_type'] ?? null),
                 ':entity_id' => $data['entity_id'] ?? null,
                 ':action' => $data['action'] ?? null,
-                ':before_data' => $this->encode($data['old_values'] ?? null),
-                ':after_data' => $this->encode($data['new_values'] ?? null),
+                ':old_values' => $this->encode($data['old_values'] ?? null),
+                ':new_values' => $this->encode($data['new_values'] ?? null),
                 ':ip_address' => $_SERVER['REMOTE_ADDR'] ?? null,
                 ':user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null,
             ]);

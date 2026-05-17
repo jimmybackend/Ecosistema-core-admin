@@ -20,8 +20,8 @@ Objetivo: asegurar que las capacidades **controlled** permanezcan desactivadas p
 | `ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS` | proveedor externo | `false` | `false` | `config/ecosistema_drive.php` | Seguro |
 | `ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECTS` | redirección pública | `false` | `false` | `config/url_locator.php` | Seguro |
 | `ECOSISTEMA_URL_LOCATOR_TRACKING_ENABLED` | tracking/analytics | `false` | `false` | `config/url_locator.php` | Seguro |
-| `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED` | redirección pública | `false` | `false` | `config/app.php` | Seguro |
-| `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED` | escritura DB | `false` | `false` | `config/app.php` | Seguro |
+| `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED` | redirección pública | `false` | `false` | `routes/web.php` (lectura directa de env) | Seguro |
+| `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED` | escritura DB | `false` | `false` | `routes/web.php` (lectura directa de env) | Seguro |
 | `ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE` | tracking/analytics | `false` | `false` | `config/app.php` | Seguro |
 | `ECOSISTEMA_AI_PROVIDER_ENABLED` | IA/proveedor externo | `false` | `false` | `config/app.php` | Seguro |
 | `ECOSISTEMA_AI_WRITE_PROPOSALS` | IA/proveedor externo | `false` | `false` | `config/app.php` | Seguro |

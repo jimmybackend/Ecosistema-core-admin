@@ -84,6 +84,28 @@ Convenciones de estado usadas en Core Admin:
 - Inventario de defaults seguros: [`docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md`](docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md)
 - Matriz técnica completa de flags y riesgos: [`docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`](docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md)
 
+### Flags críticas apagadas por defecto
+
+Estas flags deben permanecer en `false` por defecto en `.env.example` y en cualquier bootstrap de entorno hasta que exista una habilitación explícita con hardening:
+
+- `MAIL_SEND_ENABLED`
+- `MAIL_ALLOW_TEST_SEND`
+- `CLOUD_S3_ENABLED`
+- `CLOUD_ALLOW_UPLOADS`
+- `CLOUD_ALLOW_DOWNLOADS`
+- `ECOSISTEMA_DRIVE_AWS_ENABLED`
+- `ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS`
+- `ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS`
+- `ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECTS`
+- `ECOSISTEMA_URL_LOCATOR_TRACKING_ENABLED`
+- `ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED`
+- `ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED`
+- `ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE`
+- `ECOSISTEMA_AI_PROVIDER_ENABLED`
+- `ECOSISTEMA_AI_WRITE_PROPOSALS`
+- `ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED`
+- `ECOSISTEMA_REPORT_EXPORT_WRITE`
+
 ## Deploy / VM
 
 - Runbook principal de despliegue en VM: [`docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`](docs/deploy/CORE_ADMIN_VM_RUNBOOK.md)

@@ -3074,5 +3074,35 @@ if ($readmeContent !== false && str_contains((string) $readmeContent, 'ECOSISTEM
     fail('README.md no referencia docs/project/ECOSISTEMA_RISK_H_CLOSURE.md', $criticalFailures);
 }
 
+// PR #215 critical flags consistency checks (README/.env.example/config docs)
+$criticalFlagsFromReadme = [
+    'MAIL_SEND_ENABLED=false',
+    'MAIL_ALLOW_TEST_SEND=false',
+    'CLOUD_S3_ENABLED=false',
+    'CLOUD_ALLOW_UPLOADS=false',
+    'CLOUD_ALLOW_DOWNLOADS=false',
+    'ECOSISTEMA_DRIVE_AWS_ENABLED=false',
+    'ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS=false',
+    'ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS=false',
+    'ECOSISTEMA_URL_LOCATOR_PUBLIC_REDIRECTS=false',
+    'ECOSISTEMA_URL_LOCATOR_TRACKING_ENABLED=false',
+    'ECOSISTEMA_LANDING_PUBLIC_RENDER_ENABLED=false',
+    'ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED=false',
+    'ECOSISTEMA_BROWSER_ANALYTICS_COLLECTOR_WRITE=false',
+    'ECOSISTEMA_AI_PROVIDER_ENABLED=false',
+    'ECOSISTEMA_AI_WRITE_PROPOSALS=false',
+    'ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED=false',
+    'ECOSISTEMA_REPORT_EXPORT_WRITE=false',
+];
+
+$envExampleContent = is_file($root . '/.env.example') ? (string) file_get_contents($root . '/.env.example') : '';
+foreach ($criticalFlagsFromReadme as $flagLine) {
+    if (str_contains($envExampleContent, $flagLine)) {
+        ok('Flag crítica con default seguro en .env.example: ' . $flagLine);
+    } else {
+        fail('Flag crítica ausente o default inseguro en .env.example: ' . $flagLine, $criticalFailures);
+    }
+}
+
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
 exit($criticalFailures > 0 ? 1 : 0);

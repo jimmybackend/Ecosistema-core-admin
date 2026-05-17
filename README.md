@@ -14,6 +14,7 @@ Punteros y auditoría de separación core/presentación:
 
 - [`docs/project/PRESENTATION_REPOSITORY_POINTERS.md`](docs/project/PRESENTATION_REPOSITORY_POINTERS.md)
 - [`docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md`](docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md)
+- [`docs/project/REPAIR_PRESENTATION_DOCS_FINAL_REPORT.md`](docs/project/REPAIR_PRESENTATION_DOCS_FINAL_REPORT.md)
 
 Guardrails documentales de contribución:
 

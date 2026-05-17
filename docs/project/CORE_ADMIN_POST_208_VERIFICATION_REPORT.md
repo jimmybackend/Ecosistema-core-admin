@@ -126,6 +126,7 @@ Resultado esperado de lectura:
 Referencia operativa:
 - `docs/project/CORE_ADMIN_LOCAL_VERIFICATION_RUNBOOK.md`
 - `docs/project/CORE_ADMIN_TECHNICAL_BACKLOG.md`
+- `docs/project/CORE_ADMIN_DEMO_GO_NO_GO.md` (cierre final Go/No-Go demo privada, PR #224)
 - `scripts/smoke-check.php`
 
 ---

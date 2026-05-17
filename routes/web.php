@@ -487,7 +487,8 @@ return [
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->createRole($_POST); if($message==='Rol creado correctamente.'){ auditLog($pdo,['action'=>'role.created','entity_type'=>'core_roles','tenant_id'=>(int)($_POST['tenant_id']??0),'new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>'derivado (sin columna persistida)']]);}  } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        $auth = AuthSession::getAuth(); $sessionTenantId = (int) ($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0); $_POST['tenant_id'] = $sessionTenantId;
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $message = $service->createRole($_POST); if($message==='Rol creado correctamente.'){ auditLog($pdo,['action'=>'role.created','entity_type'=>'core_roles','tenant_id'=>$sessionTenantId,'new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>'derivado (sin columna persistida)']]);}  } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
         header('Location: '.($message==='Rol creado correctamente.' ? '/roles?ok='.urlencode($message) : '/roles/create?error='.urlencode($message)));
     },
     'GET /roles/{id}/edit' => static function (array $config, array $params): void {
@@ -506,7 +507,8 @@ return [
         if (!requirePermission($config, 'roles.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id = (int) ($params['id'] ?? 0);
-        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $before=$service->findRole($id); $message = $service->updateRole($id, $_POST); if($message==='Rol actualizado correctamente.'){ auditLog($pdo,['action'=>'role.updated','entity_type'=>'core_roles','entity_id'=>$id,'old_values'=>$before,'new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>'derivado (sin columna persistida)']]);}  } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
+        $auth = AuthSession::getAuth(); $sessionTenantId = (int) ($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0); $_POST['tenant_id'] = $sessionTenantId;
+        try { $pdo = PdoFactory::make($config['database']); $service = new RoleService(new RoleRepository($pdo)); $before=$service->findRole($id); $message = $service->updateRole($id, $_POST); if($message==='Rol actualizado correctamente.'){ auditLog($pdo,['action'=>'role.updated','entity_type'=>'core_roles','entity_id'=>$id,'tenant_id'=>$sessionTenantId,'old_values'=>$before,'new_values'=>['code'=>(string)($_POST['code']??''),'name'=>(string)($_POST['name']??''),'status'=>'derivado (sin columna persistida)']]);}  } catch (\Throwable) { $message = 'No se pudo guardar el rol.'; }
         header('Location: '.($message==='Rol actualizado correctamente.' ? '/roles?ok='.urlencode($message) : ($message==='Rol no encontrado.' ? '/roles?error='.urlencode($message) : '/roles/'.$id.'/edit?error='.urlencode($message))));
     },
 
@@ -610,7 +612,8 @@ return [
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->createUser($_POST); if($message === 'Usuario creado correctamente.'){ auditLog($pdo,['action'=>'user.created','entity_type'=>'core_users','tenant_id'=>(int)($_POST['tenant_id']??0),'new_values'=>['email'=>(string)($_POST['email']??''),'username'=>(string)($_POST['username']??''),'status'=>'derivado (sin columna persistida)']]);} } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        $auth = AuthSession::getAuth(); $sessionTenantId = (int) ($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0); $_POST['tenant_id'] = $sessionTenantId;
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $message = $service->createUser($_POST); if($message === 'Usuario creado correctamente.'){ auditLog($pdo,['action'=>'user.created','entity_type'=>'core_users','tenant_id'=>$sessionTenantId,'new_values'=>['email'=>(string)($_POST['email']??''),'username'=>(string)($_POST['username']??''),'status'=>'derivado (sin columna persistida)']]);} } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.($message === 'Usuario creado correctamente.' ? '/users?ok='.urlencode($message) : '/users/create?error='.urlencode($message)));
     },
 
@@ -631,7 +634,8 @@ return [
         if (!requirePermission($config, 'users.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id = (int) ($params['id'] ?? 0);
-        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $before = $service->findUser($id); $message = $service->updateUser($id, $_POST); if($message === 'Usuario actualizado correctamente.'){ auditLog($pdo,['action'=>'user.updated','entity_type'=>'core_users','entity_id'=>$id,'old_values'=>$before,'new_values'=>['tenant_id'=>(int)($_POST['tenant_id']??0),'email'=>(string)($_POST['email']??''),'username'=>(string)($_POST['username']??''),'status'=>'derivado (sin columna persistida)']]);} } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
+        $auth = AuthSession::getAuth(); $sessionTenantId = (int) ($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0); $_POST['tenant_id'] = $sessionTenantId;
+        try { $pdo = PdoFactory::make($config['database']); $service = new UserService(new CoreUserRepository($pdo)); $before = $service->findUser($id); $message = $service->updateUser($id, $_POST); if($message === 'Usuario actualizado correctamente.'){ auditLog($pdo,['action'=>'user.updated','entity_type'=>'core_users','entity_id'=>$id,'tenant_id'=>$sessionTenantId,'old_values'=>$before,'new_values'=>['tenant_id'=>$sessionTenantId,'email'=>(string)($_POST['email']??''),'username'=>(string)($_POST['username']??''),'status'=>'derivado (sin columna persistida)']]);} } catch (\Throwable) { $message = 'No se pudo guardar el usuario.'; }
         header('Location: '.(($message === 'Usuario actualizado correctamente.') ? '/users?ok='.urlencode($message) : ($message === 'Usuario no encontrado.' ? '/users?error='.urlencode($message) : '/users/'.$id.'/edit?error='.urlencode($message))));
     },
 

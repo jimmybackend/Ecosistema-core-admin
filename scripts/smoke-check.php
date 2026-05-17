@@ -3137,5 +3137,27 @@ if ($routesContent !== false && str_contains($routesContent, "'POST /browser/ana
         }
     }
 }
+
+
+// PR #217 PII/secrets output audit checks
+$crmDryRunView = (string) file_get_contents($root . '/resources/views/pages/crm/submission-to-lead-dry-run.php');
+if (str_contains($crmDryRunView, 'maskPii($field') && !str_contains($crmDryRunView, '(string)($mf[$field] ?? '-')')) {
+    ok('Vista CRM submission dry-run no imprime mapped_fields crudos.');
+} else {
+    fail('Vista CRM submission dry-run imprime mapped_fields sin máscara.', $criticalFailures);
+}
+
+$driveStorageView = (string) file_get_contents($root . '/resources/views/pages/cloud/drive-storage-usage.php');
+if (str_contains($driveStorageView, "email_preview / display_name_preview")) {
+    ok('Vista drive storage usage declara columnas preview para PII.');
+} else {
+    fail('Vista drive storage usage no declara columnas preview para PII.', $criticalFailures);
+}
+foreach (['$row[\'email\']', '$row[\'display_name\']'] as $forbiddenRawPii) {
+    if (str_contains($driveStorageView, $forbiddenRawPii) && !str_contains($driveStorageView, 'maskEmail') && !str_contains($driveStorageView, 'maskText')) {
+        fail('Vista drive storage usage podría exponer PII cruda: ' . $forbiddenRawPii, $criticalFailures);
+    }
+}
+
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
 exit($criticalFailures > 0 ? 1 : 0);

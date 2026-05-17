@@ -101,6 +101,8 @@ php scripts/smoke-check.php
 
 Estado explícito de cron/workers: `docs/ops/WORKERS_CRON_CURRENT_STATE.md`.
 
+Verificación operativa consolidada (demo/preproducción): `docs/ops/ECOSISTEMA_OPERATIONAL_READINESS_VERIFICATION.md`.
+
 ## 9) Checklist para demo/showcase
 1. Confirmar flags en `.env` y mantener por defecto en modo seguro salvo prueba controlada.
 2. Ejecutar `composer smoke` y revisar warnings no bloqueantes.

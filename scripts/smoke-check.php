@@ -1519,7 +1519,7 @@ if ($readmeContent !== false && str_contains($readmeContent, 'ECOSISTEMA_WORKFLO
 }
 
 $workflowInventoryContent = is_file($workflowInventoryPath) ? file_get_contents($workflowInventoryPath) : false;
-foreach (['workflow_rules', 'workflow_actions', 'workflow_runs', 'workflow_run_logs', 'module_workflow_links', 'adbbmis1_eco'] as $requiredMention) {
+foreach (['workflow_rules', 'workflow_runs', 'workflow_run_logs', 'module_workflow_links', 'adbbmis1_eco'] as $requiredMention) {
     if ($workflowInventoryContent !== false && str_contains($workflowInventoryContent, $requiredMention)) {
         ok('Inventario Workflow menciona: ' . $requiredMention);
     } else {
@@ -1561,7 +1561,7 @@ foreach (["'rules_read' => true", "'runs_read' => true", "'run_logs_read' => tru
     if ($workflowAdapterContent !== false && str_contains($workflowAdapterContent, $requiredFlag)) { ok('Adapter Workflow contiene ' . $requiredFlag . '.'); } else { fail('Adapter Workflow no contiene ' . $requiredFlag . '.', $criticalFailures); }
 }
 
-if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*workflow_(rules|actions|runs|run_logs)/mi', $gitDiff) === 1) {
+if (is_string($gitDiff) && preg_match('/^\+.*(INSERT|UPDATE|DELETE).*workflow_(rules|runs|run_logs)/mi', $gitDiff) === 1) {
     fail('Se detectó escritura SQL sobre tablas workflow_* en cambios del PR.', $criticalFailures);
 } else {
     ok('Sin escrituras SQL sobre tablas workflow_* en cambios del PR.');

@@ -2938,6 +2938,16 @@ if (str_contains($rolePermissionsRepo, 'WHERE role_id=:role_id AND tenant_id=:te
 } else {
     fail('Consultas de role-permissions no filtran por tenant_id.', $criticalFailures);
 }
+if (preg_match('/DELETE\s+FROM\s+core_role_permissions\s+WHERE\s+role_id\s*=\s*:role_id\s+AND\s+tenant_id\s*=\s*:tenant_id/i', $rolePermissionsRepo) === 1) {
+    ok('DELETE de core_role_permissions filtra por role_id + tenant_id.');
+} else {
+    fail('DELETE de core_role_permissions no filtra explícitamente por tenant_id.', $criticalFailures);
+}
+if (preg_match('/SELECT\s+permission_id\s+FROM\s+core_role_permissions\s+WHERE\s+role_id\s*=\s*:role_id\s+AND\s+tenant_id\s*=\s*:tenant_id/i', $rolePermissionsRepo) === 1) {
+    ok('SELECT de core_role_permissions filtra por role_id + tenant_id.');
+} else {
+    fail('SELECT de core_role_permissions no filtra explícitamente por tenant_id.', $criticalFailures);
+}
 $rolePermissionService = is_file($root . '/app/Core/Permissions/RolePermissionService.php') ? (string) file_get_contents($root . '/app/Core/Permissions/RolePermissionService.php') : '';
 if (str_contains($rolePermissionService, 'findRole($roleId)')) {
     ok('RolePermissionService valida existencia de rol antes de reemplazar permisos.');

@@ -19,7 +19,7 @@ final readonly class EcosistemaDriveBucketRepository
     {
         $limit = max(1, min($limit, 100));
 
-        $fields = ['id', 'name', 'provider', 'region', 'is_default', 'created_at', 'updated_at'];
+        $fields = ['id', 'bucket_name', 'provider', 'region', 'is_default', 'created_at', 'updated_at'];
         if ($this->hasColumn('status')) {
             $fields[] = 'status';
         }
@@ -30,7 +30,7 @@ final readonly class EcosistemaDriveBucketRepository
         );
 
         if (in_array('status', $fields, true)) {
-            $sql .= " AND (status IS NULL OR status <> 'deleted')";
+            $sql .= " AND (status IS NULL OR status <> 'archived')";
         }
 
         $sql .= ' ORDER BY id DESC LIMIT :limit';

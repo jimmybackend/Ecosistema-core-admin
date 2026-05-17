@@ -18,7 +18,7 @@ final readonly class EcosistemaDriveRepairJobRepository
         $tenantId = $this->assertPositiveInt($tenantId, 'tenant_id');
         $limit = $this->sanitizeLimit($limit);
 
-        $sql = 'SELECT j.id, j.tenant_id, j.bucket_id, b.name AS bucket_name, j.status, j.total_s3, j.total_db, j.total_actions, j.prefix, j.last_message, j.started_at, j.finished_at, j.created_at, j.updated_at,
+        $sql = 'SELECT j.id, j.tenant_id, j.bucket_id, b.bucket_name AS bucket_name, j.status, j.total_s3, j.total_db, j.total_actions, j.prefix, j.last_message, j.started_at, j.finished_at, j.created_at, j.updated_at,
                        (SELECT COUNT(*) FROM cloud_repair_logs l WHERE l.tenant_id = j.tenant_id AND l.repair_job_id = j.id) AS logs_count
                 FROM cloud_repair_jobs j
                 LEFT JOIN cloud_buckets b ON b.id = j.bucket_id AND b.tenant_id = j.tenant_id
@@ -40,7 +40,7 @@ final readonly class EcosistemaDriveRepairJobRepository
         $tenantId = $this->assertPositiveInt($tenantId, 'tenant_id');
         $jobId = $this->assertPositiveInt($jobId, 'job_id');
 
-        $sql = 'SELECT j.id, j.tenant_id, j.bucket_id, b.name AS bucket_name, j.status, j.total_s3, j.total_db, j.total_actions, j.prefix, j.last_message, j.started_at, j.finished_at, j.created_at, j.updated_at,
+        $sql = 'SELECT j.id, j.tenant_id, j.bucket_id, b.bucket_name AS bucket_name, j.status, j.total_s3, j.total_db, j.total_actions, j.prefix, j.last_message, j.started_at, j.finished_at, j.created_at, j.updated_at,
                        (SELECT COUNT(*) FROM cloud_repair_logs l WHERE l.tenant_id = j.tenant_id AND l.repair_job_id = j.id) AS logs_count
                 FROM cloud_repair_jobs j
                 LEFT JOIN cloud_buckets b ON b.id = j.bucket_id AND b.tenant_id = j.tenant_id

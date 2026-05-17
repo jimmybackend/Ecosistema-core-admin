@@ -38,7 +38,7 @@ final readonly class EcosistemaDriveStorageUsageRepository
     public function summarizeByBucket(int $tenantId): array
     {
         $stmt = $this->pdo->prepare(
-            "SELECT f.bucket_id, COALESCE(b.name, 'N/A') AS bucket_name,
+            "SELECT f.bucket_id, COALESCE(b.bucket_name, 'N/A') AS bucket_name,
                     COALESCE(b.provider, 'N/A') AS provider,
                     COALESCE(b.status, 'N/A') AS status,
                     COUNT(*) AS file_count,
@@ -46,7 +46,7 @@ final readonly class EcosistemaDriveStorageUsageRepository
              FROM cloud_files f
              LEFT JOIN cloud_buckets b ON b.id = f.bucket_id AND b.tenant_id = f.tenant_id
              WHERE f.tenant_id = :tenant_id
-             GROUP BY f.bucket_id, b.name, b.provider, b.status
+             GROUP BY f.bucket_id, b.bucket_name, b.provider, b.status
              ORDER BY total_bytes DESC, file_count DESC"
         );
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);

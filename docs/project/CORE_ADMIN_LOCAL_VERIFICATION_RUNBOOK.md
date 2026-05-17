@@ -118,6 +118,12 @@ Además de lint/smoke, revisar de forma básica que los artefactos de ruteo y tr
    - contexto mínimo de entorno (PHP/Composer, DB sí/no).
 5. Si el fallo implica flags o permisos, contrastar con la matriz de seguridad/flags antes de proponer cambios.
 
+## Anexo recomendado (demo DB mínima)
+
+Para preparar una base de datos de demo controlada (sin datos reales), usar el checklist:
+
+- `docs/project/CORE_ADMIN_DEMO_DB_MINIMUM_CHECKLIST.md`
+
 ## 7) Fuentes de verdad para esta verificación
 
 - `README.md`

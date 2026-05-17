@@ -125,6 +125,7 @@ Resultado esperado de lectura:
 
 Referencia operativa:
 - `docs/project/CORE_ADMIN_LOCAL_VERIFICATION_RUNBOOK.md`
+- `docs/project/CORE_ADMIN_TECHNICAL_BACKLOG.md`
 - `scripts/smoke-check.php`
 
 ---
@@ -152,6 +153,8 @@ Referencias:
 ---
 
 ## 10) Pendientes clasificados
+
+Seguimiento detallado de ejecución: `docs/project/CORE_ADMIN_TECHNICAL_BACKLOG.md`.
 
 ### Crítico
 1. Definir y ejecutar hardening previo a cualquier activación real de SMTP/S3/IA/workflow write/export write.
@@ -189,6 +192,7 @@ Este reporte consolida y referencia, entre otros, los siguientes documentos de l
 - `docs/project/ECOSISTEMA_GO_NO_GO_REPORT.md`
 - `docs/project/CORE_ADMIN_DEMO_READINESS_CHECKLIST.md`
 - `docs/project/CORE_ADMIN_LOCAL_VERIFICATION_RUNBOOK.md`
+- `docs/project/CORE_ADMIN_TECHNICAL_BACKLOG.md`
 
 ---
 

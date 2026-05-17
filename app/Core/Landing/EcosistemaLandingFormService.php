@@ -63,7 +63,9 @@ final readonly class EcosistemaLandingFormService
     private function toFieldDto(array $row): array
     {
         return [
-            'id' => (int) ($row['id'] ?? 0), 'form_id' => (int) ($row['form_id'] ?? 0), 'field_key' => (string) ($row['field_key'] ?? ''),
+            'id' => (int) ($row['id'] ?? 0), 'form_id' => (int) ($row['form_id'] ?? 0), 'field_key_present' => trim((string) ($row['field_key'] ?? '')) !== '',
+            'field_key_preview' => $this->maskFieldKey((string) ($row['field_key'] ?? '')),
+            'field_key_exposed' => false,
             'label' => (string) ($row['label'] ?? ''), 'field_type' => (string) ($row['field_type'] ?? ''),
             'placeholder_preview' => $this->preview((string) ($row['placeholder'] ?? ''), 64),
             'default_value_present' => trim((string) ($row['default_value'] ?? '')) !== '', 'default_value_exposed' => false,
@@ -82,5 +84,16 @@ final readonly class EcosistemaLandingFormService
         $head = mb_substr($trim, 0, $max);
 
         return $head === $trim ? $head : $head . '…';
+    }
+
+    private function maskFieldKey(string $value): ?string
+    {
+        $trim = trim($value);
+        if ($trim === '') {
+            return null;
+        }
+
+        $visible = mb_substr($trim, 0, 2);
+        return $visible . '***';
     }
 }

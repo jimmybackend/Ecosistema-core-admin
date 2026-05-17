@@ -66,6 +66,7 @@ Fuente de estado operativo por módulo:
 
 - [`docs/project/CORE_ADMIN_MODULE_STATUS.md`](docs/project/CORE_ADMIN_MODULE_STATUS.md)
 - (Complementario) [`docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`](docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md)
+- (Auditoría actual) [`docs/project/CORE_ADMIN_CURRENT_STATE_AUDIT.md`](docs/project/CORE_ADMIN_CURRENT_STATE_AUDIT.md)
 
 Convenciones de estado usadas en Core Admin:
 

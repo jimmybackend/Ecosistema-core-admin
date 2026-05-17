@@ -16,6 +16,8 @@ Punteros y auditoría de separación core/presentación:
 - [`docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md`](docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md)
 - [`docs/project/REPAIR_PRESENTATION_DOCS_FINAL_REPORT.md`](docs/project/REPAIR_PRESENTATION_DOCS_FINAL_REPORT.md)
 
+> Nota técnica: estos documentos son de frontera Core/Presentación y se mantienen por trazabilidad operativa. Ver auditoría de enlaces: [`docs/project/CORE_ADMIN_DOC_LINK_AUDIT.md`](docs/project/CORE_ADMIN_DOC_LINK_AUDIT.md).
+
 Guardrails documentales de contribución:
 
 - [`docs/project/CORE_ADMIN_DOCS_BOUNDARIES.md`](docs/project/CORE_ADMIN_DOCS_BOUNDARIES.md)
@@ -54,6 +56,7 @@ cp .env.example .env
 
 - Mapa ruta → servicio → tabla: [`docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`](docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md)
 - Matriz de vistas/rutas por módulo: [`docs/project/ECOSISTEMA_ROUTE_SERVICE_VIEW_MATRIX.md`](docs/project/ECOSISTEMA_ROUTE_SERVICE_VIEW_MATRIX.md)
+- Contrato técnico de descarga controlada (Drive): [`docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md`](docs/project/ECOSISTEMA_DRIVE_DOWNLOAD_CONTRACT.md)
 
 ## Tablas reales usadas
 

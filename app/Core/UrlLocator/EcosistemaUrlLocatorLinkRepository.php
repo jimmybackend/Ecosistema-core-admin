@@ -69,7 +69,7 @@ final readonly class EcosistemaUrlLocatorLinkRepository
             return [];
         }
 
-        $stmt = $this->pdo->prepare('SELECT sll.language_code,sll.target_url,sll.priority,sll.is_default_for_language,sll.is_active,sll.click_count FROM url_short_link_languages sll INNER JOIN url_short_links l ON l.id=sll.short_link_id LEFT JOIN url_languages ul ON ul.code=sll.language_code WHERE l.tenant_id=:tenant_id AND sll.short_link_id=:link_id ORDER BY sll.priority ASC,sll.language_code ASC');
+        $stmt = $this->pdo->prepare('SELECT sll.language_code,sll.target_url,sll.priority,sll.is_default_for_language,sll.is_active,sll.click_count FROM url_short_link_languages sll INNER JOIN url_short_links l ON l.id=sll.short_link_id LEFT JOIN url_languages ul ON ul.code=sll.language_code WHERE l.tenant_id=:tenant_id AND sll.tenant_id=:tenant_id AND sll.short_link_id=:link_id ORDER BY sll.priority ASC,sll.language_code ASC');
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':link_id', $linkId, PDO::PARAM_INT);
         $stmt->execute();
@@ -83,7 +83,7 @@ final readonly class EcosistemaUrlLocatorLinkRepository
             return null;
         }
 
-        $stmt = $this->pdo->prepare('SELECT s.show_access_counter,s.track_location,s.track_attachments,s.track_final_click,s.allow_indexing,s.require_consent,s.custom_css,s.custom_js FROM url_smart_link_settings s INNER JOIN url_short_links l ON l.id=s.short_link_id WHERE l.tenant_id=:tenant_id AND s.short_link_id=:link_id LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT s.show_access_counter,s.track_location,s.track_attachments,s.track_final_click,s.allow_indexing,s.require_consent,s.custom_css,s.custom_js FROM url_smart_link_settings s INNER JOIN url_short_links l ON l.id=s.short_link_id WHERE l.tenant_id=:tenant_id AND s.tenant_id=:tenant_id AND s.short_link_id=:link_id LIMIT 1');
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':link_id', $linkId, PDO::PARAM_INT);
         $stmt->execute();
@@ -99,7 +99,7 @@ final readonly class EcosistemaUrlLocatorLinkRepository
         }
 
         $safeLimit = max(1, min(100, $limit));
-        $stmt = $this->pdo->prepare('SELECT mt.id,mt.template_name,mt.language_code,mt.status,mt.view_count,mt.body_html FROM url_message_templates mt INNER JOIN url_short_links l ON l.id=mt.short_link_id WHERE l.tenant_id=:tenant_id AND mt.short_link_id=:link_id ORDER BY mt.id DESC LIMIT :limit');
+        $stmt = $this->pdo->prepare('SELECT mt.id,mt.template_name,mt.language_code,mt.status,mt.view_count,mt.body_html FROM url_message_templates mt INNER JOIN url_short_links l ON l.id=mt.short_link_id WHERE l.tenant_id=:tenant_id AND mt.tenant_id=:tenant_id AND mt.short_link_id=:link_id ORDER BY mt.id DESC LIMIT :limit');
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':link_id', $linkId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $safeLimit, PDO::PARAM_INT);
@@ -115,7 +115,7 @@ final readonly class EcosistemaUrlLocatorLinkRepository
         }
 
         $safeLimit = max(1, min(100, $limit));
-        $stmt = $this->pdo->prepare('SELECT ai.id,ai.title,ai.ad_type,ai.status,ai.impression_count,ai.click_count,ai.media_s3_key,ai.ad_html FROM url_ad_interstitials ai INNER JOIN url_short_links l ON l.id=ai.short_link_id WHERE l.tenant_id=:tenant_id AND ai.short_link_id=:link_id ORDER BY ai.id DESC LIMIT :limit');
+        $stmt = $this->pdo->prepare('SELECT ai.id,ai.title,ai.ad_type,ai.status,ai.impression_count,ai.click_count,ai.media_s3_key,ai.ad_html FROM url_ad_interstitials ai INNER JOIN url_short_links l ON l.id=ai.short_link_id WHERE l.tenant_id=:tenant_id AND ai.tenant_id=:tenant_id AND ai.short_link_id=:link_id ORDER BY ai.id DESC LIMIT :limit');
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':link_id', $linkId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $safeLimit, PDO::PARAM_INT);

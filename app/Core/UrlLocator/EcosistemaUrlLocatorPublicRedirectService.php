@@ -125,7 +125,8 @@ final readonly class EcosistemaUrlLocatorPublicRedirectService
             return ['selected_language' => null, 'detected_language' => $detected];
         }
 
-        $stmt = $this->pdo->prepare('SELECT language_code,target_url,is_active,priority FROM url_short_link_languages WHERE short_link_id=:link_id ORDER BY priority ASC,language_code ASC');
+        $stmt = $this->pdo->prepare('SELECT language_code,target_url,is_active,priority FROM url_short_link_languages WHERE tenant_id=:tenant_id AND short_link_id=:link_id ORDER BY priority ASC,language_code ASC');
+        $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':link_id', $linkId, PDO::PARAM_INT);
         $stmt->execute();
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -152,7 +153,8 @@ final readonly class EcosistemaUrlLocatorPublicRedirectService
     private function resolveTargetUrl(int $tenantId, array $link, ?string $selectedLanguage): ?string
     {
         if ($selectedLanguage !== null && $this->languageRedirectsEnabled()) {
-            $stmt = $this->pdo->prepare('SELECT target_url FROM url_short_link_languages WHERE short_link_id=:link_id AND language_code=:language_code AND is_active=1 LIMIT 1');
+            $stmt = $this->pdo->prepare('SELECT target_url FROM url_short_link_languages WHERE tenant_id=:tenant_id AND short_link_id=:link_id AND language_code=:language_code AND is_active=1 LIMIT 1');
+            $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
             $stmt->bindValue(':link_id', (int) $link['id'], PDO::PARAM_INT);
             $stmt->bindValue(':language_code', $selectedLanguage);
             $stmt->execute();

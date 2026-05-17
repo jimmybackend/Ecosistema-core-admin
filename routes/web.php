@@ -3206,7 +3206,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'system.view')) { return; }
         $statusMessage = isset($_GET['ok']) ? (string)$_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string)$_GET['error'] : null;
-        try { $pdo=PdoFactory::make($config['database']); $service=new HealthService(new HealthRepository($pdo), new LogRepository($pdo), $pdo); $healthChecks=$service->listHealthChecks(); } catch (\Throwable) { $healthChecks=[]; $errorMessage='No se pudo ejecutar el health check.'; }
+        try { $pdo=PdoFactory::make($config['database']); $service=new HealthService(new HealthRepository($pdo), new LogRepository($pdo), $pdo); $healthChecks=$service->listHealthChecks((int)(AuthSession::getAuth()['auth_tenant_id']??0)); } catch (\Throwable) { $healthChecks=[]; $errorMessage='No se pudo ejecutar el health check.'; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Health | Ecosistema Core Admin','contentView'=>'pages/system/health','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('healthChecks','statusMessage','errorMessage')]);
     },
     'POST /system/health/{id}/run' => static function (array $config, array $params): void {
@@ -3214,13 +3214,13 @@ return [
         if (!requirePermission($config, 'system.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $id=(int)($params['id']??0); $message='No se pudo ejecutar el health check.';
-        try { $pdo=PdoFactory::make($config['database']); $service=new HealthService(new HealthRepository($pdo), new LogRepository($pdo), $pdo); $auth=AuthSession::getAuth(); $message=$service->runHealthCheck($id, isset($auth['tenant_id'])?(int)$auth['tenant_id']:null, isset($auth['user_id'])?(int)$auth['user_id']:null, $_SERVER['REMOTE_ADDR']??null, $_SERVER['HTTP_USER_AGENT']??null);} catch (\Throwable) {}
+        try { $pdo=PdoFactory::make($config['database']); $service=new HealthService(new HealthRepository($pdo), new LogRepository($pdo), $pdo); $auth=AuthSession::getAuth(); $message=$service->runHealthCheck($id, isset($auth['auth_tenant_id'])?(int)$auth['auth_tenant_id']:null, isset($auth['auth_user_id'])?(int)$auth['auth_user_id']:null, $_SERVER['REMOTE_ADDR']??null, $_SERVER['HTTP_USER_AGENT']??null);} catch (\Throwable) {}
         header('Location: /system/health?'.($message==='Health check ejecutado correctamente.'?'ok=':'error=').urlencode($message));
     },
     'GET /system/logs' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'system.view')) { return; }
-        $errorMessage=null; try{$pdo=PdoFactory::make($config['database']); $logs=(new LogRepository($pdo))->listRecent(100);}catch(\Throwable){$logs=[]; $errorMessage='No se pudieron cargar los logs.';}
+        $errorMessage=null; try{$pdo=PdoFactory::make($config['database']); $logs=(new LogRepository($pdo))->listRecent((int)(AuthSession::getAuth()['auth_tenant_id']??0),100);}catch(\Throwable){$logs=[]; $errorMessage='No se pudieron cargar los logs.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Logs | Ecosistema Core Admin','contentView'=>'pages/system/logs','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('logs','errorMessage')]);
     },
     'GET /system/audit' => static function (array $config): void {

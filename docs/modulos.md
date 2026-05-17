@@ -1,43 +1,22 @@
-# Módulos del producto
+# Módulos del producto — estado demostrable
 
-La plataforma se construye por etapas para asegurar calidad operativa y control de riesgos: **read-only → dry-run → controlled → producción**.  
-Esto significa que no todos los módulos están en el mismo nivel al mismo tiempo.
+## Tabla obligatoria para demo/comercial
 
-## Leyenda de estado
+| Módulo | Qué se puede mostrar | Estado | Qué no se debe prometer | Próximo paso |
+|---|---|---|---|---|
+| Core Admin (Auth, tenants, users, roles, permissions, modules) | Login, dashboard y CRUD base | Base operativa | Que todo el ecosistema ampliado está full productivo | QA funcional por rol |
+| System Health / Audit | Salud de sistema/DB, logs y auditoría | Base operativa | Cobertura SIEM/observabilidad empresarial completa | Alertamiento centralizado |
+| Reports | Consultas y reportes administrativos | Parcial/read-only + controlled en export | Export productivo abierto en todos los entornos | Habilitación gradual de export |
+| CRM / Campaigns | Vistas, seguimiento y cockpit | Parcial/controlled | Automatización comercial completa end-to-end | Cierre de lifecycle de lead |
+| Landing / URL Locator | Lectura, trazabilidad y simulación | Read-only + dry-run + controlled | Publicación/redirección full activas por defecto | Activación gradual con auditoría |
+| Notifications / Mail | Plantillas, preview y cola | Controlled + dry-run | Envío real habilitado globalmente | Activar por entorno con guardrails |
+| Workflow | Definiciones/runs y simulación | Dry-run + controlled | Orquestación productiva plena | Apertura de ejecución real por etapas |
+| Browser Analytics | Dashboard y lectura de eventos/pageviews | Read-only | Recolección total sin consentimiento/controles | Operación controlada de captura |
+| Cloud / Drive | Inventario, resumen y contratos | Read-only + controlled | AWS/S3 remoto full por defecto | Hardening + activación por entorno |
+| AI assistance | Asistencia de resumen/propuesta | Dry-run + controlled | IA autónoma sin gobierno humano | Expandir casos con trazabilidad |
+| Workers | Estado operativo parcial y documentación | Parcial/roadmap | Workers productivos completos | Implementación progresiva |
+| Billing / Integrations / Support | Alcance y roadmap | Roadmap | Módulos terminados y en producción completa | Definición MVP incremental |
 
-- **Disponible base**: funcionalidad administrativa base existente.
-- **Read-only**: consulta datos sin modificar.
-- **Dry-run**: simula sin escribir.
-- **Controlled**: escribe o ejecuta sólo con flags/permisos/CSRF y defaults seguros.
-- **Roadmap**: diseñado/documentado, pendiente de implementación funcional.
-- **Mixto**: tiene partes en más de un estado.
+## Mensaje de cierre recomendado
 
-## Estado real por módulo
-
-| Módulo | Estado | Resumen comercial honesto |
-| --- | --- | --- |
-| Base de datos canónica | **Disponible base** | Modelo canónico operativo para centralizar datos y sostener los flujos administrativos actuales. |
-| Core Admin | **Mixto** | Núcleo administrativo funcional con capacidades ya utilizables y otras todavía en evolución controlada. |
-| Auth, roles y permisos | **Controlled** | Gobierno de acceso activo con controles de permisos y operación segura por defecto. |
-| Ecosistema Drive | **Read-only** | Visibilidad y consulta de información/documentos, con cambios limitados a etapas controladas. |
-| URL Locator | **Read-only** | Descubrimiento y consulta de URLs como base para decisiones operativas antes de automatizar cambios. |
-| Landing Pages | **Roadmap** | Diseño funcional definido para iterar en fases antes de habilitar operación completa. |
-| Browser Analytics | **Read-only** | Lectura de señales y métricas para diagnóstico, sin intervención directa automática. |
-| CRM y campañas | **Mixto** | Gestión comercial con componentes utilizables hoy y otros en transición por fases. |
-| Mail / Notifications | **Controlled** | Envíos y notificaciones bajo controles explícitos para evitar ejecuciones no deseadas. |
-| Workflow | **Dry-run** | Orquestaciones simuladas para validar reglas y secuencias antes de escritura efectiva. |
-| SaaS Core | **Disponible base** | Base operativa del producto disponible para sostener administración y evolución modular. |
-| Billing | **Roadmap** | Definición de arquitectura y flujo comercial; implementación funcional avanza por etapas. |
-| Security / Audit / Privacy | **Mixto** | Seguridad y auditoría con base activa; privacidad/compliance continúa en maduración progresiva. |
-| Integrations | **Roadmap** | Marco de integraciones diseñado para incorporarse de forma gradual y gobernada. |
-| Support | **Roadmap** | Funcionalidad de soporte planificada para despliegue incremental, no cerrada como módulo final. |
-| Reports | **Disponible base** | Reportería administrativa base disponible para seguimiento operativo y toma de decisiones. |
-| Jobs / Workers | **Dry-run** | Ejecuciones de procesos en modo de validación/simulación previo a operación productiva completa. |
-| IA Operativa | **Controlled** | IA enfocada en asistencia controlada con supervisión humana; no se plantea autonomía sin gobierno. |
-| Go-live | **Mixto** | Activación por fases con checklists y controles, según criticidad y nivel de madurez de cada módulo. |
-
-## Qué significa para clientes y socios
-
-- El producto **sí está en operación**, pero con capacidades que se habilitan por capas.
-- Las funciones de mayor impacto pasan primero por validaciones **read-only/dry-run** antes de abrir escritura controlada.
-- Este enfoque reduce riesgo comercial y técnico al escalar funcionalidades sin sobreprometer alcance.
+La plataforma es demostrable hoy con valor real, pero su habilitación productiva es por capas y controles; no se comunica como SaaS completo en esta etapa.

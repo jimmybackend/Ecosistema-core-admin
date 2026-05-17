@@ -91,6 +91,7 @@ Convenciones de estado usadas en Core Admin:
 
 ## Smoke checks
 
+- Runbook unificado de verificación local: [`docs/project/CORE_ADMIN_LOCAL_VERIFICATION_RUNBOOK.md`](docs/project/CORE_ADMIN_LOCAL_VERIFICATION_RUNBOOK.md)
 - Checklist QA/manual de entorno demo-operativo: [`docs/qa/ECOSISTEMA_MANUAL_QA_END_TO_END.md`](docs/qa/ECOSISTEMA_MANUAL_QA_END_TO_END.md)
 - Comando operativo:
 

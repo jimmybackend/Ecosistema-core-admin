@@ -3104,5 +3104,38 @@ foreach ($criticalFlagsFromReadme as $flagLine) {
     }
 }
 
+
+
+// PR #216 public routes safety audit checks
+$publicRoutesAuditPath = 'docs/security/CORE_ADMIN_PUBLIC_ROUTES_SECURITY_AUDIT.md';
+if (checkFile($root, $publicRoutesAuditPath, $criticalFailures)) {
+    $publicRoutesAuditContent = (string) file_get_contents($root . '/' . $publicRoutesAuditPath);
+    foreach (['GET /u/{slug}', 'GET /l/{slug}', 'POST /l/{slug}/forms/{id}/submit', 'POST /browser/analytics/collect'] as $requiredRoute) {
+        if (str_contains($publicRoutesAuditContent, $requiredRoute)) {
+            ok('Auditoría pública documenta ruta: ' . $requiredRoute);
+        } else {
+            fail('Auditoría pública no documenta ruta: ' . $requiredRoute, $criticalFailures);
+        }
+    }
+}
+
+$publicFallbackViews = [
+    'resources/views/pages/url-locator/public-redirect-blocked.php',
+    'resources/views/pages/landing/public-page-blocked.php',
+    'resources/views/pages/landing/form-submit-result.php',
+];
+foreach ($publicFallbackViews as $viewPath) {
+    checkFile($root, $viewPath, $criticalFailures);
+}
+
+if ($routesContent !== false && str_contains($routesContent, "'POST /browser/analytics/collect'")) {
+    foreach (['collector_unavailable', 'collector_failed', 'not_found'] as $collectorError) {
+        if (str_contains($routesContent, $collectorError)) {
+            ok('Ruta collector maneja respuesta segura: ' . $collectorError);
+        } else {
+            fail('Ruta collector no maneja respuesta segura: ' . $collectorError, $criticalFailures);
+        }
+    }
+}
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
 exit($criticalFailures > 0 ? 1 : 0);

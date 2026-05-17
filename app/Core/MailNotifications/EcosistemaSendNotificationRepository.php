@@ -14,7 +14,7 @@ final readonly class EcosistemaSendNotificationRepository
 
     public function findActiveTemplate(int $tenantId, int $templateId): ?array
     {
-        $sql = 'SELECT nt.id,nt.tenant_id,nt.channel_id,nt.subject,nt.body,nc.code AS channel_code FROM notifications_templates nt INNER JOIN notifications_channels nc ON nc.id=nt.channel_id AND nc.tenant_id=nt.tenant_id WHERE nt.tenant_id=:tenant_id AND nt.id=:id AND nt.is_active=1 LIMIT 1';
+        $sql = 'SELECT nt.id,nt.tenant_id,nt.channel_id,nt.subject,nt.body,nc.code AS channel_code FROM notifications_templates nt INNER JOIN notifications_channels nc ON nc.id=nt.channel_id WHERE nt.tenant_id=:tenant_id AND nt.id=:id AND nt.is_active=1 LIMIT 1';
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':tenant_id' => $tenantId, ':id' => $templateId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);

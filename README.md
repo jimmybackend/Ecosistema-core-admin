@@ -15,6 +15,11 @@ Punteros y auditoría de separación core/presentación:
 - [`docs/project/PRESENTATION_REPOSITORY_POINTERS.md`](docs/project/PRESENTATION_REPOSITORY_POINTERS.md)
 - [`docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md`](docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md)
 
+Guardrails documentales de contribución:
+
+- [`docs/project/CORE_ADMIN_DOCS_BOUNDARIES.md`](docs/project/CORE_ADMIN_DOCS_BOUNDARIES.md)
+- [`docs/project/CORE_ADMIN_CONTRIBUTING_NOTES.md`](docs/project/CORE_ADMIN_CONTRIBUTING_NOTES.md)
+
 ## Alcance de este repositorio (técnico-operativo)
 
 Core Admin concentra:

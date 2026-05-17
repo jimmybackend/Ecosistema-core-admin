@@ -1,18 +1,95 @@
 # Ecosistema Core Admin
 
-Panel administrativo interno y documentación técnico-operativa del ecosistema.
+Aplicación administrativa interna y base documental técnico-operativa del ecosistema.
 
-## Referencias de documentación
+> Este repositorio **no** es la landing pública/comercial.
 
-- Política de canonicidad presentación/core: [`docs/project/PRESENTATION_REPOSITORY_POINTERS.md`](docs/project/PRESENTATION_REPOSITORY_POINTERS.md)
-- Estado técnico por módulo: [`docs/estado_modulos.md`](docs/estado_modulos.md)
-- Catálogo técnico de módulos: [`docs/modulos.md`](docs/modulos.md)
-- Flujo operativo técnico: [`docs/flujo_operativo.md`](docs/flujo_operativo.md)
-- Diagramas técnicos base: [`docs/diagramas.md`](docs/diagramas.md)
-- FAQ interna de alcance: [`docs/faq.md`](docs/faq.md)
-- Referencia de contacto público: [`contacto.md`](contacto.md)
+## Documentación pública / presentación
 
-## Nota de alcance
+La documentación pública, narrativa comercial y material de presentación viven en:
 
-La documentación pública/comercial vive en `jimmybackend/Ecosistema-presentacion`.
-Core Admin conserva documentación técnica, operativa, seguridad, rutas, flags y estado real.
+- [`jimmybackend/Ecosistema-presentacion`](https://github.com/jimmybackend/Ecosistema-presentacion)
+
+Punteros y auditoría de separación core/presentación:
+
+- [`docs/project/PRESENTATION_REPOSITORY_POINTERS.md`](docs/project/PRESENTATION_REPOSITORY_POINTERS.md)
+- [`docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md`](docs/project/CORE_ADMIN_PRESENTATION_DOCS_AUDIT.md)
+
+## Alcance de este repositorio (técnico-operativo)
+
+Core Admin concentra:
+
+- operación administrativa interna;
+- rutas técnicas y validación de permisos;
+- estado real por módulo (operativo/read-only/dry-run/controlled/roadmap);
+- inventarios de tablas y contratos de integración;
+- guías de despliegue en VM, smoke checks y seguridad.
+
+## Instalación local
+
+Referencia operativa de instalación y arranque:
+
+- [`docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`](docs/deploy/CORE_ADMIN_VM_RUNBOOK.md)
+
+Comandos base documentados en runbook:
+
+```bash
+composer install
+cp .env.example .env
+```
+
+## Variables de entorno
+
+- Configuración de VM y reglas de `.env` real: [`docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`](docs/deploy/CORE_ADMIN_VM_RUNBOOK.md)
+- Defaults seguros y flags: [`docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md`](docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md)
+- Matriz de flags/permisos/seguridad: [`docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`](docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md)
+
+## Rutas principales
+
+- Mapa ruta → servicio → tabla: [`docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md`](docs/project/CORE_ADMIN_ROUTE_SERVICE_TABLE_MAP.md)
+- Matriz de vistas/rutas por módulo: [`docs/project/ECOSISTEMA_ROUTE_SERVICE_VIEW_MATRIX.md`](docs/project/ECOSISTEMA_ROUTE_SERVICE_VIEW_MATRIX.md)
+
+## Tablas reales usadas
+
+- Inventario y compatibilidad DB real: [`docs/project/ECOSISTEMA_DB_SCHEMA_COMPATIBILITY_REPORT.md`](docs/project/ECOSISTEMA_DB_SCHEMA_COMPATIBILITY_REPORT.md)
+- Nombre canónico de base y lineamientos operativos: [`docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md`](docs/project/CORE_ADMIN_DATABASE_CANONICAL_NAME.md)
+
+## Estado técnico por módulo
+
+Fuente de estado operativo por módulo:
+
+- [`docs/project/CORE_ADMIN_MODULE_STATUS.md`](docs/project/CORE_ADMIN_MODULE_STATUS.md)
+- (Complementario) [`docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md`](docs/project/CORE_ADMIN_MODULE_STATUS_MATRIX.md)
+
+Convenciones de estado usadas en Core Admin:
+
+- **Operativo**: funcionalidad activa para uso administrativo.
+- **Read-only**: consulta/visualización sin escritura.
+- **Dry-run**: simulación sin efecto final.
+- **Controlled**: escritura/ejecución limitada por flags, permisos y contexto.
+- **Roadmap**: alcance aún no disponible en operación real.
+
+## Flags
+
+- Inventario de defaults seguros: [`docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md`](docs/project/ECOSISTEMA_FLAGS_SAFE_DEFAULTS.md)
+- Matriz técnica completa de flags y riesgos: [`docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`](docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md)
+
+## Deploy / VM
+
+- Runbook principal de despliegue en VM: [`docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`](docs/deploy/CORE_ADMIN_VM_RUNBOOK.md)
+- Verificación de readiness operativa: [`docs/ops/ECOSISTEMA_OPERATIONAL_READINESS_VERIFICATION.md`](docs/ops/ECOSISTEMA_OPERATIONAL_READINESS_VERIFICATION.md)
+
+## Smoke checks
+
+- Checklist QA/manual de entorno demo-operativo: [`docs/qa/ECOSISTEMA_MANUAL_QA_END_TO_END.md`](docs/qa/ECOSISTEMA_MANUAL_QA_END_TO_END.md)
+- Comando operativo:
+
+```bash
+composer smoke
+```
+
+## Seguridad
+
+- Hardening de producción: [`docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md`](docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md)
+- Flags, permisos y superficie de riesgo: [`docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`](docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md)
+- Auditoría de exposición privacidad/seguridad: [`docs/security/ECOSISTEMA_PRIVACY_SECURITY_EXPOSURE_AUDIT.md`](docs/security/ECOSISTEMA_PRIVACY_SECURITY_EXPOSURE_AUDIT.md)

@@ -258,6 +258,12 @@ return [
         $enabled = filter_var($_ENV['ECOSISTEMA_LANDING_FORM_SUBMIT_ENABLED'] ?? false, FILTER_VALIDATE_BOOL);
         $uploadsEnabled = filter_var($_ENV['ECOSISTEMA_LANDING_FORM_FILE_UPLOADS'] ?? false, FILTER_VALIDATE_BOOL);
         $payload = $_POST ?? [];
+        if (!ensureValidCsrfToken($config, $payload['_csrf'] ?? null)) {
+            header('Content-Type: text/html; charset=UTF-8');
+            View::render('pages/landing/form-submit-result', ['result' => ['ok' => false, 'message' => 'CSRF inválido.']]);
+            return;
+        }
+        unset($payload['_csrf']);
         $result = ['ok'=>false,'message'=>'No disponible'];
         try {
             $pdo = PdoFactory::make($config['database']);

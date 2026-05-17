@@ -158,6 +158,8 @@ $requiredFiles = [
     'docs/ops/MONITORING_OPERATIONS_PLAN.md',
     'docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md',
     'docs/project/CORE_ADMIN_OPERATIONAL_CLOSURE.md',
+    'docs/project/CORE_ADMIN_DOCS_BOUNDARIES.md',
+    'docs/project/CORE_ADMIN_CONTRIBUTING_NOTES.md',
     'docs/project/ECOSISTEMA_RISK_H_CLOSURE.md',
     'docs/project/CORE_ADMIN_S3_DRIVE_INTEGRATION_CONTRACT.md',
     'docs/project/ECOSISTEMA_UI_SCHEMA_ALIASES.md',

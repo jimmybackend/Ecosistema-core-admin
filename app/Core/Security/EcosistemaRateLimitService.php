@@ -48,7 +48,7 @@ final class EcosistemaRateLimitService
                 'open',
                 'security',
                 'system_api_requests',
-                $path
+                null
             );
         }
 

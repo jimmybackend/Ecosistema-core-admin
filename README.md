@@ -72,6 +72,7 @@ Fuente de estado operativo por módulo:
 - (Auditoría actual) [`docs/project/CORE_ADMIN_CURRENT_STATE_AUDIT.md`](docs/project/CORE_ADMIN_CURRENT_STATE_AUDIT.md)
 - (Cierre post-PR #208) [`docs/project/CORE_ADMIN_POST_208_VERIFICATION_REPORT.md`](docs/project/CORE_ADMIN_POST_208_VERIFICATION_REPORT.md)
 - (Cierre Go/No-Go demo privada, PR #224) [`docs/project/CORE_ADMIN_DEMO_GO_NO_GO.md`](docs/project/CORE_ADMIN_DEMO_GO_NO_GO.md)
+- (Cierre fase auditoría schema PR #225–#238) [`docs/project/CORE_ADMIN_SCHEMA_AUDIT_PHASE_CLOSURE_PR225_PR238.md`](docs/project/CORE_ADMIN_SCHEMA_AUDIT_PHASE_CLOSURE_PR225_PR238.md)
 - (Demo técnica Core Admin) [`docs/project/CORE_ADMIN_TECHNICAL_DEMO_GUIDE.md`](docs/project/CORE_ADMIN_TECHNICAL_DEMO_GUIDE.md)
 
 Convenciones de estado usadas en Core Admin:

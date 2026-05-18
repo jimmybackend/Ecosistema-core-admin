@@ -59,10 +59,11 @@
 - [x] `php -l routes/web.php`
 - [x] `php -l scripts/smoke-check.php`
 - [x] `composer smoke`
-- [ ] `composer schema:usage` si existe
+- [x] `composer schema:usage` si existe (N/A: comando no definido en `composer.json`)
+- [x] Validaciones re-ejecutadas el 2026-05-18 (UTC)
 
 ## 9. Resultado
 - Estado: `Go con advertencias`
-- Warnings aceptados: No se ejecutó `composer schema:usage` por no estar definido como comando obligatorio en este alcance.
+- Warnings aceptados: `composer smoke` reporta warnings informativos preexistentes (referencias textuales y checks HTTP manuales), sin fallos críticos nuevos.
 - Pendientes que pasan al backlog: Reforzar automatización de auditoría de columnas CRM por contrato SQL en `scripts/smoke-check.php` con checks no frágiles.
 - Evidencia principal: `docs/schema-usage/crm_campaigns_pr233_audit.md`

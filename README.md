@@ -132,6 +132,7 @@ Estas flags deben permanecer en `false` por defecto en `.env.example` y en cualq
 
 - Runbook unificado de verificación local: [`docs/project/CORE_ADMIN_LOCAL_VERIFICATION_RUNBOOK.md`](docs/project/CORE_ADMIN_LOCAL_VERIFICATION_RUNBOOK.md)
 - Checklist QA/manual de entorno demo-operativo: [`docs/qa/ECOSISTEMA_MANUAL_QA_END_TO_END.md`](docs/qa/ECOSISTEMA_MANUAL_QA_END_TO_END.md)
+- Plan QA manual completo por módulo (PR #256): [`docs/qa/CORE_ADMIN_FULL_MANUAL_QA_PLAN.md`](docs/qa/CORE_ADMIN_FULL_MANUAL_QA_PLAN.md)
 - Comando operativo:
 
 ```bash

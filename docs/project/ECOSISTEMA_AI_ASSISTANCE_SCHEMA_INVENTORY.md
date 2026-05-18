@@ -47,10 +47,10 @@ Uso seguro esperado:
 - Verificación de versión/hashes en diagnósticos internos.
 
 ### `chat_threads`
-Columnas: `id`, `tenant_id`, `user_id`, `title`, `status`, `created_at`, `updated_at`.
+Columnas: `id`, `tenant_id`, `thread_key`, `title`, `thread_type`, `created_by_user_id`, `created_at`.
 
 ### `chat_messages`
-Columnas: `id`, `tenant_id`, `thread_id`, `sender_type`, `sender_user_id`, `content`, `metadata_json`, `created_at`.
+Columnas: `id`, `tenant_id`, `thread_id`, `sender_user_id`, `sender_type`, `message_text`, `cloud_file_id`, `sent_at`.
 
 Uso seguro esperado:
 - Métricas operativas (conteos, estados, latencia de respuesta).

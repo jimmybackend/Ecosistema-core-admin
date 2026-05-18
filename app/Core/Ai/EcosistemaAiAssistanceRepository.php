@@ -20,12 +20,21 @@ final readonly class EcosistemaAiAssistanceRepository
         return is_array($row) ? $row : null;
     }
 
-    public function insertProposal(int $tenantId, int $userId, array $proposal): ?int
+    public function insertProposal(int $tenantId, int $userId, array $proposal): ?string
     {
-        $sql = 'INSERT INTO os_ai_proposals (boot_id,tenant_id,user_id,created_unix,proposal_type,summary,rationale,risk_level,benefit_level,requires_human_confirmation,status,created_at,updated_at)
-                VALUES (:boot_id,:tenant_id,:user_id,:created_unix,:proposal_type,:summary,:rationale,:risk_level,:benefit_level,:requires_human_confirmation,:status,NOW(),NOW())';
+        $proposalId = trim((string) ($proposal['proposal_id'] ?? ''));
+        if ($proposalId === '') {
+            $proposalId = bin2hex(random_bytes(16));
+        }
+        $bootId = trim((string) ($proposal['boot_id'] ?? ''));
+        if ($bootId === '') {
+            $bootId = 'boot-' . (string) time();
+        }
+        $sql = 'INSERT INTO os_ai_proposals (proposal_id,boot_id,tenant_id,user_id,created_unix,proposal_type,summary,rationale,risk_level,benefit_level,requires_human_confirmation,status,created_at,updated_at)
+                VALUES (:proposal_id,:boot_id,:tenant_id,:user_id,:created_unix,:proposal_type,:summary,:rationale,:risk_level,:benefit_level,:requires_human_confirmation,:status,NOW(),NOW())';
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':boot_id', (int) ($proposal['boot_id'] ?? time()), PDO::PARAM_INT);
+        $stmt->bindValue(':proposal_id', $proposalId, PDO::PARAM_STR);
+        $stmt->bindValue(':boot_id', $bootId, PDO::PARAM_STR);
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':created_unix', time(), PDO::PARAM_INT);
@@ -39,6 +48,6 @@ final readonly class EcosistemaAiAssistanceRepository
         if (!$stmt->execute()) {
             return null;
         }
-        return (int) $this->pdo->lastInsertId();
+        return $proposalId;
     }
 }

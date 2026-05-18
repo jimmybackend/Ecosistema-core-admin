@@ -33,11 +33,11 @@ final readonly class EcosistemaAiCampaignInsightDryRunRepository
 
     public function countCampaignEvents(int $tenantId, int $campaignId): int
     {
-        $sql = 'SELECT COUNT(*) FROM service_event_logs WHERE tenant_id=:tenant_id AND resource_type=:resource_type AND resource_id=:resource_id';
+        $sql = 'SELECT COUNT(*) FROM service_event_logs WHERE tenant_id=:tenant_id AND source_table=:source_table AND source_id=:source_id';
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
-        $stmt->bindValue(':resource_type', 'crm_campaign', PDO::PARAM_STR);
-        $stmt->bindValue(':resource_id', $campaignId, PDO::PARAM_INT);
+        $stmt->bindValue(':source_table', 'crm_marketing_campaigns', PDO::PARAM_STR);
+        $stmt->bindValue(':source_id', $campaignId, PDO::PARAM_INT);
         $stmt->execute();
         return (int) ($stmt->fetchColumn() ?: 0);
     }

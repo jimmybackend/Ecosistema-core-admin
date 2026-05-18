@@ -28,7 +28,7 @@ final readonly class EcosistemaReportExportRepository
         $stmt->bindValue(':report_type', $reportType);
         $stmt->bindValue(':source_id', $sourceId, PDO::PARAM_INT);
         $stmt->bindValue(':format', $format);
-        $stmt->bindValue(':status', 'pending');
+        $stmt->bindValue(':status', 'queued');
         $stmt->bindValue(':requested_by_user_id', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':metadata_json', $metadataJson);
         $stmt->execute();

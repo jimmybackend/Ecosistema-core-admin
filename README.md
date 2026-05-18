@@ -78,6 +78,7 @@ Fuente de estado operativo por módulo:
 - (Runbook demo privada controlada, PR #240) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_RUNBOOK.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_RUNBOOK.md)
 - (Guion ejecutivo/técnico demo privada 10–15 min, PR #244) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_SCRIPT_10_15_MIN.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_SCRIPT_10_15_MIN.md)
 - (Checklist final día de demo privada, PR #245) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_DAY_CHECKLIST.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_DAY_CHECKLIST.md)
+- (Cierre final paquete demo privada controlada, PR #246) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_PACKAGE_CLOSURE.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_PACKAGE_CLOSURE.md)
 
 Convenciones de estado usadas en Core Admin:
 

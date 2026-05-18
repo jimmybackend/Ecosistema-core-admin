@@ -74,6 +74,8 @@ Fuente de estado operativo por módulo:
 - (Cierre Go/No-Go demo privada, PR #224) [`docs/project/CORE_ADMIN_DEMO_GO_NO_GO.md`](docs/project/CORE_ADMIN_DEMO_GO_NO_GO.md)
 - (Cierre fase auditoría schema PR #225–#238) [`docs/project/CORE_ADMIN_SCHEMA_AUDIT_PHASE_CLOSURE_PR225_PR238.md`](docs/project/CORE_ADMIN_SCHEMA_AUDIT_PHASE_CLOSURE_PR225_PR238.md)
 - (Demo técnica Core Admin) [`docs/project/CORE_ADMIN_TECHNICAL_DEMO_GUIDE.md`](docs/project/CORE_ADMIN_TECHNICAL_DEMO_GUIDE.md)
+- (Checklist demo privada controlada, PR #240) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_CHECKLIST.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_CHECKLIST.md)
+- (Runbook demo privada controlada, PR #240) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_RUNBOOK.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_RUNBOOK.md)
 
 Convenciones de estado usadas en Core Admin:
 

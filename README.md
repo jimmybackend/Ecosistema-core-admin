@@ -142,5 +142,6 @@ composer schema:usage
 ## Seguridad
 
 - Hardening de producción: [`docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md`](docs/security/ECOSISTEMA_PRODUCTION_HARDENING_CHECKLIST.md)
+- Hardening preproducción Core Admin: [`docs/security/CORE_ADMIN_PREPRODUCTION_HARDENING_CHECKLIST.md`](docs/security/CORE_ADMIN_PREPRODUCTION_HARDENING_CHECKLIST.md)
 - Flags, permisos y superficie de riesgo: [`docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md`](docs/security/CORE_ADMIN_FLAGS_PERMISSIONS_SECURITY_MATRIX.md)
 - Auditoría de exposición privacidad/seguridad: [`docs/security/ECOSISTEMA_PRIVACY_SECURITY_EXPOSURE_AUDIT.md`](docs/security/ECOSISTEMA_PRIVACY_SECURITY_EXPOSURE_AUDIT.md)

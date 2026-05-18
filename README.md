@@ -118,6 +118,7 @@ Estas flags deben permanecer en `false` por defecto en `.env.example` y en cualq
 ## Deploy / VM
 
 - Runbook principal de despliegue en VM: [`docs/deploy/CORE_ADMIN_VM_RUNBOOK.md`](docs/deploy/CORE_ADMIN_VM_RUNBOOK.md)
+- Runbook de demo privada en VM/EC2 controlada: [`docs/deploy/CORE_ADMIN_PRIVATE_DEMO_VM_EC2_RUNBOOK.md`](docs/deploy/CORE_ADMIN_PRIVATE_DEMO_VM_EC2_RUNBOOK.md)
 - Verificación de readiness operativa: [`docs/ops/ECOSISTEMA_OPERATIONAL_READINESS_VERIFICATION.md`](docs/ops/ECOSISTEMA_OPERATIONAL_READINESS_VERIFICATION.md)
 
 ## Smoke checks

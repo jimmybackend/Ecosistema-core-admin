@@ -12,7 +12,7 @@ $result = isset($result) && is_array($result) ? $result : null;
       <li>allowed: <?= !empty($result['allowed']) ? 'true' : 'false' ?></li>
       <li>provider: <?= htmlspecialchars((string)($result['provider'] ?? 'none'), ENT_QUOTES, 'UTF-8') ?></li>
       <li>proposal_persisted: <?= !empty($result['proposal_persisted']) ? 'true' : 'false' ?></li>
-      <li>proposal_id: <?= isset($result['proposal_id']) ? (int)$result['proposal_id'] : 0 ?></li>
+      <li>proposal_id: <?= htmlspecialchars((string)($result['proposal_id'] ?? ''), ENT_QUOTES, 'UTF-8') ?></li>
       <li>pii_preview_only: <?= !empty($result['pii_preview_only']) ? 'true' : 'false' ?></li>
     </ul>
   <?php else: ?>

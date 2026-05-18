@@ -169,6 +169,7 @@ $requiredFiles = [
     'scripts/backup-check.php',
     'scripts/cron-runner.php',
     'scripts/ops-monitor-check.php',
+    'scripts/schema-usage-check.php',
     'app/Core/Onboarding/OnboardingRunner.php',
     'app/Core/Onboarding/OnboardingStepExecutor.php',
     'resources/views/pages/onboarding/show-run.php',
@@ -3105,6 +3106,14 @@ foreach ($criticalFlagsFromReadme as $flagLine) {
 }
 
 
+
+
+$composerJson = (string) file_get_contents($root . '/composer.json');
+if (str_contains($composerJson, '"schema:usage"')) {
+    ok('composer.json declara script schema:usage.');
+} else {
+    fail('composer.json no declara script schema:usage.', $criticalFailures);
+}
 
 // PR #216 public routes safety audit checks
 $publicRoutesAuditPath = 'docs/security/CORE_ADMIN_PUBLIC_ROUTES_SECURITY_AUDIT.md';

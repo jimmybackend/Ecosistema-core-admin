@@ -76,7 +76,7 @@ Fuente de estado operativo por módulo:
 - (Demo técnica Core Admin) [`docs/project/CORE_ADMIN_TECHNICAL_DEMO_GUIDE.md`](docs/project/CORE_ADMIN_TECHNICAL_DEMO_GUIDE.md)
 - (Checklist demo privada controlada, PR #240) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_CHECKLIST.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_CHECKLIST.md)
 - (Runbook demo privada controlada, PR #240) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_RUNBOOK.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_RUNBOOK.md)
-- (Dataset ficticio seguro para demo privada) [`docs/demo/CORE_ADMIN_SAFE_DEMO_DATASET.md`](docs/demo/CORE_ADMIN_SAFE_DEMO_DATASET.md)
+- (Guion ejecutivo/técnico demo privada 10–15 min, PR #244) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_SCRIPT_10_15_MIN.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_SCRIPT_10_15_MIN.md)
 
 Convenciones de estado usadas en Core Admin:
 

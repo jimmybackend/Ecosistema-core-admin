@@ -48,10 +48,20 @@ final class EcosistemaRateLimitRepository
         return $stmt->execute();
     }
 
-    public function insertIncident(int $tenantId, int $reportedByUserId, string $title, string $description, string $severity, string $status, string $sourceModule, string $sourceTable, string $sourceId): bool
+    public function insertIncident(int $tenantId, int $reportedByUserId, string $title, string $description, string $severity, string $status, string $sourceModule, string $sourceTable, ?int $sourceId): bool
     {
         $sql = 'INSERT INTO security_incidents (tenant_id, reported_by_user_id, title, description, severity, status, source_module, source_table, source_id, detected_at, created_at, updated_at) VALUES (:tenant_id, :reported_by_user_id, :title, :description, :severity, :status, :source_module, :source_table, :source_id, NOW(), NOW(), NOW())';
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([':tenant_id' => $tenantId, ':reported_by_user_id' => $reportedByUserId, ':title' => $title, ':description' => $description, ':severity' => $severity, ':status' => $status, ':source_module' => $sourceModule, ':source_table' => $sourceTable, ':source_id' => $sourceId]);
+        $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
+        $stmt->bindValue(':reported_by_user_id', $reportedByUserId, PDO::PARAM_INT);
+        $stmt->bindValue(':title', $title, PDO::PARAM_STR);
+        $stmt->bindValue(':description', $description, PDO::PARAM_STR);
+        $stmt->bindValue(':severity', $severity, PDO::PARAM_STR);
+        $stmt->bindValue(':status', $status, PDO::PARAM_STR);
+        $stmt->bindValue(':source_module', $sourceModule, PDO::PARAM_STR);
+        $stmt->bindValue(':source_table', $sourceTable, PDO::PARAM_STR);
+        $stmt->bindValue(':source_id', $sourceId, $sourceId === null ? PDO::PARAM_NULL : PDO::PARAM_INT);
+
+        return $stmt->execute();
     }
 }

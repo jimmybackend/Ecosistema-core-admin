@@ -80,6 +80,7 @@ Fuente de estado operativo por módulo:
 - (Checklist final día de demo privada, PR #245) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_DAY_CHECKLIST.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_DAY_CHECKLIST.md)
 - (Cierre final paquete demo privada controlada, PR #246) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_PACKAGE_CLOSURE.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_PACKAGE_CLOSURE.md)
 - (Checklist preparación entorno/datos primera demo privada, PR #248) [`docs/demo/CORE_ADMIN_FIRST_PRIVATE_DEMO_PREP_CHECKLIST.md`](docs/demo/CORE_ADMIN_FIRST_PRIVATE_DEMO_PREP_CHECKLIST.md)
+- (Bitácora de ejecución primera demo privada, PR #249) [`docs/demo/CORE_ADMIN_FIRST_PRIVATE_DEMO_EXECUTION_LOG.md`](docs/demo/CORE_ADMIN_FIRST_PRIVATE_DEMO_EXECUTION_LOG.md)
 
 Convenciones de estado usadas en Core Admin:
 

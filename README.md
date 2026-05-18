@@ -83,6 +83,7 @@ Fuente de estado operativo por módulo:
 - (Bitácora de ejecución primera demo privada, PR #249) [`docs/demo/CORE_ADMIN_FIRST_PRIVATE_DEMO_EXECUTION_LOG.md`](docs/demo/CORE_ADMIN_FIRST_PRIVATE_DEMO_EXECUTION_LOG.md)
 - (Reporte post-demo privada controlada, PR #250) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_POST_REPORT.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_POST_REPORT.md)
 - (Backlog post-demo y roadmap a producción controlada, PR #252) [`docs/project/CORE_ADMIN_POST_DEMO_BACKLOG_AND_ROADMAP.md`](docs/project/CORE_ADMIN_POST_DEMO_BACKLOG_AND_ROADMAP.md)
+- (Plan de demo ampliada controlada, PR #253) [`docs/demo/CORE_ADMIN_CONTROLLED_EXTENDED_DEMO_PLAN.md`](docs/demo/CORE_ADMIN_CONTROLLED_EXTENDED_DEMO_PLAN.md)
 - (Cierre maestro readiness demo privada, PR #251) [`docs/demo/CORE_ADMIN_PRIVATE_DEMO_READINESS_MASTER.md`](docs/demo/CORE_ADMIN_PRIVATE_DEMO_READINESS_MASTER.md)
 
 Convenciones de estado usadas en Core Admin:

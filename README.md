@@ -122,6 +122,7 @@ Estas flags deben permanecer en `false` por defecto en `.env.example` y en cualq
 
 ```bash
 composer smoke
+composer schema:usage
 ```
 
 ## Seguridad

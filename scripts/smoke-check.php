@@ -1662,7 +1662,7 @@ if ($readmeContent !== false && str_contains($readmeContent, 'ECOSISTEMA_BROWSER
 }
 
 $browserInventoryContent = is_file($browserInventoryPath) ? file_get_contents($browserInventoryPath) : false;
-foreach (['browser_analytics_sessions', 'browser_analytics_pageviews', 'browser_analytics_events', 'browser_analytics_attribution'] as $requiredMention) {
+foreach (['browser_analytics_attribution', 'browser_analytics_campaign_clicks', 'browser_analytics_campaign_impressions', 'browser_analytics_daily_rollups', 'browser_analytics_events', 'browser_analytics_pageviews', 'browser_analytics_searches', 'browser_analytics_sessions'] as $requiredMention) {
     if ($browserInventoryContent !== false && str_contains($browserInventoryContent, $requiredMention)) {
         ok('Inventario Browser Analytics menciona: ' . $requiredMention);
     } else {

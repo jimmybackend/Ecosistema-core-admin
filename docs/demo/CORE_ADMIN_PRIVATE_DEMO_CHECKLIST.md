@@ -1,4 +1,4 @@
-# Core Admin — Checklist de demo privada controlada (PR #240)
+# Core Admin — Checklist de demo privada controlada (PR #241)
 
 - **Fecha base:** 2026-05-18 (UTC)
 - **Repositorio:** `jimmybackend/Ecosistema-core-admin`
@@ -12,38 +12,42 @@
 - [ ] Se usará tenant demo y usuarios ficticios (`example.test`).
 - [ ] Se confirma narrativa técnica: estados **operativo**, **read-only**, **dry-run**, **controlled**.
 - [ ] Se confirma explícitamente que esta demo **NO** es salida a producción SaaS.
+- [ ] Se confirma que el alcance de la sesión es técnico-operativo y de validación previa.
+- [ ] Se confirma que no se habilitarán integraciones externas reales durante la sesión.
 
-## 2) Entorno recomendado
+## 2) Entorno permitido
 
-- [ ] Ejecutar sobre VM/local con `.env` derivado de `.env.vm.example` o `.env.example`.
-- [ ] Mantener APP en modo seguro para demo (`APP_DEBUG=false` en sesión compartida).
-- [ ] Base de datos apuntando a entorno controlado/no productivo (`adbbmis1_eco` de demo).
-- [ ] Sin workers productivos externos, sin colas productivas y sin integraciones reales.
+- [ ] Entorno local permitido (equipo de desarrollo bajo control interno).
+- [ ] VM interna permitida (acceso restringido por red interna/VPN).
+- [ ] EC2 permitido **solo** si está aislado, controlado y sin exposición pública innecesaria.
+- [ ] No se expone la demo a Internet abierta salvo necesidad explícita y mitigada.
+- [ ] HTTPS recomendado cuando la demo se comparte por red (VM/EC2 controlada).
+- [ ] Acceso limitado a personas autorizadas (equipo técnico/operativo definido).
 
-## 3) Usuario demo/ficticio
+## 3) Datos permitidos
 
-- [ ] Usuario owner demo ficticio (ejemplo: `alicia.demo+owner@example.test`).
-- [ ] Usuario operador demo ficticio (ejemplo: `bruno.operador@example.test`).
-- [ ] Usuario auditor read-only ficticio (ejemplo: `carla.audit@example.test`).
-- [ ] Credenciales temporales solo en gestor seguro local; no en markdown ni capturas.
+- [ ] Tenant demo ficticio (sin datos de cliente real).
+- [ ] Usuarios demo ficticios (owner, operador, auditor).
+- [ ] Correos únicamente con dominio `example.test`.
+- [ ] Nombres/alias estrictamente ficticios.
+- [ ] Campañas, leads y reportes de demo con prefijos `DEMO-` / `CMP-DEMO-`.
+- [ ] Archivos de demo sin información sensible ni metadatos privados.
 
-## 4) Datos demo permitidos
+## 4) Datos prohibidos
 
-- [ ] Tenants, campañas, leads y reportes sintéticos con prefijos `DEMO-`/`CMP-DEMO-`.
-- [ ] Correos de prueba exclusivamente `@example.test`.
-- [ ] Teléfonos, direcciones y URLs ficticias (`https://demo.local` / `https://example.test`).
-- [ ] Archivos demo locales no sensibles (ej. `demo-brief.pdf`).
+- [ ] Clientes reales (nombres comerciales/razones sociales reales).
+- [ ] Correos reales de personas u organizaciones reales.
+- [ ] Teléfonos reales.
+- [ ] Contraseñas reales o reutilizadas de entornos reales.
+- [ ] Tokens, API keys, JWTs o secretos reales.
+- [ ] Dumps reales de base de datos o exportes productivos.
+- [ ] Claves AWS reales.
+- [ ] Credenciales SMTP reales.
+- [ ] Información personal/financiera real (PII/finanzas).
 
-## 5) Datos prohibidos
+## 5) Flags y servicios externos (deben permanecer `false`)
 
-- [ ] Correos/telefonía/PII reales.
-- [ ] API keys, tokens, JWTs, secretos, passwords reales.
-- [ ] Dumps o exportes con datos reales de cliente.
-- [ ] Capturas con credenciales, paneles de infraestructura real o logs sensibles.
-
-## 6) Flags que deben permanecer apagadas (`false`)
-
-Verificadas en `.env.example` y `.env.vm.example`:
+Verificar en `.env.example`, `.env.vm.example` y `.env` efectivo de demo:
 
 - [ ] `MAIL_SEND_ENABLED=false`
 - [ ] `MAIL_ALLOW_TEST_SEND=false`
@@ -62,73 +66,123 @@ Verificadas en `.env.example` y `.env.vm.example`:
 - [ ] `ECOSISTEMA_REPORT_EXPORT_INCLUDE_PII=false`
 - [ ] `CORE_REGISTRATION_ENABLED=false`
 
-## 7) Comandos previos obligatorios
+## 6) Validaciones previas obligatorias
 
-```bash
-composer dump-autoload
-php -l routes/web.php
-php -l scripts/smoke-check.php
-php -l scripts/schema-compatibility-check.php
-php -l scripts/schema-usage-check.php
-composer smoke
-composer schema:usage
-```
+- [ ] `composer dump-autoload` ejecutado (autoload actualizado).
+- [ ] `php -l routes/web.php` sin errores de sintaxis.
+- [ ] `php -l scripts/smoke-check.php` sin errores de sintaxis.
+- [ ] `php -l scripts/schema-compatibility-check.php` sin errores de sintaxis.
+- [ ] `php -l scripts/schema-usage-check.php` sin errores de sintaxis.
+- [ ] `composer smoke` sin fallos críticos nuevos.
+- [ ] `composer schema:usage` ejecutado en OK o con advertencia controlada (por ejemplo, DB no disponible en entorno de demo).
+- [ ] Revisión manual de `.env.example` y `.env.vm.example` completada.
+- [ ] Confirmación de que no hay secretos versionados en el repositorio.
 
-## 8) Rutas a probar (mínimo)
+## 7) Módulos que se pueden mostrar (por estado)
 
-- [ ] `/login`
-- [ ] `/dashboard`
-- [ ] `/tenants`, `/users`, `/roles`, `/permissions`, `/modules`
-- [ ] `/system/health`, `/system/logs`, `/system/audit`, `/audit/events`
-- [ ] `/cloud` y vistas administrativas de drive (solo lectura/controlado)
-- [ ] `/reports/*` en lectura/dry-run
+### Operativo
 
-## 9) Módulos a mostrar en demo
+- [ ] Login + Dashboard.
+- [ ] Administración interna de usuarios / roles / permisos.
+- [ ] Auditoría y system health/logs como capacidades internas.
 
-- [ ] Auth + Dashboard (operativo interno)
-- [ ] Tenants/Users/Roles/Permissions/Modules (administración interna)
-- [ ] System/Audit (lectura)
-- [ ] CRM/Campaigns/Landing/URL Locator/Reports/Workflow en modo read-only/dry-run/controlled
+### Read-only
 
-## 10) Módulos que NO deben mostrarse como productivos
+- [ ] CRM en consulta (sin promesa de operación productiva externa).
+- [ ] Campaigns en visualización y revisión de estado.
+- [ ] Browser analytics en consulta.
+- [ ] Landing en consulta administrativa.
+- [ ] Reports de lectura sin export sensible.
 
-- [ ] SMTP/Mail send real.
-- [ ] AWS/S3 o Drive remoto real (uploads/downloads/signed URLs).
-- [ ] IA externa real.
-- [ ] Ejecución real de workflows/workers productivos.
-- [ ] Exportes con PII o billing real.
+### Dry-run
 
-## 11) Criterios Go/No-Go antes de iniciar demo
+- [ ] Workflow en simulación sin ejecución real externa.
+- [ ] Flujos de report export en simulación cuando aplique.
+- [ ] AI/VitaOS en simulación (sin proveedor externo activo).
 
-**Go**
-- [ ] Lint y smoke sin fallos críticos nuevos.
-- [ ] `schema:usage` en OK o warning controlado por DB no disponible.
-- [ ] Flags sensibles confirmadas en `false`.
-- [ ] Dataset ficticio validado.
+### Controlled
 
-**No-Go**
-- [ ] Cualquier evidencia de datos reales/secretos en UI o consola.
-- [ ] Flags sensibles activadas sin control.
-- [ ] Falla crítica en login/dashboard o en gate base.
+- [ ] Cloud/Drive con guardrails y bloqueo de remotos reales.
+- [ ] Mail notifications con envíos reales desactivados.
+- [ ] Onboarding/acciones sensibles solo bajo control explícito y sin impacto productivo.
+
+> No prometer producción SaaS ni comportamiento productivo externo durante la demo.
+
+## 8) Módulos/acciones que NO deben ejecutarse como reales
+
+- [ ] Envío real de correo (SMTP).
+- [ ] Subida real a S3.
+- [ ] Descarga real desde S3.
+- [ ] Llamadas IA externas.
+- [ ] Workers/ejecuciones reales de producción.
+- [ ] Billing real.
+- [ ] Report exports con PII real.
+- [ ] Registros públicos abiertos sin control.
+- [ ] Formularios públicos con datos reales.
+
+## 9) Guion breve de demo (recorrido recomendado)
+
+- [ ] Abrir contexto: demo privada controlada, no producción.
+- [ ] Login con usuario ficticio demo.
+- [ ] Recorrido por dashboard.
+- [ ] Recorrido por usuarios/roles/permisos.
+- [ ] Recorrido por auditoría/logs.
+- [ ] Mostrar un módulo en estado read-only.
+- [ ] Mostrar un flujo en estado dry-run.
+- [ ] Cerrar con límites técnicos y siguientes pasos.
+
+## 10) Capturas permitidas y prohibidas
+
+### Permitidas
+
+- [ ] Pantallas con datos ficticios.
+- [ ] Estados generales de módulos.
+- [ ] Checklists y evidencia de validaciones.
+- [ ] Reportes sin PII.
+
+### Prohibidas
+
+- [ ] `.env` completo o fragmentos sensibles.
+- [ ] Tokens/keys/secretos.
+- [ ] IPs completas y datos de infraestructura no anonimizados.
+- [ ] User-agent completo.
+- [ ] JSON crudo sensible.
+- [ ] Rutas internas privadas no destinadas a difusión.
+- [ ] Stack traces con contexto sensible.
+- [ ] Credenciales de cualquier tipo.
+
+## 11) Criterio Go / No-Go antes de demo
+
+### Go
+
+- [ ] No hay fallos críticos en validaciones base.
+- [ ] Dataset ficticio confirmado.
+- [ ] Flags seguras en estado correcto.
+- [ ] Servicios externos reales apagados.
+- [ ] Narrativa de límites clara y repetible por el presentador.
+
+### No-Go
+
+- [ ] Se detectan datos reales.
+- [ ] Se detectan secretos/credenciales expuestas.
+- [ ] Hay servicios externos activos sin control.
+- [ ] `composer smoke` falla críticamente.
+- [ ] Hay schema mismatch crítico no mitigado.
+- [ ] No se puede explicar claramente qué es demo y qué no es producción.
 
 ## 12) Checklist post-demo
 
-- [ ] Cerrar sesión de todos los usuarios demo.
-- [ ] Revocar/rotar credenciales temporales usadas en sesión.
-- [ ] Eliminar archivos temporales de export/demo.
-- [ ] Confirmar nuevamente flags sensibles en `false`.
-- [ ] Registrar resultado final: Go / Go con advertencias / No-Go.
+- [ ] Cerrar sesión de usuarios demo.
+- [ ] Remover/desactivar usuarios temporales si aplica.
+- [ ] Borrar datos demo temporales si aplica.
+- [ ] Apagar VM/instancia temporal si aplica.
+- [ ] Revisar logs post-sesión.
+- [ ] Confirmar que no se compartieron capturas sensibles.
+- [ ] Registrar hallazgos, riesgos y feedback.
 
-## 13) Limpieza de datos temporales
+## 13) Resultado final
 
-- [ ] Eliminar o desactivar usuarios demo creados ad hoc.
-- [ ] Limpiar registros temporales de pruebas dry-run si aplica.
-- [ ] Borrar capturas locales no necesarias o moverlas a repositorio seguro interno.
-- [ ] Verificar que no quedaron `.env`, tokens o secretos en staging/commits.
-
-## 14) Notas de seguridad
-
-- Esta demo es **privada controlada** y no habilita capacidad pública SaaS.
-- Toda integración externa debe permanecer desactivada por defecto.
-- Cualquier excepción debe documentarse, aprobarse y revertirse al cierre.
-- Cualquier hallazgo de datos sensibles implica corte inmediato de demo (No-Go).
+- **Estado:** [ ] Pendiente  [ ] Go  [ ] Go con advertencias  [ ] No-Go
+- **Responsable:**
+- **Fecha:**
+- **Observaciones:**

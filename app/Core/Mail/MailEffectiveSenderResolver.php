@@ -15,7 +15,7 @@ final readonly class MailEffectiveSenderResolver
     public function resolve(int $tenantId, int $userId, ?int $mailboxId): array
     {
         if ($mailboxId !== null) {
-            $mailboxSmtp = $this->smtpAccounts->findActiveByMailbox($tenantId, $mailboxId);
+            $mailboxSmtp = $this->smtpAccounts->findActiveByMailboxForUser($tenantId, $userId, $mailboxId);
             if (is_array($mailboxSmtp)) return $this->fromAccount($mailboxSmtp, 'mailbox_smtp');
         }
 

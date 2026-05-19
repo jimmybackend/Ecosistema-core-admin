@@ -12,16 +12,16 @@ final readonly class MailboxRepository
     {
     }
 
-    public function listActiveByUser(int $tenantId, int $userId): array
+    public function listActiveForUser(int $tenantId, int $userId): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, tenant_id, user_id, full_address, display_name, status FROM mail_mailboxes WHERE tenant_id = :tenant_id AND user_id = :user_id AND status = :status ORDER BY id DESC LIMIT 100');
+        $stmt = $this->pdo->prepare('SELECT id, tenant_id, user_id, full_address, display_name, status, available_to_everyone FROM mail_mailboxes WHERE tenant_id = :tenant_id AND status = :status AND (user_id = :user_id OR available_to_everyone = 1) ORDER BY available_to_everyone DESC, id DESC LIMIT 100');
         $stmt->execute([':tenant_id' => $tenantId, ':user_id' => $userId, ':status' => 'active']);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
-    public function findActiveById(int $tenantId, int $userId, int $mailboxId): ?array
+    public function findActiveForUserById(int $tenantId, int $userId, int $mailboxId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT id, tenant_id, user_id, full_address, status FROM mail_mailboxes WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id AND status = :status LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT id, tenant_id, user_id, full_address, status, available_to_everyone FROM mail_mailboxes WHERE id = :id AND tenant_id = :tenant_id AND status = :status AND (user_id = :user_id OR available_to_everyone = 1) LIMIT 1');
         $stmt->execute([':id' => $mailboxId, ':tenant_id' => $tenantId, ':user_id' => $userId, ':status' => 'active']);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return is_array($row) ? $row : null;

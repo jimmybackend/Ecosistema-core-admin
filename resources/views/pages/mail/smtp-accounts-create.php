@@ -2,13 +2,22 @@
 $mailboxes = is_array($mailboxes ?? null) ? $mailboxes : [];
 $statusMessage = is_string($statusMessage ?? null) ? $statusMessage : null;
 $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
+$authData = is_array($auth ?? null) ? $auth : [];
+$authEmail = (string) ($authData['email'] ?? $authData['auth_email'] ?? 'no-disponible');
+$authName = (string) ($authData['display_name'] ?? $authData['auth_display_name'] ?? '');
 ?>
 <section>
 <h1>Crear SMTP propio</h1>
-<p>Usuario autenticado (panel) y mailbox operativa (correo) son identidades distintas.</p>
-<p>SMTP global de <code>.env</code> funciona como fallback. La contraseña SMTP es independiente de la contraseña del panel.</p>
+<p>Usuario autenticado: <strong><?= e($authName !== '' ? ($authName . ' (' . $authEmail . ')') : $authEmail) ?></strong>.</p>
+<p>Tu correo de acceso al panel puede ser distinto del correo operativo asignado para seguimiento y soporte.</p>
+<p>SMTP global de <code>.env</code> funciona como fallback solo si la política/flags lo permiten. La contraseña SMTP es independiente de la contraseña del panel.</p>
 <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
 <?php if ($errorMessage): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
+
+<?php if ($mailboxes === []): ?>
+<div class="eco-alert" role="alert">No tienes mailboxes operativas activas asignadas.</div>
+<p>No es posible crear una cuenta SMTP hasta que tengas una mailbox activa asignada en tu tenant.</p>
+<?php else: ?>
 <form method="post" action="/mail/smtp-accounts">
 <input type="hidden" name="_csrf" value="<?= e((string)($csrfToken ?? '')) ?>">
 <label>Mailbox operativa asignada</label>
@@ -30,4 +39,5 @@ $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
 <label>Status</label><select name="status"><option value="active">active</option><option value="disabled">disabled</option></select>
 <div style="margin-top:1rem;"><button class="eco-button btn" type="submit">Guardar SMTP</button> <a class="eco-button btn" href="/mail/smtp-accounts">Cancelar</a></div>
 </form>
+<?php endif; ?>
 </section>

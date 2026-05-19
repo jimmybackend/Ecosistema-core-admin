@@ -138,3 +138,9 @@ Lineamientos de seguridad para PRs funcionales:
 - El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.
 
 - Update 2026-05-19: `mail_smtp_accounts` ahora es editable desde UI controlada (`/mail/smtp-accounts*`) solo para usuarios autenticados con `mail.manage`; no se insertan datos por PR, password SMTP cifrada en `password_encrypted` (independiente del password del panel) y envío real sigue bloqueado por `MAIL_SEND_ENABLED` + `MAIL_ALLOW_TEST_SEND` en `false`.
+
+- Update 2026-05-19 (multiusuario/multitenant): la selección y uso de mailbox/SMTP es dinámica por `auth_tenant_id` + `auth_user_id`.
+- La mailbox operativa siempre sale de `mail_mailboxes` (propia o compartida explícitamente dentro del mismo tenant); nunca de valores hardcodeados.
+- La cuenta SMTP efectiva sale de `mail_smtp_accounts` ligada a `mailbox_id` permitido para el usuario autenticado y su tenant.
+- El correo de login del panel puede ser distinto del correo operativo de envío/seguimiento.
+- No se permite cruce entre tenants ni uso accidental de SMTP de otro usuario fuera de política compartida del tenant.

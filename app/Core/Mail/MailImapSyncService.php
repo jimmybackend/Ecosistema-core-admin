@@ -8,8 +8,11 @@ use App\Support\SecretBox;
 use PDO;
 use PDOException;
 use Throwable;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Webklex\PHPIMAP\ClientManager;
 use Webklex\PHPIMAP\Message;
+use Webklex\PHPIMAP\Attribute;
 
 final class MailImapSyncService
 {
@@ -76,67 +79,59 @@ final class MailImapSyncService
                     $result['skipped']++;
                     continue;
                 }
-
                 $uid = (int) ($message->getUid() ?? 0);
-                $headers = (string) ($message->getHeader()->raw ?? '');
-                $externalMessageId = $this->extractMessageId((string) ($message->getMessageId() ?? ''), $headers) ?? ('imap-uid:' . $uid);
-                if ($this->existsMessage($tenantId, $mailboxId, $externalMessageId)) {
-                    $result['skipped']++;
-                    continue;
-                }
+                try {
+                    $headers = $this->webklexAttributeToString($message->getHeader()?->raw) ?? '';
+                    $externalMessageId = $this->extractMessageId($this->webklexAttributeToString($message->getMessageId()) ?? '', $headers) ?? ('imap-uid:' . $uid);
+                    if ($this->existsMessage($tenantId, $mailboxId, $externalMessageId)) {
+                        $result['skipped']++;
+                        continue;
+                    }
+                    $plainBody = trim((string) $message->getTextBody());
+                    $htmlBody = trim((string) $message->getHTMLBody());
+                    if ($plainBody === '') { $plainBody = trim(strip_tags($htmlBody)); }
+                    $to = $this->normalizeAddressList($message->getTo());
+                    $cc = $this->normalizeAddressList($message->getCc());
+                    $bcc = $this->normalizeAddressList($message->getBcc());
+                    $from = $this->normalizeAddressList($message->getFrom());
+                    $isRead = (bool) $message->getFlag('seen');
+                    $isStarred = (bool) $message->getFlag('flagged');
+                    $receivedDt = $this->webklexAttributeToDateTime($message->getDate()) ?? new DateTimeImmutable();
+                    $receivedAt = $receivedDt->format('Y-m-d H:i:s');
+                    $subject = $this->webklexAttributeToString($message->getSubject()) ?? '';
+                    $attachmentParts = [];
+                    foreach ($message->getAttachments() as $attachment) {
+                        $filename = $this->webklexAttributeToString($attachment->name ?? null) ?? 'attachment';
+                        $attachmentParts[] = [
+                            'legacy_attachment_id' => $uid . ':' . ((string) ($attachment->part_number ?? count($attachmentParts) + 1)),
+                            'original_filename' => $filename,
+                            'safe_filename' => $this->safeFileName($filename),
+                            'mime_type' => $this->webklexAttributeToString($attachment->content_type ?? null) ?? 'application/octet-stream',
+                            'size_bytes' => isset($attachment->size) ? (int) $attachment->size : null,
+                        ];
+                    }
 
-                $plainBody = trim((string) $message->getTextBody());
-                $htmlBody = trim((string) $message->getHTMLBody());
-                if ($plainBody === '') {
-                    $plainBody = trim(strip_tags($htmlBody));
-                }
-
-                $to = $this->normalizeAddressList($message->getTo());
-                $cc = $this->normalizeAddressList($message->getCc());
-                $bcc = $this->normalizeAddressList($message->getBcc());
-                $from = $this->normalizeAddressList($message->getFrom());
-                $isRead = (bool) $message->getFlag('seen');
-                $isStarred = (bool) $message->getFlag('flagged');
-                $receivedAt = $this->toMysqlDateTime((string) ($message->getDate()?->format(DATE_RFC2822) ?? '')) ?? date('Y-m-d H:i:s');
-
-                $attachmentParts = [];
-                foreach ($message->getAttachments() as $attachment) {
-                    $filename = (string) ($attachment->name ?? 'attachment');
-                    $attachmentParts[] = [
-                        'legacy_attachment_id' => $uid . ':' . ((string) ($attachment->part_number ?? count($attachmentParts) + 1)),
-                        'original_filename' => $filename,
-                        'safe_filename' => $this->safeFileName($filename),
-                        'mime_type' => (string) ($attachment->content_type ?? 'application/octet-stream'),
-                        'size_bytes' => isset($attachment->size) ? (int) $attachment->size : null,
-                    ];
-                }
-
-                $messageId = $this->insertMessage([
+                    $messageId = $this->insertMessage([
                     ':tenant_id' => $tenantId, ':mailbox_id' => $mailboxId, ':folder_id' => $folderId, ':user_id' => $ownerUserId,
                     ':message_uuid' => $this->uuidV4(), ':thread_uuid' => $this->uuidV4(), ':external_provider' => 'imap', ':external_message_id' => $externalMessageId,
                     ':direction' => 'inbound', ':mail_scope' => 'normal', ':from_address' => $from[0] ?? null,
                     ':to_addresses' => json_encode($to, JSON_UNESCAPED_UNICODE), ':cc_addresses' => $cc === [] ? null : json_encode($cc, JSON_UNESCAPED_UNICODE), ':bcc_addresses' => $bcc === [] ? null : json_encode($bcc, JSON_UNESCAPED_UNICODE),
-                    ':subject' => (string) ($message->getSubject() ?? ''),
+                    ':subject' => $subject,
                     ':body_text' => $plainBody, ':body_html' => $htmlBody, ':raw_headers' => $headers,
                     ':has_attachments' => $attachmentParts === [] ? 0 : 1, ':is_read' => $isRead ? 1 : 0, ':read_at' => $isRead ? date('Y-m-d H:i:s') : null,
                     ':is_starred' => $isStarred ? 1 : 0, ':is_draft' => 0, ':is_spam' => 0, ':is_deleted' => 0,
                     ':received_at' => $receivedAt, ':sent_at' => $receivedAt,
                 ]);
-                if ($messageId <= 0) {
-                    $result['skipped']++;
-                    continue;
+                    if ($messageId <= 0) { $result['skipped']++; continue; }
+                    $this->insertRecipients($tenantId, $messageId, $to, 'to');
+                    $this->insertRecipients($tenantId, $messageId, $cc, 'cc');
+                    $this->insertRecipients($tenantId, $messageId, $bcc, 'bcc');
+                    $this->insertEvent($tenantId, $messageId, $ownerUserId, $uid, (string) $account['mailbox_full_address']);
+                    foreach ($attachmentParts as $attachment) { $this->insertExternalAttachment($tenantId, $messageId, $attachment); $result['attachments_pending']++; }
+                    $result['imported']++;
+                } catch (Throwable $messageError) {
+                    throw new \RuntimeException('message_parse stage=message_parse folder=INBOX uid='.$uid.' '.$messageError->getMessage(), 0, $messageError);
                 }
-
-                $this->insertRecipients($tenantId, $messageId, $to, 'to');
-                $this->insertRecipients($tenantId, $messageId, $cc, 'cc');
-                $this->insertRecipients($tenantId, $messageId, $bcc, 'bcc');
-                $this->insertEvent($tenantId, $messageId, $ownerUserId, $uid, (string) $account['mailbox_full_address']);
-                foreach ($attachmentParts as $attachment) {
-                    $this->insertExternalAttachment($tenantId, $messageId, $attachment);
-                    $result['attachments_pending']++;
-                }
-
-                $result['imported']++;
             }
 
             $client->disconnect();
@@ -173,8 +168,23 @@ final class MailImapSyncService
             foreach ($client->getFolders() as $folder) {
                 $folders[] = (string) ($folder->path ?? $folder->name ?? '');
             }
+            $samples = [];
+            $inbox = $client->getFolder('INBOX');
+            if ($inbox !== null) {
+                $messages = $inbox->messages()->all()->setFetchOrder('desc')->limit(5)->get();
+                foreach ($messages as $message) {
+                    if (!$message instanceof Message) { continue; }
+                    $dt = $this->webklexAttributeToDateTime($message->getDate());
+                    $samples[] = [
+                        'uid' => (int) ($message->getUid() ?? 0),
+                        'subject' => $this->webklexAttributeToString($message->getSubject(), 180),
+                        'from' => $this->webklexAttributeToString($message->getFrom(), 180),
+                        'date' => $dt?->format('Y-m-d H:i:s'),
+                    ];
+                }
+            }
             $client->disconnect();
-            return ['ok' => true, 'folders' => array_values(array_filter($folders))];
+            return ['ok' => true, 'folders' => array_values(array_filter($folders)), 'samples' => $samples];
         } catch (Throwable $e) {
             $ctx = $this->buildSafeExceptionContext($account, $this->classifyImapError($e), $e, $tenantId, $userId, $accountId);
             return ['ok' => false, 'error' => $this->buildSafeImapErrorMessage($ctx), 'context' => $ctx];
@@ -213,12 +223,14 @@ final class MailImapSyncService
     private function insertEvent(int $tenantId,int $messageId,int $userId,int $uid,string $mailbox): void { $stmt=$this->pdo->prepare('INSERT INTO mail_message_events (tenant_id,message_id,user_id,event_type,metadata_json,created_at) VALUES (:tenant_id,:message_id,:user_id,:event_type,:metadata_json,NOW())'); $this->executeWithDbContext($stmt,[':tenant_id'=>$tenantId,':message_id'=>$messageId,':user_id'=>$userId,':event_type'=>'received',':metadata_json'=>json_encode(['provider'=>'imap','uid'=>$uid,'mailbox'=>$mailbox,'folder'=>'INBOX'], JSON_UNESCAPED_UNICODE)],'insert','mail_message_events',['tenant_id','message_id','user_id','event_type','metadata_json','created_at']); }
     private function insertExternalAttachment(int $tenantId,int $messageId,array $attachment): void { $stmt=$this->pdo->prepare('INSERT INTO mail_external_attachments (tenant_id,message_id,cloud_file_id,legacy_source,legacy_table,legacy_attachment_id,original_filename,mime_type,size_bytes,import_status,raw_payload_json,created_at) VALUES (:tenant_id,:message_id,NULL,:legacy_source,:legacy_table,:legacy_attachment_id,:original_filename,:mime_type,:size_bytes,:import_status,:raw_payload_json,NOW())'); $this->executeWithDbContext($stmt,[':tenant_id'=>$tenantId,':message_id'=>$messageId,':legacy_source'=>'imap',':legacy_table'=>'imap',':legacy_attachment_id'=>(string)$attachment['legacy_attachment_id'],':original_filename'=>$attachment['original_filename'],':mime_type'=>$attachment['mime_type'],':size_bytes'=>$attachment['size_bytes'],':import_status'=>'pending',':raw_payload_json'=>json_encode($attachment, JSON_UNESCAPED_UNICODE)],'insert','mail_external_attachments',['tenant_id','message_id','cloud_file_id','legacy_source','legacy_table','legacy_attachment_id','original_filename','mime_type','size_bytes','import_status','raw_payload_json','created_at']); }
     private function updateInboundSyncStatus(array $account, bool $ok, ?string $error): void { if (($account['source_type'] ?? '') !== 'inbound') { return; } $stmt = $this->pdo->prepare('UPDATE mail_inbound_accounts SET last_sync_at = NOW(), last_error = :last_error, status = :status, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $stmt->execute([':last_error'=>$ok?null:$error, ':status'=>$ok?'active':'error', ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
-    private function updateSmtpSyncStatus(array $account, ?array $safeContext = null): void { if (($account['source_type'] ?? '') !== 'smtp') { return; } $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET last_error = :last_error, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $payload = null; if ($safeContext !== null) { $payload = (string) json_encode(['type'=>(string)($safeContext['error_type'] ?? 'unknown_imap_error'),'exception_class'=>(string)($safeContext['exception_class'] ?? ''),'message'=>(string)($safeContext['exception_message_sanitized'] ?? ''),'previous_exception_class'=>(string)($safeContext['previous_exception_class'] ?? ''),'previous_message'=>(string)($safeContext['previous_exception_message_sanitized'] ?? ''),'host'=>(string)($safeContext['host_in'] ?? ''),'port'=>(int)($safeContext['port_in'] ?? 0),'encryption'=>(string)($safeContext['ssl_in'] ?? 'none')], JSON_UNESCAPED_UNICODE); } $stmt->execute([':last_error'=>$payload, ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
+    private function updateSmtpSyncStatus(array $account, ?array $safeContext = null): void { if (($account['source_type'] ?? '') !== 'smtp') { return; } $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET last_error = :last_error, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $payload = null; if ($safeContext !== null) { $payload = (string) json_encode($safeContext, JSON_UNESCAPED_UNICODE); } $stmt->execute([':last_error'=>$payload, ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
     private function updateSyncStatus(array $account, bool $ok, ?string $error, ?array $safeContext = null): void { $this->updateInboundSyncStatus($account,$ok,$error); $this->updateSmtpSyncStatus($account,$ok ? null : $safeContext); }
-    private function classifyImapError(Throwable $e): string { if ($e instanceof PDOException || $e->getPrevious() instanceof PDOException) { return 'db_query_error'; } $raw = strtolower(trim($e->getMessage().' '.($e->getPrevious()?->getMessage() ?? ''))); $map=['auth_failed'=>['authentication failed','login failed','invalid credentials','invalid password','failed to authenticate'],'decrypt_failed'=>['decrypt','decryption','secretbox','sodium','empty password'],'ssl_tls_failed'=>['ssl','tls','certificate','crypto','peer certificate'],'timeout'=>['timeout','timed out'],'connection_failed'=>['connection refused','network unreachable','could not connect','failed to connect'],'mailbox_not_found'=>['mailbox','folder','inbox not found'],'config_error'=>['invalid configuration','invalid option','unsupported encryption']]; foreach($map as $type=>$keywords){ foreach($keywords as $k){ if(str_contains($raw,$k)){ return $type; } } } return 'unknown_imap_error'; }
+    private function classifyImapError(Throwable $e): string { if ($e instanceof PDOException || $e->getPrevious() instanceof PDOException) { return 'db_query_error'; } $raw = strtolower(trim($e->getMessage().' '.($e->getPrevious()?->getMessage() ?? ''))); $map=['imap_parse_error'=>['attribute::format','message_parse','parse'],'auth_failed'=>['authentication failed','login failed','invalid credentials','invalid password','failed to authenticate'],'decrypt_failed'=>['decrypt','decryption','secretbox','sodium','empty password'],'ssl_tls_failed'=>['ssl','tls','certificate','crypto','peer certificate'],'timeout'=>['timeout','timed out'],'connection_failed'=>['connection refused','network unreachable','could not connect','failed to connect'],'mailbox_not_found'=>['mailbox','folder','inbox not found'],'config_error'=>['invalid configuration','invalid option','unsupported encryption']]; foreach($map as $type=>$keywords){ foreach($keywords as $k){ if(str_contains($raw,$k)){ return $type; } } } return 'unknown_imap_error'; }
     private function resolveImapPassword(array $account): array { $username=trim((string)($account['imap_username']??'')); $host=trim((string)($account['imap_host']??'')); $port=(int)($account['imap_port']??0); $encryption=strtolower(trim((string)($account['imap_encryption']??''))); $encrypted=trim((string)($account['password_encrypted']??'')); if($username===''||$host===''||$port<=0||!in_array($encryption,['ssl','tls','none',''],true)){return [null,'config_error'];} if($encrypted===''){return [null,'decrypt_failed'];} try { $password=(string)$this->secretBox->decrypt($encrypted);} catch (Throwable $e){ return [null,$this->classifyImapError($e) === 'unknown_imap_error' ? 'decrypt_failed' : $this->classifyImapError($e)]; } if(trim($password)===''){return [null,'decrypt_failed'];} return [$password,null]; }
     private function logSafeSyncError(array $ctx): void { error_log('[mail.imap.sync] '.json_encode($ctx, JSON_UNESCAPED_UNICODE)); }
-    private function buildSafeExceptionContext(array $account, string $errorType, ?Throwable $e, int $tenantId, int $userId, int $accountId): array { $previous = $e?->getPrevious(); return ['error_type'=>$errorType,'exception_class'=>$e ? get_class($e) : 'n/a','exception_message_sanitized'=>$this->shortText($this->sanitizeSensitiveText($e?->getMessage() ?? $errorType, $account),220),'previous_exception_class'=>$previous ? get_class($previous) : null,'previous_exception_message_sanitized'=>$previous ? $this->shortText($this->sanitizeSensitiveText($previous->getMessage(), $account),220) : null,'host_in'=>trim((string)($account['imap_host'] ?? '')),'port_in'=>(int)($account['imap_port'] ?? 0),'ssl_in'=>strtolower(trim((string)($account['imap_encryption'] ?? 'none'))) ?: 'none','account_id'=>$accountId,'tenant_id'=>$tenantId,'user_id'=>$userId] + $this->extractDbContext($e); }
+    private function buildSafeExceptionContext(array $account, string $errorType, ?Throwable $e, int $tenantId, int $userId, int $accountId): array { $previous = $e?->getPrevious(); $message = $e?->getMessage() ?? $errorType; preg_match('/uid=(\d+)/i', $message, $uid); preg_match('/folder=([^\s]+)/i', $message, $folder); return ['error_type'=>$errorType,'exception_class'=>$e ? get_class($e) : 'n/a','exception_message_sanitized'=>$this->shortText($this->sanitizeSensitiveText($message, $account),220),'previous_exception_class'=>$previous ? get_class($previous) : null,'previous_exception_message_sanitized'=>$previous ? $this->shortText($this->sanitizeSensitiveText($previous->getMessage(), $account),220) : null,'host_in'=>trim((string)($account['imap_host'] ?? '')),'port_in'=>(int)($account['imap_port'] ?? 0),'ssl_in'=>strtolower(trim((string)($account['imap_encryption'] ?? 'none'))) ?: 'none','account_id'=>$accountId,'tenant_id'=>$tenantId,'user_id'=>$userId,'stage'=>str_contains(strtolower($message), 'message_parse') ? 'message_parse' : 'sync','message_uid'=>isset($uid[1]) ? (int)$uid[1] : null,'folder'=>$folder[1] ?? null] + $this->extractDbContext($e); }
+    private function webklexAttributeToDateTime(mixed $value): ?DateTimeImmutable { if ($value === null) { return null; } if ($value instanceof DateTimeInterface) { return DateTimeImmutable::createFromInterface($value); } if ($value instanceof Attribute) { $candidate = $this->webklexAttributeToDateTime($value->first()); if ($candidate instanceof DateTimeImmutable) { return $candidate; } $value = (string) $value; } if (is_array($value)) { foreach ($value as $item) { $parsed = $this->webklexAttributeToDateTime($item); if ($parsed instanceof DateTimeImmutable) { return $parsed; } } return null; } if (is_object($value) && method_exists($value, 'toDate')) { return $this->webklexAttributeToDateTime($value->toDate()); } if (is_object($value) && method_exists($value, 'first')) { return $this->webklexAttributeToDateTime($value->first()); } if (is_object($value) && method_exists($value, 'toString')) { return $this->webklexAttributeToDateTime($value->toString()); } if (is_string($value)) { $trimmed = trim($value); if ($trimmed === '') { return null; } try { return new DateTimeImmutable($trimmed); } catch (Throwable) { return null; } } return null; }
+    private function webklexAttributeToString(mixed $value, int $maxLen = 1000): ?string { if ($value === null) { return null; } if (is_string($value)) { $v = trim($value); return $v === '' ? null : mb_substr($v, 0, $maxLen); } if (is_scalar($value)) { return mb_substr(trim((string)$value), 0, $maxLen); } if ($value instanceof Attribute) { $first = $this->webklexAttributeToString($value->first(), $maxLen); if ($first !== null && $first !== '') { return $first; } return $this->webklexAttributeToString((string)$value, $maxLen); } if (is_array($value) || $value instanceof \Traversable) { $parts = []; foreach ($value as $item) { $str = $this->webklexAttributeToString($item, $maxLen); if ($str !== null && $str !== '') { $parts[] = $str; } } if ($parts === []) { return null; } return mb_substr(implode(', ', $parts), 0, $maxLen); } if (is_object($value) && method_exists($value, 'toString')) { return $this->webklexAttributeToString($value->toString(), $maxLen); } if (is_object($value) && method_exists($value, '__toString')) { return $this->webklexAttributeToString((string)$value, $maxLen); } return null; }
 
     private function executeWithDbContext(\PDOStatement $statement, array $params, string $operation, string $table, array $columns): bool {
         $this->lastDbContext = ['db_operation'=>$operation,'db_table'=>$table,'db_context'=>['columns'=>$columns]];

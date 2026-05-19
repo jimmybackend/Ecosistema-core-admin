@@ -42,3 +42,20 @@ if ($folders === []) {
 foreach ($folders as $folder) {
     echo ' - ' . $folder . PHP_EOL;
 }
+
+$samples = (array) ($result['samples'] ?? []);
+if ($samples !== []) {
+    echo "SAMPLES:\n";
+    foreach ($samples as $sample) {
+        if (!is_array($sample)) {
+            continue;
+        }
+        echo sprintf(
+            " - uid=%d | date=%s | from=%s | subject=%s\n",
+            (int) ($sample['uid'] ?? 0),
+            (string) ($sample['date'] ?? 'n/a'),
+            (string) ($sample['from'] ?? 'n/a'),
+            (string) ($sample['subject'] ?? 'n/a')
+        );
+    }
+}

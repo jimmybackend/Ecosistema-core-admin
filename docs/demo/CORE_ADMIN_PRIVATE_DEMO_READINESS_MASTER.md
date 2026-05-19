@@ -182,3 +182,9 @@ Se acepta únicamente como warning controlado cuando:
 - Corrección aplicada: owner deploy user + group `www-data` + `chmod 640` para `.env`.
 - Pendiente obligatorio preprod/prod: rotar `DB_PASSWORD`, `APP_KEY` y `CORE_REGISTRATION_INVITE_CODE`.
 - `composer schema:usage` en validación real reporta 5 incompatibilidades pendientes (`mail_messages.status`, `os_ai_proposals.id`, `os_ai_proposals.module_code`, `os_ai_proposals.entity_table`, `os_ai_proposals.entity_id`) sin bloquear login.
+
+## Referencia de implementación VM (2026-05-19)
+
+Para trazabilidad formal de instalación/actualización/configuración web/DB/login/dashboard en VM de demo privada, ver:
+
+- `docs/demo/CORE_ADMIN_PRIVATE_DEMO_VM_IMPLEMENTATION_CHECKLIST.md`

@@ -215,3 +215,9 @@ Esta checklist habilita una evaluación de **preproducción controlada**, no una
 - Corrección aplicada: owner deploy user + group `www-data` + `chmod 640` para `.env`.
 - Pendiente obligatorio preprod/prod: rotar `DB_PASSWORD`, `APP_KEY` y `CORE_REGISTRATION_INVITE_CODE`.
 - `composer schema:usage` en validación real reporta 5 incompatibilidades pendientes (`mail_messages.status`, `os_ai_proposals.id`, `os_ai_proposals.module_code`, `os_ai_proposals.entity_table`, `os_ai_proposals.entity_id`) sin bloquear login.
+
+## Referencia cruzada de implementación VM (2026-05-19)
+
+Para evidencia del estado técnico real alcanzado en VM controlada (incluyendo pendiente de rotación de secretos y pendientes de `schema:usage`), ver:
+
+- `docs/demo/CORE_ADMIN_PRIVATE_DEMO_VM_IMPLEMENTATION_CHECKLIST.md`

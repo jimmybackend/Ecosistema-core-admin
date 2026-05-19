@@ -38,7 +38,7 @@ final readonly class MailSmtpAccountRepository
 
     public function listForImapSyncForUser(int $tenantId, int $userId): array
     {
-        $sql = "SELECT s.id, s.mailbox_id, s.host_in, s.port_in, s.ssl_in, s.username, m.full_address AS mailbox_full_address FROM mail_smtp_accounts s INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND s.status = 'active' AND m.status = 'active' AND TRIM(COALESCE(s.host_in, '')) <> '' AND s.port_in IS NOT NULL AND TRIM(COALESCE(s.username, '')) <> '' AND TRIM(COALESCE(s.password_encrypted, '')) <> '' AND (s.created_by_user_id = :created_by_user_id OR m.user_id = :mailbox_user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100";
+        $sql = "SELECT s.id, s.tenant_id, s.mailbox_id, s.name, s.email_address, s.host_in, s.port_in, s.ssl_in, s.username, s.status, m.full_address AS mailbox_full_address, CASE WHEN TRIM(COALESCE(s.password_encrypted, '')) = '' THEN 0 ELSE 1 END AS password_encrypted_present FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND s.status = 'active' AND TRIM(COALESCE(s.host_in, '')) <> '' AND s.port_in IS NOT NULL AND TRIM(COALESCE(s.username, '')) <> '' AND TRIM(COALESCE(s.password_encrypted, '')) <> '' AND (s.created_by_user_id = :created_by_user_id OR m.user_id = :mailbox_user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':tenant_id' => $tenantId, ':created_by_user_id' => $userId, ':mailbox_user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -91,15 +91,22 @@ final readonly class MailSmtpAccountRepository
 
     public function deleteForUser(int $tenantId, int $userId, int $accountId): bool
     {
-        $sql = 'DELETE s FROM mail_smtp_accounts s INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND s.id = :account_id AND s.status = :status_disabled AND (s.created_by_user_id = :created_by_user_id OR m.user_id = :mailbox_user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1)';
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
-            ':tenant_id' => $tenantId,
-            ':account_id' => $accountId,
-            ':status_disabled' => 'disabled',
-            ':created_by_user_id' => $userId,
-            ':mailbox_user_id' => $userId,
-        ]);
+        $account = $this->findAuthorizedById($tenantId, $userId, $accountId);
+        if (!is_array($account)) {
+            throw new \RuntimeException('Cuenta SMTP no encontrada o sin acceso.');
+        }
+
+        if ((string) ($account['status'] ?? '') !== 'disabled') {
+            throw new \RuntimeException('Primero desactiva la cuenta SMTP antes de eliminarla.');
+        }
+
+        $stmt = $this->pdo->prepare('DELETE FROM mail_smtp_accounts WHERE id = :account_id AND tenant_id = :tenant_id');
+        try {
+            $stmt->execute([':account_id' => $accountId, ':tenant_id' => $tenantId]);
+        } catch (\Throwable) {
+            throw new \RuntimeException('No se puede eliminar porque tiene datos relacionados. Se mantendrá desactivada.');
+        }
+
         return $stmt->rowCount() > 0;
     }
 

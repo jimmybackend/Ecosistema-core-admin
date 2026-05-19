@@ -3176,5 +3176,22 @@ foreach (['$row[\'email\']', '$row[\'display_name\']'] as $forbiddenRawPii) {
     }
 }
 
+
+$schemaCompatibilityContent = (string) file_get_contents($root . '/scripts/schema-compatibility-check.php');
+if (str_contains($schemaCompatibilityContent, "mail_mailboxes") && str_contains($schemaCompatibilityContent, "available_to_everyone")) {
+    ok('Schema compatibility check declara mail_mailboxes.available_to_everyone como columna crítica.');
+} else {
+    fail('Schema compatibility check no declara mail_mailboxes.available_to_everyone como columna crítica.', $criticalFailures);
+}
+
+$mailboxRepositoryContent = (string) file_get_contents($root . '/app/Core/Mail/MailboxRepository.php');
+if (str_contains($mailboxRepositoryContent, 'available_to_everyone')) {
+    if (str_contains($schemaCompatibilityContent, 'mail_mailboxes') && str_contains($schemaCompatibilityContent, 'available_to_everyone')) {
+        ok('MailboxRepository y contrato de esquema están alineados para available_to_everyone.');
+    } else {
+        fail('MailboxRepository depende de available_to_everyone pero el contrato de esquema no lo documenta.', $criticalFailures);
+    }
+}
+
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
 exit($criticalFailures > 0 ? 1 : 0);

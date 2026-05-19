@@ -79,6 +79,7 @@ $criticalColumns = [
     'cloud_files' => ['id', 'tenant_id', 'user_id', 'original_name', 'stored_name', 's3_key', 'status'],
     'cloud_folders' => ['id', 'tenant_id', 'user_id', 'bucket_id', 'root_id', 'parent_folder_id', 'name', 'prefix', 'prefix_hash', 'folder_type', 'access_type', 'password_hash', 'secure_hint', 'found_in_s3', 'is_system', 'is_deleted', 'deleted_at', 'created_at', 'updated_at'],
     'mail_messages' => ['id', 'tenant_id', 'user_id', 'subject', 'status', 'created_at'],
+    'mail_mailboxes' => ['id', 'tenant_id', 'user_id', 'full_address', 'status', 'available_to_everyone'],
     'notifications_queue' => ['id', 'tenant_id', 'user_id', 'channel_id', 'status', 'created_at'],
     'crm_leads' => ['id', 'tenant_id', 'email', 'status', 'created_at'],
     'crm_marketing_campaigns' => ['id', 'tenant_id', 'name', 'code', 'status'],

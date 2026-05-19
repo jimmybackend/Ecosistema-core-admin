@@ -2,6 +2,7 @@
 $mailboxes = is_array($mailboxes ?? null) ? $mailboxes : [];
 $statusMessage = is_string($statusMessage ?? null) ? $statusMessage : null;
 $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
+$mailboxesLoadError = (bool) ($mailboxesLoadError ?? false);
 $authData = is_array($auth ?? null) ? $auth : [];
 $authEmail = (string) ($authData['email'] ?? $authData['auth_email'] ?? 'no-disponible');
 $authName = (string) ($authData['display_name'] ?? $authData['auth_display_name'] ?? '');
@@ -14,7 +15,10 @@ $authName = (string) ($authData['display_name'] ?? $authData['auth_display_name'
 <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
 <?php if ($errorMessage): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
 
-<?php if ($mailboxes === []): ?>
+<?php if ($mailboxesLoadError): ?>
+<div class="eco-alert" role="alert">No se pudo cargar la lista de mailboxes operativas por incompatibilidad de esquema.</div>
+<p>Revisa compatibilidad de esquema antes de crear una cuenta SMTP.</p>
+<?php elseif ($mailboxes === []): ?>
 <div class="eco-alert" role="alert">No tienes mailboxes operativas activas asignadas.</div>
 <p>No es posible crear una cuenta SMTP hasta que tengas una mailbox activa asignada en tu tenant.</p>
 <?php else: ?>

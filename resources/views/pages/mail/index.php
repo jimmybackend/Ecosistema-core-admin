@@ -5,11 +5,16 @@ $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
 $summary = static function (mixed $json): string { $arr = json_decode((string)$json, true); return is_array($arr) ? implode(', ', array_slice($arr, 0, 2)) : (string)$json; };
 $smtpAccounts = is_array($smtpAccounts ?? null) ? $smtpAccounts : [];
 $selectedSmtpId = (int)($smtpAccounts[0]['id'] ?? 0);
+
+$imported = (int)($imported ?? 0);
+$skipped = (int)($skipped ?? 0);
+$attachmentsPending = (int)($attachmentsPending ?? 0);
+$syncErrors = (int)($syncErrors ?? 0);
 ?>
 <section>
   <h1>Mail</h1>
   <p>Listado mínimo de mensajes por tenant/usuario autenticado. La autorización fina queda para PR posterior.</p>
-  <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
+  <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?> imported=<?= e((string)$imported) ?>, skipped=<?= e((string)$skipped) ?>, attachments_pending=<?= e((string)$attachmentsPending) ?>, errors=<?= e((string)$syncErrors) ?></div><?php endif; ?>
   <?php if ($errorMessage): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
   <article class="eco-card"><div style="margin-bottom:.75rem;"><a class="eco-button btn" href="/mail/compose">Nuevo borrador</a> <a class="eco-button btn" href="/mail/settings">Configuración SMTP</a></div>
   <form method="post" action="/mail/imap-sync" style="margin-bottom:.75rem; display:flex; gap:.5rem; align-items:center;">

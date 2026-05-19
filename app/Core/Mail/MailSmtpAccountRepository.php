@@ -30,8 +30,37 @@ final readonly class MailSmtpAccountRepository
 
     public function listForUser(int $tenantId, int $userId): array
     {
-        $stmt = $this->pdo->prepare('SELECT s.id, s.name, s.email_address, s.host_out, s.port_out, s.ssl_out, s.username, s.status, s.last_error, s.mailbox_id FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id WHERE s.tenant_id = :tenant_id AND (m.user_id = :user_id OR s.created_by_user_id = :user_id OR s.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100');
+        $stmt = $this->pdo->prepare('SELECT s.id, s.name, s.email_address, s.host_out, s.port_out, s.ssl_out, s.username, s.status, s.last_error, s.mailbox_id, s.max_daily_email, s.enable_limit, s.available_to_everyone FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id WHERE s.tenant_id = :tenant_id AND (m.user_id = :user_id OR s.created_by_user_id = :user_id OR s.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100');
         $stmt->execute([':tenant_id' => $tenantId, ':user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public function findForUserOrTenant(int $tenantId, int $userId, int $id): ?array
+    {
+        $stmt = $this->pdo->prepare('SELECT s.* FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id WHERE s.id = :id AND s.tenant_id = :tenant_id AND (m.user_id = :user_id OR s.created_by_user_id = :user_id OR s.available_to_everyone = 1) LIMIT 1');
+        $stmt->execute([':id' => $id, ':tenant_id' => $tenantId, ':user_id' => $userId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
+    public function create(array $data): int
+    {
+        $stmt = $this->pdo->prepare('INSERT INTO mail_smtp_accounts (tenant_id, mailbox_id, created_by_user_id, name, email_address, host_out, port_out, ssl_out, username, password_encrypted, max_daily_email, enable_limit, available_to_everyone, status, created_at, updated_at) VALUES (:tenant_id, :mailbox_id, :created_by_user_id, :name, :email_address, :host_out, :port_out, :ssl_out, :username, :password_encrypted, :max_daily_email, :enable_limit, :available_to_everyone, :status, NOW(), NOW())');
+        $stmt->execute([
+            ':tenant_id' => $data['tenant_id'], ':mailbox_id' => $data['mailbox_id'], ':created_by_user_id' => $data['created_by_user_id'], ':name' => $data['name'], ':email_address' => $data['email_address'], ':host_out' => $data['host_out'], ':port_out' => $data['port_out'], ':ssl_out' => $data['ssl_out'], ':username' => $data['username'], ':password_encrypted' => $data['password_encrypted'], ':max_daily_email' => $data['max_daily_email'], ':enable_limit' => $data['enable_limit'], ':available_to_everyone' => $data['available_to_everyone'], ':status' => $data['status'],
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    public function update(int $tenantId, int $id, array $data): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET name = :name, email_address = :email_address, host_out = :host_out, port_out = :port_out, ssl_out = :ssl_out, username = :username, password_encrypted = :password_encrypted, max_daily_email = :max_daily_email, enable_limit = :enable_limit, available_to_everyone = :available_to_everyone, status = :status, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id');
+        $stmt->execute([':id' => $id, ':tenant_id' => $tenantId, ':name' => $data['name'], ':email_address' => $data['email_address'], ':host_out' => $data['host_out'], ':port_out' => $data['port_out'], ':ssl_out' => $data['ssl_out'], ':username' => $data['username'], ':password_encrypted' => $data['password_encrypted'], ':max_daily_email' => $data['max_daily_email'], ':enable_limit' => $data['enable_limit'], ':available_to_everyone' => $data['available_to_everyone'], ':status' => $data['status']]);
+    }
+
+    public function disable(int $tenantId, int $id): void
+    {
+        $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET status = :status, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id');
+        $stmt->execute([':status' => 'disabled', ':id' => $id, ':tenant_id' => $tenantId]);
     }
 }

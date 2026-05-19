@@ -51,7 +51,10 @@ $sendEnabled = (bool) ($smtp['send_enabled'] ?? false);
       </div>
     <?php endif; ?>
 
-    <div style="margin-top:1rem;">
+    <div class="eco-alert" role="alert" style="margin-top:1rem;">SMTP global (.env) es fallback. SMTP por mailbox/usuario se configura en <code>mail_smtp_accounts</code>. El correo de login no tiene que coincidir con la mailbox operativa. El envío real sigue bloqueado si <code>MAIL_SEND_ENABLED=false</code> o <code>MAIL_ALLOW_TEST_SEND=false</code>.</div>
+    <div style="margin-top:1rem;display:flex;gap:.5rem;">
+      <a class="eco-button btn" href="/mail/smtp-accounts">Gestionar cuentas SMTP</a>
+      <a class="eco-button btn" href="/mail/smtp-accounts/create">Crear SMTP propio</a>
       <a class="eco-button btn" href="/mail">Volver a Mail</a>
     </div>
   </article>

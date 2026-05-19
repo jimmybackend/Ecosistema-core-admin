@@ -33,6 +33,9 @@ use App\Core\Mail\MailConfig;
 use App\Core\Mail\MailAttachmentRepository;
 use App\Core\Mail\MailAttachmentService;
 use App\Core\Mail\MailSendService;
+use App\Support\SecretBox;
+use App\Core\Mail\MailEffectiveSenderResolver;
+use App\Core\Mail\MailSmtpAccountRepository;
 use App\Core\Mail\MailOutgoingAttachmentService;
 use App\Core\MailNotifications\EcosistemaMailNotificationsAdapter;
 use App\Core\MailNotifications\EcosistemaMessagePreviewDryRunService;
@@ -833,15 +836,38 @@ return [
         $auth = AuthSession::getAuth();
         $mailConfig = new MailConfig($config['mail'] ?? []);
         $smtp = $mailConfig->toSafeArray();
+        $effectiveSmtp = ['source'=>'global_env','status'=>'invalid'];
+        $managedMailbox = ['status'=>'dominio no configurado'];
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+            $resolver = new MailEffectiveSenderResolver($mailConfig, new MailSmtpAccountRepository($pdo), new SecretBox());
+            $effectiveSmtp = (array) ($resolver->resolve($tenantId, $userId, null)['safe'] ?? []);
+        } catch (\Throwable) {}
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin',[
             'title'=>'Configuración SMTP | Ecosistema Core Admin',
             'contentView'=>'pages/mail/settings',
             'auth'=>$auth,
             'csrfToken'=>AuthSession::getCsrfToken(),
-            'contentData'=>compact('smtp'),
+            'contentData'=>compact('smtp','effectiveSmtp','managedMailbox'),
         ]);
     },
+
+    'GET /mail/smtp-accounts' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        try { $pdo=PdoFactory::make($config['database']); $accounts=(new MailSmtpAccountRepository($pdo))->listForUser($tenantId,$userId); } catch (\Throwable) { $accounts=[]; }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'SMTP Accounts | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('accounts')]);
+    },
+    'GET /mail/smtp-accounts/create' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $auth=AuthSession::getAuth();
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-create','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>[]]);
+    },
+
     'GET /mail-notifications' => static function (array $config): void {
         startAuthSession($config);
         if (!requirePermission($config, 'mail.view')) {

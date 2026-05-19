@@ -221,3 +221,17 @@ Esta checklist habilita una evaluación de **preproducción controlada**, no una
 Para evidencia del estado técnico real alcanzado en VM controlada (incluyendo pendiente de rotación de secretos y pendientes de `schema:usage`), ver:
 
 - `docs/demo/CORE_ADMIN_PRIVATE_DEMO_VM_IMPLEMENTATION_CHECKLIST.md`
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.

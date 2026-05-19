@@ -10,6 +10,21 @@ $sendEnabled = (bool) ($smtp['send_enabled'] ?? false);
 
   <div class="eco-alert" role="alert">El envío real está deshabilitado en este PR.</div>
 
+
+<?php $effectiveSmtp = is_array($effectiveSmtp ?? null) ? $effectiveSmtp : []; ?>
+<div class="eco-alert" role="alert">La contraseña SMTP es independiente de la contraseña de acceso al panel.</div>
+<article class="eco-card" style="margin-top:1rem;">
+<h2>SMTP efectivo (dry-run)</h2>
+<table class="eco-table" style="width:100%"><tbody>
+<tr><th>source</th><td><?= e((string)($effectiveSmtp['source'] ?? 'global_env')) ?></td></tr>
+<tr><th>status</th><td><?= e((string)($effectiveSmtp['status'] ?? 'unknown')) ?></td></tr>
+<tr><th>host</th><td><?= e((string)($effectiveSmtp['host'] ?? $smtp['host'] ?? '')) ?></td></tr>
+<tr><th>port</th><td><?= e((string)($effectiveSmtp['port'] ?? $smtp['port'] ?? '')) ?></td></tr>
+<tr><th>encryption</th><td><?= e((string)($effectiveSmtp['encryption'] ?? $smtp['encryption'] ?? '')) ?></td></tr>
+<tr><th>username_masked</th><td><?= e((string)($effectiveSmtp['username_masked'] ?? $smtp['username_masked'] ?? '')) ?></td></tr>
+</tbody></table>
+</article>
+
   <article class="eco-card">
     <table class="eco-table" style="width:100%">
       <tbody>

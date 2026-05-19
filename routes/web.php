@@ -728,7 +728,7 @@ return [
     'GET /mail' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.view')) { return; }
-        $auth = AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $messages=$service->listMessages($tenantId,$userId);} catch (\Throwable) { $messages=[]; $errorMessage='Mensaje no encontrado.'; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage')]);
@@ -736,7 +736,7 @@ return [
     'GET /mail/messages/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.view')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         $attachments = [];
         try {
             $pdo=PdoFactory::make($config['database']);
@@ -758,7 +758,7 @@ return [
     'GET /mail/messages/{id}/attachments' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
         try {
             $pdo=PdoFactory::make($config['database']);
@@ -778,7 +778,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try {
             $pdo=PdoFactory::make($config['database']);
             $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
@@ -802,7 +802,7 @@ return [
     'GET /mail/messages/{id}/send-preview' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try {
             $pdo=PdoFactory::make($config['database']);
             $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []), new MailOutgoingAttachmentService(new MailAttachmentRepository($pdo), $config['cloud'] ?? [], $config['mail'] ?? []));
@@ -818,7 +818,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try {
             $pdo=PdoFactory::make($config['database']);
             $service = new MailSendService(new MailMessageRepository($pdo), new MailAttachmentService(new MailAttachmentRepository($pdo)), new MailConfig($config['mail'] ?? []), new MailOutgoingAttachmentService(new MailAttachmentRepository($pdo), $config['cloud'] ?? [], $config['mail'] ?? []));
@@ -840,7 +840,7 @@ return [
         $managedMailbox = ['status'=>'dominio no configurado'];
         try {
             $pdo = PdoFactory::make($config['database']);
-            $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+            $tenantId=authTenantId($auth); $userId=authUserId($auth);
             $resolver = new MailEffectiveSenderResolver($mailConfig, new MailSmtpAccountRepository($pdo), new ("App\\Support\\Se" . "cretBox")());
             $effectiveSmtp = (array) ($resolver->resolve($tenantId, $userId, null)['safe'] ?? []);
         } catch (\Throwable) {}
@@ -857,22 +857,30 @@ return [
     'GET /mail/smtp-accounts' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0);
-        try { $pdo=PdoFactory::make($config['database']); $accounts=(new MailSmtpAccountRepository($pdo))->listForUser($tenantId,$userId); } catch (\Throwable) { $accounts=[]; }
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
+        $emptyAccountsMessage = 'No hay cuentas SMTP disponibles para tu usuario/tenant.';
+        try {
+            $pdo=PdoFactory::make($config['database']);
+            $repo = new MailSmtpAccountRepository($pdo);
+            $accounts=$repo->listForUser($tenantId,$userId);
+            if ($accounts === [] && $repo->countForTenant($tenantId) > 0) {
+                $emptyAccountsMessage = 'No hay cuentas SMTP visibles para tu usuario. Verifica asignación de mailbox o política de tenant.';
+            }
+        } catch (\Throwable) { $accounts=[]; }
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'SMTP Accounts | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('accounts','statusMessage','errorMessage','auth')]);
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'SMTP Accounts | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('accounts','statusMessage','errorMessage','emptyAccountsMessage','auth')]);
     },
     'GET /mail/smtp-accounts/create' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         $mailboxes=[]; $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $mailboxesLoadError = false; try { $pdo=PdoFactory::make($config['database']); $mailboxes=(new MailboxRepository($pdo))->listActiveForUser($tenantId,$userId); } catch (\Throwable $exception) { $mailboxesLoadError = true; error_log('[mail.smtp_accounts.create] mailbox_list_load_failed tenant_id=' . $tenantId . ' user_id=' . $userId . ' error=' . $exception->getMessage()); if ($errorMessage === null || $errorMessage == '') { $errorMessage = 'No se pudo cargar la lista de mailboxes operativas por incompatibilidad de esquema.'; } }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-create','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('mailboxes','statusMessage','errorMessage','mailboxesLoadError','auth')]);
     },
     'POST /mail/smtp-accounts' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth = AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0);
+        $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         $mailboxId=(int)($_POST['mailbox_id']??0); $password=trim((string)($_POST['smtp_password']??''));
         if ($mailboxId<=0 || $password==='') { header('Location: /mail/smtp-accounts/create?error='.urlencode('Mailbox y password SMTP son obligatorios.')); return; }
         try {
@@ -885,7 +893,7 @@ return [
     },
     'GET /mail/smtp-accounts/{id}/edit' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         $account=null; $mailboxes=[]; $mailboxesLoadError = false; try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); $account=$repo->findForUserOrTenant($tenantId,$userId,$id); $mailboxes=(new MailboxRepository($pdo))->listActiveForUser($tenantId,$userId);} catch (\Throwable $exception) { $mailboxesLoadError = true; error_log('[mail.smtp_accounts.edit] mailbox_list_load_failed tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $id . ' error=' . $exception->getMessage()); if (!is_array($account)) { $account = null; } }
         if (!is_array($account)) { header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; }
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; if ($mailboxesLoadError && ($errorMessage === null || $errorMessage === '')) { $errorMessage = 'No se pudo cargar la lista de mailboxes operativas por incompatibilidad de esquema.'; }
@@ -896,7 +904,7 @@ return [
     'POST /mail/smtp-accounts/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth = AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0); $id=(int)($params['id']??0);
+        $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); $account=$repo->findForUserOrTenant($tenantId,$userId,$id); if(!is_array($account)){ header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; }
             $mailboxId=(int)($_POST['mailbox_id']??($account['mailbox_id']??0)); if((new MailboxRepository($pdo))->findActiveForUserById($tenantId,$userId,$mailboxId)===null){ header('Location: /mail/smtp-accounts/'.$id.'/edit?error='.urlencode('Mailbox inválida o inactiva.')); return; }
             $password=trim((string)($_POST['smtp_password']??'')); $encrypted=(string)($account['password_encrypted']??''); if($password!==''){ $encrypted=(new SecretBox())->encrypt($password); }
@@ -907,12 +915,12 @@ return [
     'POST /mail/smtp-accounts/{id}/disable' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth = AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0); $id=(int)($params['id']??0);
+        $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); if(!is_array($repo->findForUserOrTenant($tenantId,$userId,$id))){ header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; } $repo->disable($tenantId,$id); header('Location: /mail/smtp-accounts?ok='.urlencode('Cuenta SMTP desactivada.')); return; } catch (\Throwable) { header('Location: /mail/smtp-accounts?error='.urlencode('No se pudo desactivar la cuenta SMTP.')); return; }
     },
     'GET /mail/smtp-accounts/{id}/test-dry-run' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth = AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0); $id=(int)($params['id']??0);
+        $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); $a=$repo->findForUserOrTenant($tenantId,$userId,$id); if(!is_array($a)){ header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; }
             $preview=['source'=>(int)($a['mailbox_id']??0)>0?'mailbox_smtp':'tenant_smtp','mailbox_full_address'=>(string)($a['mailbox_full_address']??''),'account_name'=>(string)($a['name']??''),'email_address'=>(string)($a['email_address']??''),'host_in'=>(string)($a['host_in']??''),'port_in'=>(int)($a['port_in']??0),'ssl_in'=>(string)($a['ssl_in']??''),'host_out'=>(string)($a['host_out']??''),'port_out'=>(int)($a['port_out']??0),'ssl_out'=>(string)($a['ssl_out']??''),'username_masked'=>substr((string)($a['username']??''),0,1).'***','max_daily_email'=>(int)($a['max_daily_email']??0),'enable_limit'=>(int)($a['enable_limit']??0),'available_to_everyone'=>(int)($a['available_to_everyone']??0),'status'=>(string)($a['status']??''),'last_error'=>trim(preg_replace('/\s+/', ' ', strip_tags((string)($a['last_error'] ?? ''))) ?? ''),'password_encrypted_present'=>trim((string)($a['password_encrypted']??''))!==''?'yes':'no'];
             header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'SMTP Dry-Run | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-dry-run','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('preview','a')]); return;
@@ -1169,7 +1177,7 @@ return [
     'GET /mail/compose' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $mailboxes=$service->listActiveMailboxes($tenantId,$userId);} catch (\Throwable) { $mailboxes=[]; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Compose | Ecosistema Core Admin','contentView'=>'pages/mail/compose','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('mailboxes','statusMessage','errorMessage','mailboxesLoadError','auth')]);
     },
@@ -1177,7 +1185,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->createDraft($tenantId,$userId,$_POST);} catch (\Throwable) { $message='No se pudo guardar el borrador.'; }
         header('Location: '.($message==='Borrador creado correctamente.'?'/mail?ok='.urlencode($message):'/mail/compose?error='.urlencode($message)));
     },
@@ -1185,7 +1193,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->updateRead($tenantId,$userId,$id);} catch (\Throwable) { $message='Mensaje no encontrado.'; }
         header('Location: /mail?'.(($message==='Mensaje actualizado correctamente.')?'ok=':'error=').urlencode($message));
     },
@@ -1193,7 +1201,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->updateStar($tenantId,$userId,$id);} catch (\Throwable) { $message='Mensaje no encontrado.'; }
         header('Location: /mail?'.(($message==='Mensaje actualizado correctamente.')?'ok=':'error=').urlencode($message));
     },
@@ -1201,7 +1209,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $message=$service->trash($tenantId,$userId,$id);} catch (\Throwable) { $message='Mensaje no encontrado.'; }
         header('Location: /mail?'.(($message==='Mensaje enviado a papelera.')?'ok=':'error=').urlencode($message));
     },
@@ -1213,7 +1221,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $statusMessage = null;
         $errorMessage = null;
         $summary = ['total' => 0, 'by_status' => [], 'by_smart_type' => []];
@@ -1238,7 +1246,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $statusMessage = null;
         $errorMessage = null;
         $summary = ['total' => 0, 'by_status' => [], 'by_smart_type' => []];
@@ -1269,7 +1277,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $summary = ['total' => 0, 'by_device_type' => [], 'by_detected_language' => [], 'by_country' => []];
         $clicks = [];
         $errorMessage = null;
@@ -1295,7 +1303,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $id = (int)($params['id'] ?? 0);
         if ($id <= 0) { renderError($config, 404); return; }
 
@@ -1325,7 +1333,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $id = (int)($params['id'] ?? 0);
         if ($id <= 0) { renderError($config, 404); return; }
 
@@ -1358,7 +1366,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $id = (int)($params['id'] ?? 0);
         if ($id <= 0) { renderError($config, 404); return; }
 
@@ -1394,8 +1402,8 @@ return [
         if (!requirePermission($config, 'modules.manage')) { return; }
         if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
-        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $tenantId = authTenantId($auth);
+        $userId = authUserId($auth);
         try { $pdo=PdoFactory::make($config['database']); $svc=new EcosistemaUrlLocatorLinkWriteService(new EcosistemaUrlLocatorLinkWriteRepository($pdo),(array)($config['url_locator']??[])); if(!$svc->writeEnabled()){ header('Location: /url/locator/links?error=write-disabled'); return; } $res=$svc->create($tenantId,$userId,$_POST);} catch (\Throwable) { $res=['errors'=>['No se pudo crear.']]; }
         if (($res['errors'] ?? []) === []) { header('Location: /url/locator/links/'.(int)$res['id'].'?ok=created'); return; }
         header('Content-Type: text/html; charset=UTF-8');
@@ -1406,7 +1414,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         $auth = AuthSession::getAuth(); $id=(int)($params['id']??0); if($id<=0){ renderError($config,404); return; }
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $writeEnabled = (bool)(($config['url_locator']['enabled'] ?? false) && ($config['url_locator']['admin_write_enabled'] ?? false));
         try { $pdo=PdoFactory::make($config['database']); $repo=new EcosistemaUrlLocatorLinkRepository($pdo); $link=$repo->findLink($tenantId,$id);} catch (\Throwable) { $link=null; }
         if($link===null){ renderError($config,404); return; }
@@ -1418,7 +1426,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.manage')) { return; }
         if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
-        $auth = AuthSession::getAuth(); $id=(int)($params['id']??0); $tenantId=(int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $auth = AuthSession::getAuth(); $id=(int)($params['id']??0); $tenantId=authTenantId($auth);
         try { $pdo=PdoFactory::make($config['database']); $svc=new EcosistemaUrlLocatorLinkWriteService(new EcosistemaUrlLocatorLinkWriteRepository($pdo),(array)($config['url_locator']??[])); if(!$svc->writeEnabled()){ header('Location: /url/locator/links?error=write-disabled'); return; } $res=$svc->update($tenantId,$id,$_POST);} catch (\Throwable) { $res=['errors'=>['No se pudo actualizar.']]; }
         if (($res['errors'] ?? []) === []) { header('Location: /url/locator/links/'.$id.'?ok=updated'); return; }
         header('Content-Type: text/html; charset=UTF-8');
@@ -1730,7 +1738,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
         if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $clickId = (int)($_POST['click_id'] ?? 0);
         $result = null; $errorMessage = null;
         try {
@@ -1758,7 +1766,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
         if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $startDate = trim((string)($_POST['start_date'] ?? ''));
         $endDate = trim((string)($_POST['end_date'] ?? ''));
         $result = null; $errorMessage = null;
@@ -1780,7 +1788,7 @@ return [
         if (!requirePermission($config, 'modules.view')) { return; }
         if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $rollupDate = trim((string)($_POST['rollup_date'] ?? date('Y-m-d')));
         $result = null;
         try {
@@ -1800,7 +1808,7 @@ return [
     'GET /attribution/campaigns' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }
-        $auth = AuthSession::getAuth(); $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $auth = AuthSession::getAuth(); $tenantId = authTenantId($auth);
         $summary = ['total' => 0]; $campaigns = [];
         try {
             $pdo = PdoFactory::make($config['database']);
@@ -1817,7 +1825,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }
         $id = isset($params['id']) ? (int)$params['id'] : 0; if ($id <= 0) { renderError($config, 404); return; }
-        $auth = AuthSession::getAuth(); $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $auth = AuthSession::getAuth(); $tenantId = authTenantId($auth);
         $detail = ['found' => false, 'campaign' => null, 'funnel' => ['clicks' => 0, 'visits' => 0, 'submissions' => 0, 'leads' => 0, 'conversions' => 0]];
         try {
             $pdo = PdoFactory::make($config['database']);
@@ -2478,7 +2486,7 @@ return [
     'GET /cloud' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage')]);
     },
@@ -2584,8 +2592,8 @@ return [
         $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
-        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $tenantId = authTenantId($auth);
+        $userId = authUserId($auth);
         $sessionContext = [
             'tenant_id' => $tenantId,
             'user_id' => $userId,
@@ -2746,8 +2754,8 @@ return [
         if (!requirePermission($config, 'cloud.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
-        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $tenantId = authTenantId($auth);
+        $userId = authUserId($auth);
         $summary = ['root_summary' => null, 'file_count' => 0, 'folder_count' => 0, 'bucket_count' => 0, 'quota_bytes' => null, 'used_bytes' => null, 'read_only' => true, 'mode' => 'contract/dry-run', 'warnings' => ['No se pudo cargar el resumen operativo Drive.']];
 
         try {
@@ -2767,8 +2775,8 @@ return [
         if (!requirePermission($config, 'cloud.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
-        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $tenantId = authTenantId($auth);
+        $userId = authUserId($auth);
         $root = null;
         $errorMessage = null;
 
@@ -2834,8 +2842,8 @@ return [
         if (!requirePermission($config, 'cloud.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
-        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $tenantId = authTenantId($auth);
+        $userId = authUserId($auth);
         $idRaw = (string)($params['id'] ?? '');
         $folder = null;
         $errorMessage = null;
@@ -2869,8 +2877,8 @@ return [
         if (!requirePermission($config, 'cloud.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
-        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $tenantId = authTenantId($auth);
+        $userId = authUserId($auth);
         $folderIdRaw = isset($_GET['folder_id']) ? (string)$_GET['folder_id'] : null;
         $folderId = null;
 
@@ -2905,7 +2913,7 @@ return [
         if (!requirePermission($config, 'cloud.view')) { return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
+        $tenantId = authTenantId($auth);
         $buckets = [];
         $errorMessage = null;
 
@@ -3192,7 +3200,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         try{$pdo=PdoFactory::make($config['database']); $service = new CloudUploadService(new CloudFileRepository($pdo), new CloudStorageService($config, class_exists('Aws\S3\S3Client')), $config); $result=$service->upload($tenantId,$userId,$_FILES['file']??[]); if(($result['ok']??false)===true){ auditLog($pdo,['action'=>'cloud.file_uploaded','entity_type'=>'cloud_files','entity_id'=>(int)($result['id']??0),'new_values'=>['status'=>'active']]); }}catch(\Throwable){$result=['ok'=>false,'message'=>'No se pudo guardar el archivo.'];}
         header('Location: /cloud/files/upload?'.((($result['ok']??false)===true)?'ok=':'error=').urlencode((string)($result['message']??'')));
     },
@@ -3200,7 +3208,7 @@ return [
     'GET /cloud/files/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $file=$service->findFile($tenantId,$userId,$id);}catch(\Throwable){$file=null;}
         if($file===null){http_response_code(404);} header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud detalle | Ecosistema Core Admin','contentView'=>'pages/cloud/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('file')]);
     },
@@ -3208,7 +3216,7 @@ return [
     'GET /cloud/files/{id}/download' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         try { $authCheck=AuthSession::getAuth(); $p=PdoFactory::make($config['database']); $az=new \App\Core\Auth\AuthorizationService(new \App\Core\Auth\AuthorizationRepository($p)); if(!$az->can((int)($authCheck['auth_user_id']??0),(int)($authCheck['auth_tenant_id']??0),'cloud.view')&&!$az->can((int)($authCheck['auth_user_id']??0),(int)($authCheck['auth_tenant_id']??0),'cloud.manage')){ renderError($config,403); return; }} catch (\Throwable) { renderError($config,403); return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try {
             $pdo=PdoFactory::make($config['database']);
             $service = new CloudDownloadService(new CloudFileRepository($pdo), $config);
@@ -3239,7 +3247,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->archiveFile($tenantId,$userId,$id);}catch(\Throwable){$message='Archivo no encontrado.';}
         header('Location: /cloud?'.(($message==='Archivo actualizado correctamente.')?'ok=':'error=').urlencode($message));
     },
@@ -3247,21 +3255,21 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->trashFile($tenantId,$userId,$id);}catch(\Throwable){$message='Archivo no encontrado.';}
         header('Location: /cloud?'.(($message==='Archivo enviado a papelera.')?'ok=':'error=').urlencode($message));
     },
     'GET /cloud/folders' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $folders=$service->listFolders($tenantId,$userId);}catch(\Throwable){$folders=[];$errorMessage='Carpeta no encontrada.';}
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud carpetas | Ecosistema Core Admin','contentView'=>'pages/cloud/folders','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('folders','statusMessage','errorMessage')]);
     },
     'GET /cloud/folders/create' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $roots=$service->listRoots($tenantId,$userId); $folders=$service->listFolders($tenantId,$userId);}catch(\Throwable){$roots=[];$folders=[];}
         $errorMessage=$roots===[]?'No hay raíz Cloud activa para este usuario.':null;
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear carpeta Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/create-folder','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('roots','folders','errorMessage')]);
@@ -3270,7 +3278,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->createFolder($tenantId,$userId,$_POST);}catch(\Throwable){$message='No se pudo guardar la carpeta.';}
         header('Location: '.($message==='Carpeta creada correctamente.'?'/cloud/folders?ok='.urlencode($message):'/cloud/folders/create?error='.urlencode($message)));
     },
@@ -3278,7 +3286,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??0); $userId=(int)($auth['user_id']??0); $id=(int)($params['id']??0);
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->trashFolder($tenantId,$userId,$id);}catch(\Throwable){$message='Carpeta no encontrada.';}
         header('Location: /cloud/folders?'.(($message==='Carpeta enviada a papelera.')?'ok=':'error=').urlencode($message));
     },
@@ -3965,8 +3973,8 @@ return [
         if (!$featureEnabled || !$dryRunEnabled) { renderError($config, 404); return; }
 
         $auth = AuthSession::getAuth();
-        $tenantId = (int)($auth['tenant_id'] ?? $auth['auth_tenant_id'] ?? 0);
-        $userId = (int)($auth['user_id'] ?? $auth['auth_user_id'] ?? 0);
+        $tenantId = authTenantId($auth);
+        $userId = authUserId($auth);
 
         $service = new EcosistemaBrowserAnalyticsCollectorDryRunService();
         $result = $service->simulate($tenantId, $userId, $_POST, [

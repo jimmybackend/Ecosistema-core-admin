@@ -38,6 +38,22 @@ if (!function_exists('requirePermission')) {
     }
 }
 
+if (!function_exists('authTenantId')) {
+    function authTenantId(array $auth): int
+    {
+        $tenantId = $auth['auth_tenant_id'] ?? $auth['tenant_id'] ?? 0;
+        return is_numeric($tenantId) ? max(0, (int) $tenantId) : 0;
+    }
+}
+
+if (!function_exists('authUserId')) {
+    function authUserId(array $auth): int
+    {
+        $userId = $auth['auth_user_id'] ?? $auth['user_id'] ?? 0;
+        return is_numeric($userId) ? max(0, (int) $userId) : 0;
+    }
+}
+
 
 if (!function_exists('renderError')) {
     function renderError(array $config, int $statusCode, ?string $message = null): void

@@ -1,5 +1,6 @@
 <?php
 $accounts = is_array($accounts ?? null) ? $accounts : [];
+$emptyAccountsMessage = trim((string)($emptyAccountsMessage ?? 'No hay cuentas SMTP disponibles para tu usuario/tenant.'));
 $clean = static fn ($v): string => trim(preg_replace('/\s+/', ' ', strip_tags((string) $v)) ?? '');
 $yn = static fn ($v): string => ((string)$v === '1' || $v === 1 || $v === true || $v === 'yes') ? 'yes' : 'no';
 $mask = static function ($value): string { $value=(string)$value; if ($value==='') return 'no-configurado'; $len=strlen($value); if ($len<=2) return str_repeat('*',$len); return substr($value,0,1).str_repeat('*',$len-2).substr($value,-1); };
@@ -9,7 +10,7 @@ $mask = static function ($value): string { $value=(string)$value; if ($value==='
 <div style="margin-bottom:.75rem;"><a class="eco-button btn" href="/mail/smtp-accounts/create">Crear SMTP propio</a></div>
 
 <?php if ($accounts === []): ?>
-  <article class="eco-card"><p>No hay cuentas SMTP disponibles para tu usuario/tenant.</p></article>
+  <article class="eco-card"><p><?= e($emptyAccountsMessage) ?></p></article>
 <?php else: ?>
 <table class="eco-table" style="width:100%;font-size:.92rem;">
 <thead><tr><th>ID</th><th>Mailbox operativa</th><th>Nombre</th><th>Email/from</th><th>Entrada</th><th>Salida</th><th>Username enmascarado</th><th>Límite diario</th><th>Compartida</th><th>Status</th><th>Last error</th><th>Password guardado</th><th>Acciones</th></tr></thead>

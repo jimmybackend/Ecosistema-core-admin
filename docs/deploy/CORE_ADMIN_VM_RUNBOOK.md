@@ -144,3 +144,27 @@ php -l scripts/smoke-check.php
 - No pegar contraseñas reales en documentación, tickets o commits.
 - No activar AWS/S3 real en esta etapa.
 - No ejecutar cambios de esquema ni datos como parte de este runbook.
+
+## 11) Permisos seguros de `.env` para PHP-FPM
+
+Diagnóstico confirmado en VM: `chmod 600` en `.env` bloqueó lectura desde PHP-FPM (`www-data`) y provocó `PDOException 2002 Connection refused` al caer a defaults de DB local.
+
+Aplicar:
+```bash
+sudo chown jimmybackend:www-data .env
+sudo chmod 640 .env
+sudo nginx -t && sudo systemctl reload nginx
+sudo systemctl reload php8.5-fpm
+```
+
+Validar:
+```bash
+ls -l .env
+ps -eo user,group,comm | grep -E "php-fpm|php8.5-fpm"
+curl -s -o /dev/null -w "GET /login => HTTP %{http_code}\n" http://127.0.0.1/login
+```
+
+Troubleshooting — **Login 500 con PDOException 2002 Connection refused**:
+- Si CLI conecta a DB y web falla, revisar permisos de `.env`.
+- Si PHP-FPM corre como `www-data`, `.env` en `600` puede impedir leer `DB_HOST` y terminar en `127.0.0.1`.
+- Resultado esperado tras corrección: `POST /login => 302 Found`, `Location: /dashboard`.

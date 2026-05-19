@@ -201,3 +201,17 @@ Fuera de alcance:
 ## 25) Declaración final
 
 Esta checklist habilita una evaluación de **preproducción controlada**, no una salida a **producción SaaS pública**.
+
+
+## Actualización de ejecución real en VM controlada (2026-05-19)
+
+- Repo actualizado y limpio en `main` (commit `836d0db`, PR #257).
+- Nginx y PHP-FPM operativos (`fastcgi_pass unix:/run/php/php8.5-fpm.sock`).
+- `GET /login` validado en local y público con `HTTP 200`.
+- `POST /login` validado con `HTTP 302 Found` y `Location: /dashboard`.
+- Dashboard confirmado visible en navegador.
+- DB remota `adbbmis1_eco` autorizada por IP pública de la VM en Remote MySQL / Manage Access Hosts.
+- Causa raíz del fallo inicial: `.env` ilegible para `www-data` por `chmod 600`.
+- Corrección aplicada: owner deploy user + group `www-data` + `chmod 640` para `.env`.
+- Pendiente obligatorio preprod/prod: rotar `DB_PASSWORD`, `APP_KEY` y `CORE_REGISTRATION_INVITE_CODE`.
+- `composer schema:usage` en validación real reporta 5 incompatibilidades pendientes (`mail_messages.status`, `os_ai_proposals.id`, `os_ai_proposals.module_code`, `os_ai_proposals.entity_table`, `os_ai_proposals.entity_id`) sin bloquear login.

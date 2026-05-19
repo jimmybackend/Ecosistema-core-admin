@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATE_FILE="${ROOT_DIR}/.env.vm.example"
 ENV_FILE="${ROOT_DIR}/.env"
+WEB_GROUP="${WEB_GROUP:-www-data}"
 
 if [[ ! -f "${TEMPLATE_FILE}" ]]; then
   echo "Error: no existe ${TEMPLATE_FILE}" >&2
@@ -78,3 +79,24 @@ if [[ "${update_idle_timeout}" =~ ^[sS]$ ]]; then
 fi
 
 echo "Listo. .env actualizado de forma segura sin exponer secretos."
+
+
+apply_env_permissions() {
+  local file="$1"
+  local owner_user="${SUDO_USER:-${USER:-$(id -un)}}"
+
+  if getent group "${WEB_GROUP}" >/dev/null 2>&1; then
+    if chown "${owner_user}:${WEB_GROUP}" "${file}" 2>/dev/null; then
+      :
+    else
+      chgrp "${WEB_GROUP}" "${file}"
+    fi
+    chmod 640 "${file}"
+    echo "Permisos de ${file} ajustados a owner=${owner_user}, group=${WEB_GROUP}, mode=640"
+  else
+    echo "Advertencia: el grupo WEB_GROUP=${WEB_GROUP} no existe. No se aplicó chmod 644 ni apertura global." >&2
+    echo "Ajusta permisos manualmente para que PHP-FPM pueda leer ${file} de forma segura." >&2
+  fi
+}
+
+apply_env_permissions "${ENV_FILE}"

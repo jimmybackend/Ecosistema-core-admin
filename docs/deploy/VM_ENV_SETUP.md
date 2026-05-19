@@ -72,3 +72,38 @@ APP_URL=https://dominio-real
 
 ## Referencia de validación Drive
 - Validación operativa/rollback de Drive: `docs/project/ECOSISTEMA_DRIVE_PRODUCTION_READINESS_CHECKLIST.md`.
+
+## Permisos seguros de `.env` para PHP-FPM
+
+Si PHP-FPM corre como `www-data` y el repositorio pertenece al usuario de despliegue (por ejemplo `jimmybackend`), `.env` **no** debe quedar en `600` porque el runtime web no podrá leerlo.
+
+Configuración recomendada:
+
+```bash
+sudo chown jimmybackend:www-data .env
+sudo chmod 640 .env
+```
+
+- `600` solo funciona si el proceso PHP corre como el mismo usuario dueño de `.env`.
+- `644` **no** se recomienda para `.env` por exposición innecesaria.
+
+Aplicar recarga:
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+sudo systemctl reload php8.5-fpm
+```
+
+Validaciones:
+
+```bash
+ls -l .env
+ps -eo user,group,comm | grep -E 'php-fpm|php8.5-fpm'
+curl -s -o /dev/null -w "GET /login => HTTP %{http_code}\n" http://127.0.0.1/login
+```
+
+Uso recomendado del setup:
+
+```bash
+WEB_GROUP=www-data bash scripts/setup-vm-env.sh
+```

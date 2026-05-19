@@ -174,3 +174,23 @@ Al cerrar la sesión:
 
 > Este entorno y este runbook están diseñados exclusivamente para **demo privada controlada**.  
 > **No** constituyen habilitación de **producción SaaS pública** ni autorización para activar integraciones reales.
+
+## 13) Lección operativa crítica: permisos de `.env`
+
+Validación real en VM (main en commit `836d0db`, PR #257):
+- Nginx + PHP-FPM operativos.
+- `GET /login` OK (`HTTP 200`).
+- `POST /login` fallaba (`HTTP 500`) por `PDOException 2002 Connection refused`.
+- Causa raíz: `.env` con `600`, ilegible para runtime web (`www-data`).
+- Corrección efectiva: owner deploy + group web + `chmod 640`.
+
+```bash
+sudo chown jimmybackend:www-data .env
+sudo chmod 640 .env
+sudo nginx -t && sudo systemctl reload nginx
+sudo systemctl reload php8.5-fpm
+```
+
+Resultado verificado: `POST /login => 302 Found` y `Location: /dashboard` (dashboard visible en navegador).
+
+Pendiente obligatorio antes de preproducción/producción: **rotar `DB_PASSWORD`, `APP_KEY` y `CORE_REGISTRATION_INVITE_CODE`**.

@@ -3,7 +3,8 @@
   "description": "Ecosistema Core Admin - estructura base (Capa 2)",
   "type": "project",
   "require": {
-    "php": "^8.3"
+    "php": "^8.3",
+    "webklex/php-imap": "^6.2"
   },
   "autoload": {
     "psr-4": {

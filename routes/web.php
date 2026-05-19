@@ -429,7 +429,7 @@ return [
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }
-        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $smtpAccounts = [];
         try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $modules=$service->listModules(); } catch (\Throwable) { $modules=[]; $errorMessage='No se pudo guardar el módulo.'; }
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title'=>'Módulos | Ecosistema Core Admin','contentView'=>'pages/modules/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('modules','statusMessage','errorMessage')]);
@@ -730,9 +730,36 @@ return [
         if (!requirePermission($config, 'mail.view')) { return; }
         $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
-        try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $messages=$service->listMessages($tenantId,$userId);} catch (\Throwable) { $messages=[]; $errorMessage='Mensaje no encontrado.'; }
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage')]);
+        try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $messages=$service->listMessages($tenantId,$userId); $smtpAccounts=(new MailSmtpAccountRepository($pdo))->listForUser($tenantId,$userId);} catch (\Throwable) { $messages=[]; $smtpAccounts=[]; $errorMessage='Mensaje no encontrado.'; }
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage','smtpAccounts')]);
     },
+
+    'POST /mail/imap-sync' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.view')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth(); $tenantId = authTenantId($auth); $userId = authUserId($auth);
+        $smtpAccountId = (int) ($_POST['smtp_account_id'] ?? 0);
+        $limit = (int) ($_POST['limit'] ?? 25);
+        if ($smtpAccountId <= 0) { header('Location: /mail?error=' . urlencode('Selecciona una cuenta SMTP/IMAP válida.')); return; }
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new \App\Core\Mail\MailImapSyncService($pdo, new SecretBox());
+            $result = $service->syncForUser($tenantId, $userId, $smtpAccountId, $limit);
+            if (($result['ok'] ?? false) !== true) {
+                $msg = (string) (($result['errors'][0] ?? 'No se pudo sincronizar IMAP.'));
+                header('Location: /mail?error=' . urlencode($msg));
+                return;
+            }
+            $msg = 'Sincronización IMAP completada. imported=' . (int) ($result['imported'] ?? 0) . ', skipped=' . (int) ($result['skipped'] ?? 0) . ', errors=' . count((array) ($result['errors'] ?? []));
+            header('Location: /mail?ok=' . urlencode($msg));
+            return;
+        } catch (\Throwable) {
+            header('Location: /mail?error=' . urlencode('No se pudo sincronizar IMAP.'));
+            return;
+        }
+    },
+
     'GET /mail/messages/{id}' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.view')) { return; }

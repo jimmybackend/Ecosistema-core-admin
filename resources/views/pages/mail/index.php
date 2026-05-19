@@ -3,6 +3,8 @@ $messages = is_array($messages ?? null) ? $messages : [];
 $statusMessage = is_string($statusMessage ?? null) ? $statusMessage : null;
 $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
 $summary = static function (mixed $json): string { $arr = json_decode((string)$json, true); return is_array($arr) ? implode(', ', array_slice($arr, 0, 2)) : (string)$json; };
+$smtpAccounts = is_array($smtpAccounts ?? null) ? $smtpAccounts : [];
+$selectedSmtpId = (int)($smtpAccounts[0]['id'] ?? 0);
 ?>
 <section>
   <h1>Mail</h1>
@@ -10,6 +12,18 @@ $summary = static function (mixed $json): string { $arr = json_decode((string)$j
   <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
   <?php if ($errorMessage): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
   <article class="eco-card"><div style="margin-bottom:.75rem;"><a class="eco-button btn" href="/mail/compose">Nuevo borrador</a> <a class="eco-button btn" href="/mail/settings">Configuración SMTP</a></div>
+  <form method="post" action="/mail/imap-sync" style="margin-bottom:.75rem; display:flex; gap:.5rem; align-items:center;">
+    <input type="hidden" name="_csrf" value="<?= e((string)$csrfToken) ?>">
+    <label for="smtp_account_id">Cuenta:</label>
+    <select id="smtp_account_id" name="smtp_account_id" required>
+      <?php foreach($smtpAccounts as $acc): ?>
+        <option value="<?= e((string)($acc['id'] ?? 0)) ?>" <?= ((int)($acc['id'] ?? 0) === $selectedSmtpId ? 'selected' : '') ?>><?= e((string)($acc['name'] ?? 'Cuenta SMTP')) ?> · <?= e((string)($acc['email_address'] ?? '')) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <label for="limit">Límite:</label>
+    <input id="limit" name="limit" type="number" min="1" max="250" value="25">
+    <button class="eco-button btn" type="submit" <?= $smtpAccounts === [] ? 'disabled' : '' ?>>Sincronizar IMAP</button>
+  </form>
   <table class="eco-table" style="width:100%"><thead><tr><th>ID</th><th>Dir</th><th>From</th><th>To</th><th>Subject</th><th>Flags</th><th>Fechas</th><th>Acciones</th></tr></thead><tbody>
   <?php if ($messages===[]): ?><tr><td colspan="8">No hay mensajes para mostrar.</td></tr><?php else: foreach($messages as $m): ?><tr>
     <td><?= e((string)$m['id']) ?></td><td><span class="eco-badge"><?= e((string)$m['direction']) ?></span></td><td><?= e((string)$m['from_address']) ?></td><td><?= e($summary($m['to_addresses'] ?? '')) ?></td><td><?= e((string)($m['subject'] ?? '')) ?></td>

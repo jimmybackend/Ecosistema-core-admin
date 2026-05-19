@@ -55,6 +55,7 @@ use App\Core\Cloud\CloudService;
 use App\Core\Cloud\CloudStorageConfig;
 use App\Core\Cloud\CloudStorageService;
 use App\Core\Cloud\CloudUploadService;
+use App\Core\Cloud\UserCloudRootProvisioner;
 use App\Core\Cloud\CloudDownloadService;
 use App\Core\Cloud\EcosistemaDriveConfig;
 use App\Core\Cloud\EcosistemaDriveAdapter;
@@ -2522,6 +2523,25 @@ return [
         View::render('layouts.admin',['title'=>'CRM Campaign Detail | Ecosistema Core Admin','contentView'=>'pages/crm/campaign-detail','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('campaign','errorMessage')]);
     },
 
+    'POST /cloud/provision-my-root' => static function (array $config): void {
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $auth = AuthSession::getAuth();
+        if (!is_array($auth) || !isset($auth['auth_user_id'], $auth['auth_tenant_id'])) { header('Location: /cloud?error=' . urlencode('Sesión inválida.')); return; }
+        if (!ensureValidCsrfToken($config, $_POST['_csrf'] ?? null)) { return; }
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $provisioner = new UserCloudRootProvisioner($pdo, new CloudStorageService($config, class_exists('Aws\S3\S3Client')), $config);
+            $result = $provisioner->provisionForUser((int)$auth['auth_tenant_id'], (int)$auth['auth_user_id']);
+            $key = ($result['ok'] ?? false) ? 'ok' : 'error';
+            $msg = ($result['ok'] ?? false) ? 'Estructura Cloud provisionada correctamente.' : 'No se pudo provisionar Cloud para el usuario.';
+            header('Location: /cloud?' . $key . '=' . urlencode($msg));
+            return;
+        } catch (\Throwable) {
+            header('Location: /cloud?error=' . urlencode('No se pudo provisionar Cloud para el usuario.'));
+            return;
+        }
+    },
+
     'GET /cloud' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
@@ -3863,6 +3883,16 @@ return [
             ]);
             $userId = (int) $pdo->lastInsertId();
             $postRegisterMessage = 'Cuenta creada. Ahora puedes iniciar sesión.';
+            $cloudProvisioningFailed = false;
+
+            try {
+                $provisioner = new UserCloudRootProvisioner($pdo, new CloudStorageService($config, class_exists('Aws\S3\S3Client')), $config);
+                $provision = $provisioner->provisionForUser($tenantId, $userId);
+                if (($provision['ok'] ?? false) !== true) { $cloudProvisioningFailed = true; }
+            } catch (\Throwable $e) {
+                $cloudProvisioningFailed = true;
+                error_log('[cloud.provision.register] tenant_id=' . $tenantId . ' user_id=' . $userId . ' error=' . $e->getMessage());
+            }
 
             if (is_int($defaultRoleId)) {
                 $roleStmt = $pdo->prepare('SELECT id FROM core_roles WHERE id = :id AND tenant_id = :tenant_id LIMIT 1');
@@ -3878,6 +3908,7 @@ return [
                 }
             }
 
+            if ($cloudProvisioningFailed) { throw new RuntimeException('cloud_provision_failed'); }
             $pdo->commit();
             header('Location: /login?registered=1&message=' . urlencode($postRegisterMessage));
             return;
@@ -3890,6 +3921,7 @@ return [
                 'invalid_tenant' => 'Registro no disponible. El tenant configurado no existe.',
                 'first_user_blocked' => 'Registro inicial bloqueado. Ya existe un usuario para ese tenant.',
                 'email_taken' => 'El email ya está registrado.',
+                'cloud_provision_failed' => 'Usuario creado, pero Cloud no pudo provisionarse. Usa el reparador de Cloud al iniciar sesión.',
                 default => 'No fue posible procesar el registro en este momento.',
             };
         } catch (\Throwable) {

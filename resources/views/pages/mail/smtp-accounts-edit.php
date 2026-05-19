@@ -1,5 +1,5 @@
-<?php $account = is_array($account ?? null) ? $account : []; $mailboxes=is_array($mailboxes??null)?$mailboxes:[]; ?>
-<section><h1>Editar SMTP</h1><p>La contraseña SMTP no es la contraseña de acceso al panel.</p>
+<?php $account = is_array($account ?? null) ? $account : []; $mailboxes=is_array($mailboxes??null)?$mailboxes:[]; $authData = is_array($auth ?? null) ? $auth : []; $authEmail = (string) ($authData['email'] ?? $authData['auth_email'] ?? 'no-disponible'); $authName = (string) ($authData['display_name'] ?? $authData['auth_display_name'] ?? ''); ?>
+<section><h1>Editar SMTP</h1><p>Usuario autenticado: <strong><?= e($authName !== "" ? ($authName . " (" . $authEmail . ")") : $authEmail) ?></strong>.</p><p>Tu correo de acceso al panel puede ser distinto del correo operativo asignado para seguimiento y soporte.</p><p>La contraseña SMTP no es la contraseña de acceso al panel.</p>
 <form method="post" action="/mail/smtp-accounts/<?= e((string)($account['id'] ?? '0')) ?>"><input type="hidden" name="_csrf" value="<?= e((string)($csrfToken ?? '')) ?>">
 <label>Mailbox</label><select name="mailbox_id" required><?php foreach($mailboxes as $m): ?><option value="<?= e((string)$m['id']) ?>" <?= ((int)($account['mailbox_id']??0)===(int)$m['id'])?'selected':'' ?>><?= e((string)($m['full_address'] ?? ('Mailbox #'.$m['id']))) ?></option><?php endforeach; ?></select>
 <label>Nombre</label><input name="name" value="<?= e((string)($account['name']??'')) ?>" required>

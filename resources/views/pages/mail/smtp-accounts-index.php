@@ -2,9 +2,12 @@
 $accounts = is_array($accounts ?? null) ? $accounts : [];
 $statusMessage = is_string($statusMessage ?? null) ? $statusMessage : null;
 $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
+$authData = is_array($auth ?? null) ? $auth : [];
+$authEmail = (string) ($authData['email'] ?? $authData['auth_email'] ?? 'no-disponible');
+$authName = (string) ($authData['display_name'] ?? $authData['auth_display_name'] ?? '');
 ?>
 <section><h1>SMTP Accounts</h1><p>Listado seguro (sin password SMTP).</p>
-<p>Login del panel y mailbox operativa pueden ser distintos.</p>
+<p>Usuario autenticado: <strong><?= e($authName !== "" ? ($authName . " (" . $authEmail . ")") : $authEmail) ?></strong>.</p><p>Tu correo de acceso al panel puede ser distinto del correo operativo asignado para seguimiento y soporte.</p>
 <?php if ($statusMessage): ?><div class="eco-alert" role="status"><?= e($statusMessage) ?></div><?php endif; ?>
 <?php if ($errorMessage): ?><div class="eco-alert" role="alert"><?= e($errorMessage) ?></div><?php endif; ?>
 <div><a class="eco-button btn" href="/mail/smtp-accounts/create">Crear SMTP propio</a></div>

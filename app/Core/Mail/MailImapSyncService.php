@@ -35,9 +35,11 @@ final readonly class MailImapSyncService
             return ['ok' => false, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => ['No se pudo preparar la carpeta INBOX.']];
         }
 
-        $password = $this->secretBox->decrypt((string) ($account['password_encrypted'] ?? ''));
-        if (trim($password) === '') {
-            return ['ok' => false, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => ['No se pudo resolver la contraseña IMAP.']];
+        [$password, $validationError] = $this->resolveImapPassword($account);
+        if ($validationError !== null) {
+            $safeError = $this->buildSafeImapErrorMessage($account, $validationError, null);
+            $this->updateSyncStatus($account, false, $safeError);
+            return ['ok' => false, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => [$safeError]];
         }
 
         $result = ['ok' => true, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => []];
@@ -46,16 +48,12 @@ final readonly class MailImapSyncService
             $clientManager = new ClientManager(['options' => ['fetch' => 2]]);
             $client = $clientManager->make($this->buildClientConfig($account, $password));
 
-            try {
-                $client->connect();
-            } catch (Throwable $e) {
-                $result['ok'] = false;
-                $result['errors'][] = $this->buildSafeImapConnectionError($account, $e);
-                $this->updateInboundSyncStatus($account, false, $result['errors'][0]);
-                return $result;
-            }
+            $client->connect();
 
             $folder = $client->getFolder('INBOX');
+            if ($folder === null) {
+                throw new \RuntimeException('IMAP folder INBOX not found');
+            }
             $messages = $folder->messages()->all()->setFetchOrder('desc')->limit($limit)->get();
 
             foreach ($messages as $message) {
@@ -127,46 +125,35 @@ final readonly class MailImapSyncService
             }
 
             $client->disconnect();
-            $this->updateInboundSyncStatus($account, $result['errors'] === [], $result['errors'] === [] ? null : 'Error parcial de sincronización IMAP');
-        } catch (Throwable) {
+            $this->updateSyncStatus($account, $result['errors'] === [], $result['errors'] === [] ? null : 'Error parcial de sincronización IMAP');
+        } catch (Throwable $e) {
             $result['ok'] = false;
-            $result['errors'][] = 'Falló la sincronización IMAP.';
-            $this->updateInboundSyncStatus($account, false, 'Falló la sincronización IMAP.');
+            $errorType = $this->classifyImapError($e);
+            $safeError = $this->buildSafeImapErrorMessage($account, $errorType, $e);
+            $result['errors'][] = $safeError;
+            $this->logSafeSyncError($account, $userId, $errorType, $e);
+            $this->updateSyncStatus($account, false, $safeError);
         }
 
         return $result;
     }
 
 
-    private function buildSafeImapConnectionError(array $account, Throwable $e): string
+    private function buildSafeImapErrorMessage(array $account, string $errorType, ?Throwable $e): string
     {
         $host = trim((string) ($account['imap_host'] ?? ''));
         $port = (int) ($account['imap_port'] ?? 0);
-        $encryption = strtolower(trim((string) ($account['imap_encryption'] ?? 'none')));
-        if ($encryption === '') {
-            $encryption = 'none';
-        }
+        $sslIn = strtolower(trim((string) ($account['imap_encryption'] ?? 'none'))) ?: 'none';
+        $suggestion = match ($errorType) {
+            'auth_failed' => 'Verifica usuario y contraseña del buzón.',
+            'connection_failed' => 'Verifica host, puerto y conectividad de red.',
+            'ssl_tls_failed' => 'Verifica SSL/TLS y certificado del servidor.',
+            'decrypt_failed' => 'Reingresa la contraseña del buzón y vuelve a guardar.',
+            'mailbox_not_found' => 'Verifica que la carpeta INBOX exista en el servidor.',
+            default => 'Reintenta la sincronización y revisa la configuración IMAP.',
+        };
 
-        $raw = strtolower(trim($e->getMessage()));
-        $failureType = 'connection failed';
-        if ($raw !== '') {
-            if (str_contains($raw, 'auth') || str_contains($raw, 'login') || str_contains($raw, 'invalid credentials')) {
-                $failureType = 'auth failed';
-            } elseif (str_contains($raw, 'refused')) {
-                $failureType = 'connection refused';
-            } elseif (str_contains($raw, 'timeout') || str_contains($raw, 'timed out')) {
-                $failureType = 'timeout';
-            } elseif (str_contains($raw, 'ssl') || str_contains($raw, 'tls') || str_contains($raw, 'certificate') || str_contains($raw, 'handshake')) {
-                $failureType = 'TLS/SSL error';
-            }
-        }
-
-        $message = "No se pudo conectar al servidor IMAP (host={$host}, port={$port}, encryption={$encryption}, tipo={$failureType}).";
-        if (str_contains(strtolower($host), 'titan') && $port === 995) {
-            $message .= ' Para IMAP Titan usa imap.titan.email puerto 993 ssl. El puerto 995 es POP.';
-        }
-
-        return $message;
+        return "No se pudo sincronizar IMAP con {$host}:{$port} {$sslIn}. Tipo: {$errorType}. {$suggestion}";
     }
 
     private function buildClientConfig(array $account, string $password): array {
@@ -181,7 +168,7 @@ final readonly class MailImapSyncService
             'host' => (string) $account['imap_host'],
             'port' => (int) $account['imap_port'],
             'encryption' => $encryption,
-            'validate_cert' => false,
+            'validate_cert' => true,
             'username' => (string) $account['imap_username'],
             'password' => $password,
             'protocol' => 'imap',
@@ -215,6 +202,11 @@ final readonly class MailImapSyncService
     private function insertEvent(int $tenantId,int $messageId,int $userId,int $uid,string $mailbox): void { $stmt=$this->pdo->prepare('INSERT INTO mail_message_events (tenant_id,message_id,user_id,event_type,metadata_json,created_at) VALUES (:tenant_id,:message_id,:user_id,:event_type,:metadata_json,NOW())'); $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':user_id'=>$userId,':event_type'=>'received',':metadata_json'=>json_encode(['provider'=>'imap','uid'=>$uid,'mailbox'=>$mailbox,'folder'=>'INBOX'], JSON_UNESCAPED_UNICODE)]); }
     private function insertExternalAttachment(int $tenantId,int $messageId,array $attachment): void { $stmt=$this->pdo->prepare('INSERT INTO mail_external_attachments (tenant_id,message_id,cloud_file_id,legacy_source,legacy_table,legacy_attachment_id,original_filename,mime_type,size_bytes,import_status,raw_payload_json,created_at,updated_at) VALUES (:tenant_id,:message_id,NULL,:legacy_source,:legacy_table,:legacy_attachment_id,:original_filename,:mime_type,:size_bytes,:import_status,:raw_payload_json,NOW(),NOW())'); $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':legacy_source'=>'imap',':legacy_table'=>'imap',':legacy_attachment_id'=>(string)$attachment['legacy_attachment_id'],':original_filename'=>$attachment['original_filename'],':mime_type'=>$attachment['mime_type'],':size_bytes'=>$attachment['size_bytes'],':import_status'=>'pending',':raw_payload_json'=>json_encode($attachment, JSON_UNESCAPED_UNICODE)]); }
     private function updateInboundSyncStatus(array $account, bool $ok, ?string $error): void { if (($account['source_type'] ?? '') !== 'inbound') { return; } $stmt = $this->pdo->prepare('UPDATE mail_inbound_accounts SET last_sync_at = NOW(), last_error = :last_error, status = :status, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $stmt->execute([':last_error'=>$ok?null:$error, ':status'=>$ok?'active':'error', ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
+    private function updateSmtpSyncStatus(array $account, ?string $error): void { if (($account['source_type'] ?? '') !== 'smtp') { return; } $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET last_error = :last_error, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $stmt->execute([':last_error'=>$error, ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
+    private function updateSyncStatus(array $account, bool $ok, ?string $error): void { $this->updateInboundSyncStatus($account,$ok,$error); $this->updateSmtpSyncStatus($account,$ok?null:$error); }
+    private function classifyImapError(Throwable $e): string { $raw=strtolower(trim($e->getMessage())); if($raw===''){return 'unknown_imap_error';} if(str_contains($raw,'auth')||str_contains($raw,'login')||str_contains($raw,'invalid credentials')){return 'auth_failed';} if(str_contains($raw,'ssl')||str_contains($raw,'tls')||str_contains($raw,'certificate')||str_contains($raw,'handshake')){return 'ssl_tls_failed';} if(str_contains($raw,'inbox')&&str_contains($raw,'not found')){return 'mailbox_not_found';} if(str_contains($raw,'connection')||str_contains($raw,'refused')||str_contains($raw,'timeout')||str_contains($raw,'timed out')||str_contains($raw,'unable to connect')||str_contains($raw,'network')){return 'connection_failed';} return 'unknown_imap_error'; }
+    private function resolveImapPassword(array $account): array { $encrypted=trim((string)($account['password_encrypted']??'')); $username=trim((string)($account['imap_username']??'')); if($encrypted===''||$username===''){ return [null,'decrypt_failed']; } $password=(string)$this->secretBox->decrypt($encrypted); if(trim($password)===''){ return [null,'decrypt_failed']; } return [$password,null]; }
+    private function logSafeSyncError(array $account, int $userId, string $errorType, Throwable $e): void { error_log('[mail.imap.sync] tenant_id='.(int)($account['tenant_id']??0).' user_id='.$userId.' smtp_account_id='.(int)($account['source_type']==='smtp' ? ($account['source_id']??0):0).' host_in='.(string)($account['imap_host']??'').' port_in='.(int)($account['imap_port']??0).' ssl_in='.(string)($account['imap_encryption']??'').' error_type='.$errorType.' exception_class='.get_class($e)); }
     private function extractMessageId(string $messageId, string $headers): ?string { $trim=trim($messageId); if($trim!==''){return $trim;} if(preg_match('/^Message-ID:\s*(.+)$/mi',$headers,$m)===1){ return trim((string)$m[1]); } return null; }
     private function safeFileName(string $name): string { $base = basename(str_replace('\\','/',$name)); $clean = preg_replace('/[^a-zA-Z0-9._-]/', '_', $base); return $clean !== '' ? $clean : 'attachment'; }
     private function toMysqlDateTime(string $value): ?string { $ts = strtotime($value); return $ts === false ? null : date('Y-m-d H:i:s', $ts); }

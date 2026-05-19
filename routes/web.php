@@ -777,8 +777,42 @@ return [
             ]);
             header('Location: /mail?' . $query);
             return;
-        } catch (\Throwable) {
-            header('Location: /mail?error=' . urlencode('No se pudo sincronizar IMAP.'));
+        } catch (\Throwable $e) {
+            error_log('[mail.imap.sync.route] tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $smtpAccountId . ' error_type=unknown_imap_error exception_class=' . get_class($e));
+            header('Location: /mail?error=' . urlencode('No se pudo sincronizar IMAP. Tipo: unknown_imap_error. Reintenta la sincronización.'));
+            return;
+        }
+    },
+
+    'POST /mail/sync' => static function (array $config): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.view')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth(); $tenantId = authTenantId($auth); $userId = authUserId($auth);
+        $smtpAccountId = (int) ($_POST['smtp_account_id'] ?? 0);
+        $limit = (int) ($_POST['limit'] ?? 25);
+        if ($smtpAccountId <= 0) { header('Location: /mail?error=' . urlencode('Selecciona una cuenta SMTP/IMAP válida.')); return; }
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $service = new \App\Core\Mail\MailImapSyncService($pdo, new SecretBox());
+            $result = $service->syncForUser($tenantId, $userId, $smtpAccountId, $limit);
+            if (($result['ok'] ?? false) !== true) {
+                $msg = (string) (($result['errors'][0] ?? 'No se pudo sincronizar IMAP.'));
+                header('Location: /mail?error=' . urlencode($msg));
+                return;
+            }
+            $query = http_build_query([
+                'imported' => (int) ($result['imported'] ?? 0),
+                'skipped' => (int) ($result['skipped'] ?? 0),
+                'attachments_pending' => (int) ($result['attachments_pending'] ?? 0),
+                'errors' => count((array) ($result['errors'] ?? [])),
+                'ok' => 'Sincronización IMAP completada.',
+            ]);
+            header('Location: /mail?' . $query);
+            return;
+        } catch (\Throwable $e) {
+            error_log('[mail.imap.sync.route] tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $smtpAccountId . ' error_type=unknown_imap_error exception_class=' . get_class($e));
+            header('Location: /mail?error=' . urlencode('No se pudo sincronizar IMAP. Tipo: unknown_imap_error. Reintenta la sincronización.'));
             return;
         }
     },

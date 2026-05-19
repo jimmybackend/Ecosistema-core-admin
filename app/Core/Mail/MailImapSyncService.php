@@ -7,6 +7,8 @@ namespace App\Core\Mail;
 use App\Support\SecretBox;
 use PDO;
 use Throwable;
+use Webklex\PHPIMAP\ClientManager;
+use Webklex\PHPIMAP\Message;
 
 final readonly class MailImapSyncService
 {
@@ -16,14 +18,14 @@ final readonly class MailImapSyncService
 
     public function syncForUser(int $tenantId, int $userId, int $accountId, int $limit = 25): array
     {
-        if (!extension_loaded('imap')) {
-            return ['ok' => false, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => ['PHP IMAP extension not loaded.']];
-        }
-
         $limit = max(1, min(250, $limit));
         $account = $this->findAuthorizedAccount($tenantId, $userId, $accountId);
         if ($account === null) {
             return ['ok' => false, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => ['Cuenta IMAP no autorizada o inactiva.']];
+        }
+
+        if (!class_exists(ClientManager::class)) {
+            return ['ok' => false, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => ['Cliente IMAP Composer no disponible en el servidor.']];
         }
 
         $mailboxId = (int) $account['mailbox_id'];
@@ -39,61 +41,78 @@ final readonly class MailImapSyncService
         }
 
         $result = ['ok' => true, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => []];
-        $imap = null;
 
         try {
-            $imap = @imap_open($this->imapMailboxPath((string) $account['imap_host'], (int) $account['imap_port'], (string) $account['imap_encryption']), (string) $account['imap_username'], $password, 0, 1);
-            if ($imap === false) {
+            $clientManager = new ClientManager(['options' => ['fetch' => \IMAP::FT_PEEK ?? 2]]);
+            $client = $clientManager->make($this->buildClientConfig($account, $password));
+
+            try {
+                $client->connect();
+            } catch (Throwable) {
                 $result['ok'] = false;
-                $result['errors'][] = 'No se pudo conectar al servidor IMAP.';
+                $result['errors'][] = 'No se pudo conectar al servidor IMAP con la configuración indicada.';
                 $this->updateInboundSyncStatus($account, false, $result['errors'][0]);
                 return $result;
             }
 
-            $uids = imap_search($imap, 'ALL', SE_UID);
-            if (!is_array($uids) || $uids === []) {
-                $this->updateInboundSyncStatus($account, true, null);
-                return $result;
-            }
+            $folder = $client->getFolder('INBOX');
+            $messages = $folder->messages()->all()->setFetchOrder('desc')->limit($limit)->get();
 
-            rsort($uids, SORT_NUMERIC);
-            $uids = array_slice($uids, 0, $limit);
+            foreach ($messages as $message) {
+                if (!$message instanceof Message) {
+                    $result['skipped']++;
+                    continue;
+                }
 
-            foreach ($uids as $uid) {
-                $uid = (int) $uid;
-                $overview = imap_fetch_overview($imap, (string) $uid, FT_UID);
-                if (!is_array($overview) || !isset($overview[0])) { $result['skipped']++; continue; }
-                $ov = $overview[0];
-                $headers = (string) (imap_fetchheader($imap, (string) $uid, FT_UID) ?: '');
-                $externalMessageId = $this->extractMessageId((string) ($ov->message_id ?? ''), $headers) ?? ('imap-uid:' . $uid);
-                if ($this->existsMessage($tenantId, $mailboxId, $externalMessageId)) { $result['skipped']++; continue; }
+                $uid = (int) ($message->getUid() ?? 0);
+                $headers = (string) ($message->getHeader()->raw ?? '');
+                $externalMessageId = $this->extractMessageId((string) ($message->getMessageId() ?? ''), $headers) ?? ('imap-uid:' . $uid);
+                if ($this->existsMessage($tenantId, $mailboxId, $externalMessageId)) {
+                    $result['skipped']++;
+                    continue;
+                }
 
-                $structure = imap_fetchstructure($imap, (string) $uid, FT_UID);
-                $attachmentParts = $this->collectAttachmentMetadata($structure, (string) $uid);
-                $plainBody = $this->fetchBodyBySubtype($imap, $uid, 'PLAIN');
-                $htmlBody = $this->fetchBodyBySubtype($imap, $uid, 'HTML');
-                if ($plainBody === null) { $plainBody = trim(strip_tags((string) $htmlBody)); }
+                $plainBody = trim((string) $message->getTextBody());
+                $htmlBody = trim((string) $message->getHTMLBody());
+                if ($plainBody === '') {
+                    $plainBody = trim(strip_tags($htmlBody));
+                }
 
-                $to = $this->extractAddressList((string) ($ov->to ?? ''));
-                $cc = $this->extractAddressList((string) ($ov->cc ?? ''));
-                $bcc = $this->extractAddressList((string) ($ov->bcc ?? ''));
-                $from = $this->extractAddressList((string) ($ov->from ?? ''));
-                $isRead = isset($ov->seen) && ((string) $ov->seen === '1' || (string) $ov->seen === 'S');
-                $isStarred = isset($ov->flagged) && ((string) $ov->flagged === '1' || (string) $ov->flagged === 'F');
-                $receivedAt = $this->toMysqlDateTime((string) ($ov->date ?? '')) ?? date('Y-m-d H:i:s');
+                $to = $this->normalizeAddressList($message->getTo());
+                $cc = $this->normalizeAddressList($message->getCc());
+                $bcc = $this->normalizeAddressList($message->getBcc());
+                $from = $this->normalizeAddressList($message->getFrom());
+                $isRead = (bool) $message->getFlag('seen');
+                $isStarred = (bool) $message->getFlag('flagged');
+                $receivedAt = $this->toMysqlDateTime((string) ($message->getDate()?->format(DATE_RFC2822) ?? '')) ?? date('Y-m-d H:i:s');
+
+                $attachmentParts = [];
+                foreach ($message->getAttachments() as $attachment) {
+                    $filename = (string) ($attachment->name ?? 'attachment');
+                    $attachmentParts[] = [
+                        'legacy_attachment_id' => $uid . ':' . ((string) ($attachment->part_number ?? count($attachmentParts) + 1)),
+                        'original_filename' => $filename,
+                        'safe_filename' => $this->safeFileName($filename),
+                        'mime_type' => (string) ($attachment->content_type ?? 'application/octet-stream'),
+                        'size_bytes' => isset($attachment->size) ? (int) $attachment->size : null,
+                    ];
+                }
 
                 $messageId = $this->insertMessage([
                     ':tenant_id' => $tenantId, ':mailbox_id' => $mailboxId, ':folder_id' => $folderId, ':user_id' => $ownerUserId,
                     ':message_uuid' => $this->uuidV4(), ':thread_uuid' => $this->uuidV4(), ':external_provider' => 'imap', ':external_message_id' => $externalMessageId,
                     ':direction' => 'inbound', ':mail_scope' => 'normal', ':from_address' => $from[0] ?? null,
                     ':to_addresses' => json_encode($to, JSON_UNESCAPED_UNICODE), ':cc_addresses' => $cc === [] ? null : json_encode($cc, JSON_UNESCAPED_UNICODE), ':bcc_addresses' => $bcc === [] ? null : json_encode($bcc, JSON_UNESCAPED_UNICODE),
-                    ':subject' => isset($ov->subject) ? imap_utf8((string) $ov->subject) : null,
+                    ':subject' => (string) ($message->getSubject() ?? ''),
                     ':body_text' => $plainBody, ':body_html' => $htmlBody, ':raw_headers' => $headers,
                     ':has_attachments' => $attachmentParts === [] ? 0 : 1, ':is_read' => $isRead ? 1 : 0, ':read_at' => $isRead ? date('Y-m-d H:i:s') : null,
                     ':is_starred' => $isStarred ? 1 : 0, ':is_draft' => 0, ':is_spam' => 0, ':is_deleted' => 0,
                     ':received_at' => $receivedAt, ':sent_at' => $receivedAt,
                 ]);
-                if ($messageId <= 0) { $result['skipped']++; continue; }
+                if ($messageId <= 0) {
+                    $result['skipped']++;
+                    continue;
+                }
 
                 $this->insertRecipients($tenantId, $messageId, $to, 'to');
                 $this->insertRecipients($tenantId, $messageId, $cc, 'cc');
@@ -107,17 +126,39 @@ final readonly class MailImapSyncService
                 $result['imported']++;
             }
 
+            $client->disconnect();
             $this->updateInboundSyncStatus($account, $result['errors'] === [], $result['errors'] === [] ? null : 'Error parcial de sincronización IMAP');
         } catch (Throwable) {
             $result['ok'] = false;
             $result['errors'][] = 'Falló la sincronización IMAP.';
             $this->updateInboundSyncStatus($account, false, 'Falló la sincronización IMAP.');
-        } finally {
-            if (is_resource($imap) || $imap instanceof \IMAP\Connection) { @imap_close($imap); }
         }
 
         return $result;
     }
+
+    private function buildClientConfig(array $account, string $password): array {
+        $enc = strtolower(trim((string) ($account['imap_encryption'] ?? '')));
+        $encryption = match ($enc) {
+            'ssl' => 'ssl',
+            'tls' => 'tls',
+            default => false,
+        };
+
+        return [
+            'host' => (string) $account['imap_host'],
+            'port' => (int) $account['imap_port'],
+            'encryption' => $encryption,
+            'validate_cert' => false,
+            'username' => (string) $account['imap_username'],
+            'password' => $password,
+            'protocol' => 'imap',
+            'authentication' => null,
+            'timeout' => 30,
+        ];
+    }
+
+    private function normalizeAddressList(mixed $addresses): array { $emails=[]; foreach ((array)$addresses as $address){ $email=(string)($address->mail ?? $address->address ?? ''); if($email!==''){$emails[] = strtolower(trim($email));}} return array_values(array_unique(array_filter($emails))); }
 
     private function findAuthorizedAccount(int $tenantId, int $userId, int $accountId): ?array
     {

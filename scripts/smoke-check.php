@@ -3212,6 +3212,28 @@ foreach (['resources/views/pages/mail/settings.php','resources/views/pages/mail/
     else { fail('Vista mail no debe imprimir password_encrypted: ' . $mailViewPath, $criticalFailures); }
 }
 
+
+$mailSmtpRepositoryContent = (string) file_get_contents($root . '/app/Core/Mail/MailSmtpAccountRepository.php');
+if (!str_contains($mailSmtpRepositoryContent, 'm.address') && str_contains($mailSmtpRepositoryContent, 'm.full_address')) {
+    ok('MailSmtpAccountRepository usa m.full_address y no referencia m.address.');
+} else {
+    fail('MailSmtpAccountRepository debe usar m.full_address y evitar m.address.', $criticalFailures);
+}
+
+$dangerousRepeatedPlaceholders = [':tenant_id', ':user_id', ':status'];
+$hasDangerousRepeatedPlaceholder = false;
+foreach ($dangerousRepeatedPlaceholders as $placeholder) {
+    if (substr_count($mailSmtpRepositoryContent, $placeholder) > 6) {
+        $hasDangerousRepeatedPlaceholder = true;
+        break;
+    }
+}
+if (!$hasDangerousRepeatedPlaceholder && str_contains($mailSmtpRepositoryContent, ':user_id_mailbox') && str_contains($mailSmtpRepositoryContent, ':user_id_created_by')) {
+    ok('MailSmtpAccountRepository evita placeholders nombrados repetidos peligrosos en queries SMTP.');
+} else {
+    fail('MailSmtpAccountRepository podría reutilizar placeholders nombrados y gatillar HY093.', $criticalFailures);
+}
+
 $routesForMail = (string) file_get_contents($root . '/routes/web.php');
 if (!str_contains($routesForMail, 'jimmybackend@gmail.com') && !str_contains($routesForMail, 'soporte@esforzados.com')) { ok('Sin hardcode de correos prohibidos en lógica mail.'); }
 else { fail('Se detectó hardcode de correos prohibidos en lógica mail.', $criticalFailures); }

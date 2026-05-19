@@ -30,7 +30,8 @@ $mask = static function ($value): string { $value=(string)$value; if ($value==='
 <td><?= e($clean($a['last_error'] ?? '')) ?></td>
 <td><?= e((string)($a['password_encrypted_present'] ?? 'no')) ?></td>
 <td><a href="/mail/smtp-accounts/<?= e((string)$a['id']) ?>/edit">Editar</a> | <a href="/mail/smtp-accounts/<?= e((string)$a['id']) ?>/test-dry-run">Test dry-run</a> |
-<form method="post" action="/mail/smtp-accounts/<?= e((string)$a['id']) ?>/disable" style="display:inline;"><input type="hidden" name="_csrf" value="<?= e((string)($csrfToken ?? '')) ?>"><button type="submit" style="border:none;background:none;padding:0;color:#b00;cursor:pointer;">Desactivar</button></form></td>
+<form method="post" action="/mail/smtp-accounts/<?= e((string)$a['id']) ?>/disable" style="display:inline;"><input type="hidden" name="_csrf" value="<?= e((string)($csrfToken ?? '')) ?>"><button type="submit" style="border:none;background:none;padding:0;color:#b00;cursor:pointer;">Desactivar</button></form> |
+<form method="post" action="/mail/smtp-accounts/<?= e((string)$a['id']) ?>/delete" style="display:inline;" onsubmit="return confirm('¿Eliminar esta cuenta SMTP? Esta acción no mostrará ni tocará contraseñas.');"><input type="hidden" name="_csrf" value="<?= e((string)($csrfToken ?? '')) ?>"><button type="submit" style="border:none;background:none;padding:0;color:#b00;cursor:pointer;">Eliminar</button></form></td>
 </tr>
 <?php endforeach; ?>
 </tbody></table>

@@ -64,6 +64,15 @@ final readonly class MailSmtpAccountRepository
         $stmt->execute([':status' => 'disabled', ':id' => $id, ':tenant_id' => $tenantId]);
     }
 
+
+
+    public function deleteForUser(int $tenantId, int $userId, int $accountId): bool
+    {
+        $stmt = $this->pdo->prepare("DELETE s FROM mail_smtp_accounts s INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.id = :account_id AND s.tenant_id = :tenant_id AND s.status = :status_disabled AND (s.created_by_user_id = :user_id_created_by OR m.user_id = :user_id_mailbox OR s.available_to_everyone = 1 OR m.available_to_everyone = 1)");
+        $stmt->execute([':account_id' => $accountId, ':tenant_id' => $tenantId, ':status_disabled' => 'disabled', ':user_id_created_by' => $userId, ':user_id_mailbox' => $userId]);
+        return $stmt->rowCount() > 0;
+    }
+
     public function countForTenant(int $tenantId): int
     {
         $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM mail_smtp_accounts WHERE tenant_id = :tenant_id');

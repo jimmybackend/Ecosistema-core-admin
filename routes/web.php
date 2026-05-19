@@ -918,6 +918,12 @@ return [
         $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); if(!is_array($repo->findForUserOrTenant($tenantId,$userId,$id))){ header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; } $repo->disable($tenantId,$id); header('Location: /mail/smtp-accounts?ok='.urlencode('Cuenta SMTP desactivada.')); return; } catch (\Throwable) { header('Location: /mail/smtp-accounts?error='.urlencode('No se pudo desactivar la cuenta SMTP.')); return; }
     },
+    'POST /mail/smtp-accounts/{id}/delete' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
+        try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); if(!$repo->deleteForUser($tenantId,$userId,$id)){ header('Location: /mail/smtp-accounts?error='.urlencode('No se pudo eliminar la cuenta SMTP. Verifica que esté desactivada y tengas acceso.')); return; } header('Location: /mail/smtp-accounts?ok='.urlencode('Cuenta SMTP eliminada correctamente.')); return; } catch (\Throwable) { header('Location: /mail/smtp-accounts?error='.urlencode('No se pudo eliminar la cuenta SMTP.')); return; }
+    },
     'GET /mail/smtp-accounts/{id}/test-dry-run' => static function (array $config, array $params): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
         $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);

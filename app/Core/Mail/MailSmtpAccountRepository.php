@@ -22,7 +22,7 @@ final readonly class MailSmtpAccountRepository
 
     public function findActiveByUserFallback(int $tenantId, int $userId): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT s.*, m.address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id WHERE s.tenant_id = :tenant_id AND s.status = :status AND (m.user_id = :user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1) ORDER BY s.available_to_everyone DESC, s.id DESC LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT s.*, m.address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND s.status = :status AND (m.user_id = :user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1) ORDER BY s.available_to_everyone DESC, s.id DESC LIMIT 1');
         $stmt->execute([':tenant_id' => $tenantId, ':status' => 'active', ':user_id' => $userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return is_array($row) ? $row : null;
@@ -30,14 +30,14 @@ final readonly class MailSmtpAccountRepository
 
     public function listForUser(int $tenantId, int $userId): array
     {
-        $stmt = $this->pdo->prepare("SELECT s.id, s.name, s.email_address, s.host_in, s.port_in, s.ssl_in, s.host_out, s.port_out, s.ssl_out, s.username, s.status, s.last_error, s.mailbox_id, s.max_daily_email, s.enable_limit, s.available_to_everyone, CASE WHEN TRIM(COALESCE(s.password_encrypted, '')) = '' THEN 'no' ELSE 'yes' END AS password_encrypted_present, m.address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id WHERE s.tenant_id = :tenant_id AND (m.user_id = :user_id OR m.available_to_everyone = 1 OR s.created_by_user_id = :user_id OR s.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100");
+        $stmt = $this->pdo->prepare("SELECT s.id, s.name, s.email_address, s.host_in, s.port_in, s.ssl_in, s.host_out, s.port_out, s.ssl_out, s.username, s.status, s.last_error, s.mailbox_id, s.max_daily_email, s.enable_limit, s.available_to_everyone, CASE WHEN TRIM(COALESCE(s.password_encrypted, '')) = '' THEN 'no' ELSE 'yes' END AS password_encrypted_present, m.address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND (m.user_id = :user_id OR m.available_to_everyone = 1 OR s.created_by_user_id = :user_id OR s.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100");
         $stmt->execute([':tenant_id' => $tenantId, ':user_id' => $userId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function findForUserOrTenant(int $tenantId, int $userId, int $id): ?array
     {
-        $stmt = $this->pdo->prepare('SELECT s.*, m.address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id WHERE s.id = :id AND s.tenant_id = :tenant_id AND (m.user_id = :user_id OR m.available_to_everyone = 1 OR s.created_by_user_id = :user_id OR s.available_to_everyone = 1) LIMIT 1');
+        $stmt = $this->pdo->prepare('SELECT s.*, m.address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.id = :id AND s.tenant_id = :tenant_id AND (m.user_id = :user_id OR m.available_to_everyone = 1 OR s.created_by_user_id = :user_id OR s.available_to_everyone = 1) LIMIT 1');
         $stmt->execute([':id' => $id, ':tenant_id' => $tenantId, ':user_id' => $userId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         return is_array($row) ? $row : null;
@@ -62,5 +62,12 @@ final readonly class MailSmtpAccountRepository
     {
         $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET status = :status, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id');
         $stmt->execute([':status' => 'disabled', ':id' => $id, ':tenant_id' => $tenantId]);
+    }
+
+    public function countForTenant(int $tenantId): int
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM mail_smtp_accounts WHERE tenant_id = :tenant_id');
+        $stmt->execute([':tenant_id' => $tenantId]);
+        return (int) $stmt->fetchColumn();
     }
 }

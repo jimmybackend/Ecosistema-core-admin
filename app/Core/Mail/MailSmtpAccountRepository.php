@@ -35,6 +35,15 @@ final readonly class MailSmtpAccountRepository
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
+
+    public function listForImapSyncForUser(int $tenantId, int $userId): array
+    {
+        $sql = "SELECT s.id, s.mailbox_id, s.host_in, s.port_in, s.ssl_in, s.username, m.full_address AS mailbox_full_address FROM mail_smtp_accounts s INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND s.status = 'active' AND m.status = 'active' AND TRIM(COALESCE(s.host_in, '')) <> '' AND s.port_in IS NOT NULL AND TRIM(COALESCE(s.username, '')) <> '' AND TRIM(COALESCE(s.password_encrypted, '')) <> '' AND (s.created_by_user_id = :created_by_user_id OR m.user_id = :mailbox_user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':tenant_id' => $tenantId, ':created_by_user_id' => $userId, ':mailbox_user_id' => $userId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
     public function findForUserOrTenant(int $tenantId, int $userId, int $id): ?array
     {
         $stmt = $this->pdo->prepare('SELECT s.*, m.full_address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.id = :id AND s.tenant_id = :tenant_id_account AND (m.user_id = :user_id_mailbox OR m.available_to_everyone = 1 OR s.created_by_user_id = :user_id_created_by OR s.available_to_everyone = 1) LIMIT 1');
@@ -66,10 +75,31 @@ final readonly class MailSmtpAccountRepository
 
 
 
+    public function findAuthorizedById(int $tenantId, int $userId, int $accountId): ?array
+    {
+        $sql = 'SELECT s.id, s.status FROM mail_smtp_accounts s INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND s.id = :account_id AND (s.created_by_user_id = :created_by_user_id OR m.user_id = :mailbox_user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1) LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':tenant_id' => $tenantId,
+            ':account_id' => $accountId,
+            ':created_by_user_id' => $userId,
+            ':mailbox_user_id' => $userId,
+        ]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
     public function deleteForUser(int $tenantId, int $userId, int $accountId): bool
     {
-        $stmt = $this->pdo->prepare("DELETE s FROM mail_smtp_accounts s INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.id = :account_id AND s.tenant_id = :tenant_id AND s.status = :status_disabled AND (s.created_by_user_id = :user_id_created_by OR m.user_id = :user_id_mailbox OR s.available_to_everyone = 1 OR m.available_to_everyone = 1)");
-        $stmt->execute([':account_id' => $accountId, ':tenant_id' => $tenantId, ':status_disabled' => 'disabled', ':user_id_created_by' => $userId, ':user_id_mailbox' => $userId]);
+        $sql = 'DELETE s FROM mail_smtp_accounts s INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id AND s.id = :account_id AND s.status = :status_disabled AND (s.created_by_user_id = :created_by_user_id OR m.user_id = :mailbox_user_id OR s.available_to_everyone = 1 OR m.available_to_everyone = 1)';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':tenant_id' => $tenantId,
+            ':account_id' => $accountId,
+            ':status_disabled' => 'disabled',
+            ':created_by_user_id' => $userId,
+            ':mailbox_user_id' => $userId,
+        ]);
         return $stmt->rowCount() > 0;
     }
 

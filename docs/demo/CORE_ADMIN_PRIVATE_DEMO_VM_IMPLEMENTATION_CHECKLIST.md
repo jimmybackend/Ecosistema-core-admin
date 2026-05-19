@@ -61,17 +61,24 @@
 ## 9) Validaciones Composer / scripts
 
 - [x] `php -l routes/web.php`
+- [x] `php -l app/Core/Mail/*.php`
+- [x] `php -l resources/views/pages/mail/*.php`
 - [x] `php -l scripts/smoke-check.php`
 - [x] `php -l scripts/schema-compatibility-check.php`
 - [x] `php -l scripts/schema-usage-check.php`
 - [x] `php -l scripts/vm-runtime-check.php`
-- [x] `composer validate --no-check-publish`
+- [x] `composer validate --no-check-publish` (OK; warning conocido por campo `license` en `composer.json`)
 - [x] `composer smoke` (críticos fallidos: `0`)
 - [x] `composer vm:check` (OK)
+- [x] Clasificación operativa documentada:
+  1. Sintaxis PHP: **OK**
+  2. Smoke operativo: **OK**
+  3. Runtime VM: **OK**
+  4. `schema:usage`: **pendiente técnico conocido** (no es error de sintaxis)
 
 ## 10) Pendientes conocidos
 
-- [ ] Resolver o ajustar las 5 incompatibilidades reportadas por `composer schema:usage`:
+- [ ] Resolver o ajustar las 5 incompatibilidades reportadas por `composer schema:usage` (pendiente de alineación contra esquema real; **no** corresponde a fallo de sintaxis PHP):
   - `mail_messages.status`
   - `os_ai_proposals.id`
   - `os_ai_proposals.module_code`
@@ -81,7 +88,7 @@
 - [ ] Reservar IP estática o formalizar actualización de Remote MySQL ante cambio de IP.
 - [ ] Definir siguiente ronda de QA manual funcional por módulos.
 
-> Nota de impacto: las 5 incompatibilidades actuales de `schema:usage` **no bloquearon** login ni dashboard en la validación real de VM.
+> Nota de impacto: las 5 incompatibilidades actuales de `schema:usage` **no bloquearon** login, dashboard ni CRUD de cuentas SMTP en la validación real de VM.
 
 ## 11) Criterio Go / No-Go para demo privada
 
@@ -117,4 +124,3 @@
 - Update 2026-05-19 (mailboxes compartidas por tenant): `mail_mailboxes.available_to_everyone` es columna requerida del contrato de esquema y su default operativo debe ser `0`.
 - `available_to_everyone = 1` solo habilita compartición dentro del mismo `tenant_id`; no habilita cruce entre tenants y sigue exigiendo permisos/autorización del usuario autenticado.
 - Este campo soporta el modelo operativo multiusuario donde usuario de panel puede ser distinto de la mailbox operativa asignada.
-

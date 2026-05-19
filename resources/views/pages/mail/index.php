@@ -5,6 +5,7 @@ $errorMessage = is_string($errorMessage ?? null) ? $errorMessage : null;
 $summary = static function (mixed $json): string { $arr = json_decode((string)$json, true); return is_array($arr) ? implode(', ', array_slice($arr, 0, 2)) : (string)$json; };
 $smtpAccounts = is_array($smtpAccounts ?? null) ? $smtpAccounts : [];
 $selectedSmtpId = (int)($smtpAccounts[0]['id'] ?? 0);
+$maskUser = static function (mixed $username): string { $value = trim((string)$username); if ($value === '') { return '***'; } $len = strlen($value); if ($len <= 2) { return str_repeat('*', $len); } return substr($value, 0, 1) . str_repeat('*', $len - 2) . substr($value, -1); };
 
 $imported = (int)($imported ?? 0);
 $skipped = (int)($skipped ?? 0);
@@ -22,12 +23,13 @@ $syncErrors = (int)($syncErrors ?? 0);
     <label for="smtp_account_id">Cuenta:</label>
     <select id="smtp_account_id" name="smtp_account_id" required>
       <?php foreach($smtpAccounts as $acc): ?>
-        <option value="<?= e((string)($acc['id'] ?? 0)) ?>" <?= ((int)($acc['id'] ?? 0) === $selectedSmtpId ? 'selected' : '') ?>><?= e((string)($acc['name'] ?? 'Cuenta SMTP')) ?> · <?= e((string)($acc['email_address'] ?? '')) ?></option>
+        <option value="<?= e((string)($acc['id'] ?? 0)) ?>" <?= ((int)($acc['id'] ?? 0) === $selectedSmtpId ? 'selected' : '') ?>>#<?= e((string)($acc['id'] ?? 0)) ?> · <?= e((string)($acc['mailbox_full_address'] ?? 'sin-mailbox')) ?> · <?= e((string)($acc['host_in'] ?? '')) ?>:<?= e((string)($acc['port_in'] ?? '')) ?> · <?= e($maskUser($acc['username'] ?? '')) ?></option>
       <?php endforeach; ?>
     </select>
     <label for="limit">Límite:</label>
     <input id="limit" name="limit" type="number" min="1" max="250" value="25">
     <button class="eco-button btn" type="submit" <?= $smtpAccounts === [] ? 'disabled' : '' ?>>Sincronizar IMAP</button>
+    <?php if ($smtpAccounts === []): ?><small style="color:#555">No hay cuentas IMAP activas disponibles. Configura una cuenta SMTP/IMAP activa primero.</small><?php endif; ?>
   </form>
   <table class="eco-table" style="width:100%"><thead><tr><th>ID</th><th>Dir</th><th>From</th><th>To</th><th>Subject</th><th>Flags</th><th>Fechas</th><th>Acciones</th></tr></thead><tbody>
   <?php if ($messages===[]): ?><tr><td colspan="8">No hay mensajes para mostrar.</td></tr><?php else: foreach($messages as $m): ?><tr>

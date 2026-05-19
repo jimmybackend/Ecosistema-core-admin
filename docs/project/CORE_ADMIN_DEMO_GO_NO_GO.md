@@ -124,3 +124,21 @@ Resultado esperado:
 - Corrección aplicada: owner deploy user + group `www-data` + `chmod 640` para `.env`.
 - Pendiente obligatorio preprod/prod: rotar `DB_PASSWORD`, `APP_KEY` y `CORE_REGISTRATION_INVITE_CODE`.
 - `composer schema:usage` en validación real reporta 5 incompatibilidades pendientes (`mail_messages.status`, `os_ai_proposals.id`, `os_ai_proposals.module_code`, `os_ai_proposals.entity_table`, `os_ai_proposals.entity_id`) sin bloquear login.
+
+## Estado sugerido actualizado (VM real, 2026-05-19)
+
+**GO condicionado para demo privada técnica / validación interna**.
+
+Motivo:
+- Login y dashboard funcionales.
+- Entorno web operativo.
+- DB conectada.
+- Flags peligrosas apagadas.
+
+Condiciones:
+- No usar como producción.
+- Rotar secretos antes de preproducción/producción.
+- `schema:usage` mantiene 5 pendientes conocidos.
+
+Referencia operativa:
+- `docs/demo/CORE_ADMIN_PRIVATE_DEMO_VM_IMPLEMENTATION_CHECKLIST.md`

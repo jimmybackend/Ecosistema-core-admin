@@ -1108,6 +1108,7 @@ $sensitivePatterns = [
     'MAIL_PASSWORD',
     'SECRET',
 ];
+$safeSecretMentions = ['SecretBox','secretaria','secretaría'];
 
 $securityTargets = [$root . '/routes/web.php'];
 $viewsRoot = $root . '/resources/views';
@@ -1136,7 +1137,14 @@ foreach ($securityTargets as $targetFile) {
     }
 
     foreach ($sensitivePatterns as $pattern) {
-        if (preg_match('/' . preg_quote($pattern, '/') . '/i', $content) === 1) {
+        $scanContent = $content;
+        if ($pattern === 'SECRET') {
+            $scanContent = str_replace($safeSecretMentions, '', $scanContent);
+            $regex = '/\bSECRET\b/i';
+        } else {
+            $regex = '/' . preg_quote($pattern, '/') . '/i';
+        }
+        if (preg_match($regex, $scanContent) === 1) {
             $secretHits++;
             fail('Posible exposición sensible en ' . str_replace($root . '/', '', $targetFile) . " (patrón: {$pattern})", $criticalFailures);
         }

@@ -36,3 +36,5 @@ No hay envío SMTP directo en request web: se deja en estado `queued` para worke
 - `password_encrypted` se cifra y nunca se muestra en UI ni logs.
 - `core_users.password_hash` no se reutiliza para SMTP.
 - El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.
+
+- Update 2026-05-19: `mail_smtp_accounts` ahora es editable desde UI controlada (`/mail/smtp-accounts*`) solo para usuarios autenticados con `mail.manage`; no se insertan datos por PR, password SMTP cifrada en `password_encrypted` (independiente del password del panel) y envío real sigue bloqueado por `MAIL_SEND_ENABLED` + `MAIL_ALLOW_TEST_SEND` en `false`.

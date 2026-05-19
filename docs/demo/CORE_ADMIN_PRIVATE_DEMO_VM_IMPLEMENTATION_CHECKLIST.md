@@ -111,3 +111,5 @@
 - `docs/project/CORE_ADMIN_DEMO_GO_NO_GO.md`
 - `docs/ops/ECOSISTEMA_OPERATIONAL_READINESS_VERIFICATION.md`
 - `docs/security/CORE_ADMIN_PREPRODUCTION_HARDENING_CHECKLIST.md`
+
+- Update 2026-05-19: `mail_smtp_accounts` ahora es editable desde UI controlada (`/mail/smtp-accounts*`) solo para usuarios autenticados con `mail.manage`; no se insertan datos por PR, password SMTP cifrada en `password_encrypted` (independiente del password del panel) y envío real sigue bloqueado por `MAIL_SEND_ENABLED` + `MAIL_ALLOW_TEST_SEND` en `false`.

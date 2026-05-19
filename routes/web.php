@@ -33,6 +33,7 @@ use App\Core\Mail\MailConfig;
 use App\Core\Mail\MailAttachmentRepository;
 use App\Core\Mail\MailAttachmentService;
 use App\Core\Mail\MailSendService;
+use App\Support\SecretBox;
 use App\Core\Mail\MailEffectiveSenderResolver;
 use App\Core\Mail\MailSmtpAccountRepository;
 use App\Core\Mail\MailOutgoingAttachmentService;
@@ -865,8 +866,8 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0);
-        $mailboxes=[]; try { $pdo=PdoFactory::make($config['database']); $mailboxes=(new MailboxRepository($pdo))->listActiveByUser($tenantId,$userId); } catch (\Throwable) {}
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-create','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('mailboxes')]);
+        $mailboxes=[]; $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; try { $pdo=PdoFactory::make($config['database']); $mailboxes=(new MailboxRepository($pdo))->listActiveByUser($tenantId,$userId); } catch (\Throwable) {}
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-create','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('mailboxes','statusMessage','errorMessage')]);
     },
     'POST /mail/smtp-accounts' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; } if (!requirePermission($config, 'mail.manage')) { return; }
@@ -877,7 +878,7 @@ return [
         try {
             $pdo=PdoFactory::make($config['database']); $mailboxRepo=new MailboxRepository($pdo); $smtpRepo=new MailSmtpAccountRepository($pdo);
             if ($mailboxRepo->findActiveById($tenantId,$userId,$mailboxId)===null) { header('Location: /mail/smtp-accounts/create?error='.urlencode('Mailbox inválida o inactiva para el usuario actual.')); return; }
-            $boxClass = "App\\Support\\Se" . "cretBox"; $encrypted=(new $boxClass())->encrypt($password);
+            $encrypted=(new SecretBox())->encrypt($password);
             $smtpRepo->create(['tenant_id'=>$tenantId,'mailbox_id'=>$mailboxId,'created_by_user_id'=>$userId,'name'=>trim((string)($_POST['name']??'')),'email_address'=>trim((string)($_POST['email_address']??'')),'host_out'=>trim((string)($_POST['host_out']??'')),'port_out'=>(int)($_POST['port_out']??587),'ssl_out'=>trim((string)($_POST['ssl_out']??'tls')),'username'=>trim((string)($_POST['username']??'')),'password_encrypted'=>$encrypted,'max_daily_email'=>(int)($_POST['max_daily_email']??0),'enable_limit'=>isset($_POST['enable_limit'])?1:0,'available_to_everyone'=>isset($_POST['available_to_everyone'])?1:0,'status'=>in_array((string)($_POST['status']??'active'),['active','disabled'],true)?(string)$_POST['status']:'active']);
             header('Location: /mail/smtp-accounts?ok='.urlencode('Cuenta SMTP creada correctamente.')); return;
         } catch (\Throwable) { header('Location: /mail/smtp-accounts/create?error='.urlencode('No se pudo crear la cuenta SMTP.')); return; }
@@ -887,7 +888,8 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0); $id=(int)($params['id']??0);
         $account=null; $mailboxes=[]; try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); $account=$repo->findForUserOrTenant($tenantId,$userId,$id); $mailboxes=(new MailboxRepository($pdo))->listActiveByUser($tenantId,$userId);} catch (\Throwable) {}
         if (!is_array($account)) { header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; }
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Editar SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-edit','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('account','mailboxes')]);
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Editar SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-edit','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('account','mailboxes','statusMessage','errorMessage')]);
     },
 
 
@@ -897,7 +899,7 @@ return [
         $auth = AuthSession::getAuth(); $tenantId=(int)($auth['tenant_id']??$auth['auth_tenant_id']??0); $userId=(int)($auth['user_id']??$auth['auth_user_id']??0); $id=(int)($params['id']??0);
         try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); $account=$repo->findForUserOrTenant($tenantId,$userId,$id); if(!is_array($account)){ header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; }
             $mailboxId=(int)($_POST['mailbox_id']??($account['mailbox_id']??0)); if((new MailboxRepository($pdo))->findActiveById($tenantId,$userId,$mailboxId)===null){ header('Location: /mail/smtp-accounts/'.$id.'/edit?error='.urlencode('Mailbox inválida o inactiva.')); return; }
-            $password=trim((string)($_POST['smtp_password']??'')); $encrypted=(string)($account['password_encrypted']??''); if($password!==''){ $boxClass = "App\\Support\\Se" . "cretBox"; $encrypted=(new $boxClass())->encrypt($password); }
+            $password=trim((string)($_POST['smtp_password']??'')); $encrypted=(string)($account['password_encrypted']??''); if($password!==''){ $encrypted=(new SecretBox())->encrypt($password); }
             $repo->update($tenantId,$id,['name'=>trim((string)($_POST['name']??$account['name']??'')),'email_address'=>trim((string)($_POST['email_address']??$account['email_address']??'')),'host_out'=>trim((string)($_POST['host_out']??$account['host_out']??'')),'port_out'=>(int)($_POST['port_out']??$account['port_out']??587),'ssl_out'=>trim((string)($_POST['ssl_out']??$account['ssl_out']??'tls')),'username'=>trim((string)($_POST['username']??$account['username']??'')),'password_encrypted'=>$encrypted,'max_daily_email'=>(int)($_POST['max_daily_email']??$account['max_daily_email']??0),'enable_limit'=>isset($_POST['enable_limit'])?1:0,'available_to_everyone'=>isset($_POST['available_to_everyone'])?1:0,'status'=>in_array((string)($_POST['status']??$account['status']??'active'),['active','disabled'],true)?(string)($_POST['status']??$account['status']):'active']);
             header('Location: /mail/smtp-accounts?ok='.urlencode('Cuenta SMTP actualizada correctamente.')); return;
         } catch (\Throwable) { header('Location: /mail/smtp-accounts/'.$id.'/edit?error='.urlencode('No se pudo actualizar la cuenta SMTP.')); return; }

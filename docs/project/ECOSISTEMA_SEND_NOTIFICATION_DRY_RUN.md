@@ -19,3 +19,17 @@ PR #109 agrega simulación de envío de notificación en modo dry-run.
 - Tenant aplicado desde sesión/contexto (`auth_tenant_id`).
 - No se acepta `tenant_id` desde request.
 - No se exponen secretos ni payloads sensibles sin sanitización.
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.

@@ -22,3 +22,17 @@ Si cualquier flag falta, el flujo queda bloqueado de forma segura.
 - `mail_delivery_logs` como traza controlada de preparación de entrega.
 
 No hay envío SMTP directo en request web: se deja en estado `queued` para worker controlado.
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.

@@ -122,3 +122,17 @@ Lineamientos de seguridad para PRs funcionales:
 - No se crean migraciones, seeds, tablas ni columnas.
 - No se agregan escrituras SQL (`INSERT/UPDATE/DELETE`) sobre `mail_*`, `notifications_*` o `url_message_*`.
 - No se habilita envío de correos ni procesamiento de cola.
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.
+
+## SMTP por usuario/mailbox: administrado vs propio
+- SMTP global por `.env` se mantiene como fallback controlado.
+- SMTP por mailbox/usuario se persiste en `mail_smtp_accounts`.
+- `password_encrypted` se cifra y nunca se muestra en UI ni logs.
+- `core_users.password_hash` no se reutiliza para SMTP.
+- El correo administrado `username+id@dominio` requiere provisión real en servidor SMTP externo/cPanel.

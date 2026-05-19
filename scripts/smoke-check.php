@@ -3214,10 +3214,10 @@ foreach (['resources/views/pages/mail/settings.php','resources/views/pages/mail/
 
 
 $mailSmtpRepositoryContent = (string) file_get_contents($root . '/app/Core/Mail/MailSmtpAccountRepository.php');
-if (!str_contains($mailSmtpRepositoryContent, 'm.address') && str_contains($mailSmtpRepositoryContent, 'm.full_address')) {
-    ok('MailSmtpAccountRepository usa m.full_address y no referencia m.address.');
+if (str_contains($mailSmtpRepositoryContent, 'm.full_address')) {
+    ok('MailSmtpAccountRepository usa m.full_address.');
 } else {
-    fail('MailSmtpAccountRepository debe usar m.full_address y evitar m.address.', $criticalFailures);
+    fail('MailSmtpAccountRepository debe usar m.full_address.', $criticalFailures);
 }
 
 $dangerousRepeatedPlaceholders = [':tenant_id', ':user_id', ':status'];

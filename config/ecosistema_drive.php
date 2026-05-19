@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 use App\Support\Env;
 
+$resolvedAwsBucket = trim((string) Env::get('ECOSISTEMA_DRIVE_AWS_BUCKET', ''));
+if ($resolvedAwsBucket === '') {
+    foreach (['AWS_BUCKET', 'AWS_S3_BUCKET', 'S3_BUCKET', 'CLOUD_BUCKET'] as $fallbackBucketKey) {
+        $candidate = trim((string) Env::get($fallbackBucketKey, ''));
+        if ($candidate !== '') {
+            $resolvedAwsBucket = $candidate;
+            break;
+        }
+    }
+}
+
 return [
     'enabled' => filter_var((string) Env::get('ECOSISTEMA_DRIVE_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN),
     'mode' => (string) Env::get('ECOSISTEMA_DRIVE_MODE', 'contract'),
@@ -11,7 +22,7 @@ return [
     'provider' => (string) Env::get('ECOSISTEMA_DRIVE_PROVIDER', 'aws-s3'),
     'aws_enabled' => filter_var((string) Env::get('ECOSISTEMA_DRIVE_AWS_ENABLED', 'false'), FILTER_VALIDATE_BOOLEAN),
     'aws_region' => (string) Env::get('ECOSISTEMA_DRIVE_AWS_REGION', ''),
-    'aws_bucket' => (string) Env::get('ECOSISTEMA_DRIVE_AWS_BUCKET', ''),
+    'aws_bucket' => $resolvedAwsBucket,
     'aws_endpoint' => (string) Env::get('ECOSISTEMA_DRIVE_AWS_ENDPOINT', ''),
     'aws_access_key_id' => (string) Env::get('ECOSISTEMA_DRIVE_AWS_ACCESS_KEY_ID', ''),
     'aws_secret_access_key' => (string) Env::get('ECOSISTEMA_DRIVE_AWS_SECRET_ACCESS_KEY', ''),

@@ -78,7 +78,7 @@ final readonly class EcosistemaDriveS3UploadService
                 'region' => (string) ($awsSummary['region_configured'] ? env('ECOSISTEMA_DRIVE_AWS_REGION', '') : ''),
                 'credentials' => ['key' => (string) env('ECOSISTEMA_DRIVE_AWS_ACCESS_KEY_ID', ''), 'secret' => (string) env('ECOSISTEMA_DRIVE_AWS_SECRET_ACCESS_KEY', '')],
             ]);
-            $bucket = (string) env('ECOSISTEMA_DRIVE_AWS_BUCKET', '');
+            $bucket = trim((string) ($awsSummary['bucket'] ?? env('ECOSISTEMA_DRIVE_AWS_BUCKET', '')));
             if ($bucket === '') { return $result + ['blocked_reason' => 'aws_bucket_not_configured']; }
 
             $client->putObject([

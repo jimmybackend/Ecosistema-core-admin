@@ -144,3 +144,8 @@ Lineamientos de seguridad para PRs funcionales:
 - La cuenta SMTP efectiva sale de `mail_smtp_accounts` ligada a `mailbox_id` permitido para el usuario autenticado y su tenant.
 - El correo de login del panel puede ser distinto del correo operativo de envío/seguimiento.
 - No se permite cruce entre tenants ni uso accidental de SMTP de otro usuario fuera de política compartida del tenant.
+
+- Update 2026-05-19 (mailboxes compartidas por tenant): `mail_mailboxes.available_to_everyone` es columna requerida del contrato de esquema y su default operativo debe ser `0`.
+- `available_to_everyone = 1` solo habilita compartición dentro del mismo `tenant_id`; no habilita cruce entre tenants y sigue exigiendo permisos/autorización del usuario autenticado.
+- Este campo soporta el modelo operativo multiusuario donde usuario de panel puede ser distinto de la mailbox operativa asignada.
+

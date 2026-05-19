@@ -113,3 +113,8 @@
 - `docs/security/CORE_ADMIN_PREPRODUCTION_HARDENING_CHECKLIST.md`
 
 - Update 2026-05-19: `mail_smtp_accounts` ahora es editable desde UI controlada (`/mail/smtp-accounts*`) solo para usuarios autenticados con `mail.manage`; no se insertan datos por PR, password SMTP cifrada en `password_encrypted` (independiente del password del panel) y envío real sigue bloqueado por `MAIL_SEND_ENABLED` + `MAIL_ALLOW_TEST_SEND` en `false`.
+
+- Update 2026-05-19 (mailboxes compartidas por tenant): `mail_mailboxes.available_to_everyone` es columna requerida del contrato de esquema y su default operativo debe ser `0`.
+- `available_to_everyone = 1` solo habilita compartición dentro del mismo `tenant_id`; no habilita cruce entre tenants y sigue exigiendo permisos/autorización del usuario autenticado.
+- Este campo soporta el modelo operativo multiusuario donde usuario de panel puede ser distinto de la mailbox operativa asignada.
+

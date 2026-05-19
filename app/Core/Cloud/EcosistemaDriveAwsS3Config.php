@@ -29,12 +29,17 @@ final readonly class EcosistemaDriveAwsS3Config
             $warnings[] = 'AWS/S3 real permanece apagado por configuración.';
         }
 
+        $bucket = trim((string) ($this->driveConfig['aws_bucket'] ?? ''));
+        $region = trim((string) ($this->driveConfig['aws_region'] ?? ''));
+
         return [
             'enabled' => $enabled,
             'mode' => $mode,
             'provider' => $provider,
-            'region_configured' => trim((string) ($this->driveConfig['aws_region'] ?? '')) !== '',
-            'bucket_configured' => trim((string) ($this->driveConfig['aws_bucket'] ?? '')) !== '',
+            'region' => $region,
+            'bucket' => $bucket,
+            'region_configured' => $region !== '',
+            'bucket_configured' => $bucket !== '',
             'credentials_configured' => trim((string) ($this->driveConfig['aws_access_key_id'] ?? '')) !== ''
                 && trim((string) ($this->driveConfig['aws_secret_access_key'] ?? '')) !== '',
             'endpoint_configured' => trim((string) ($this->driveConfig['aws_endpoint'] ?? '')) !== '',

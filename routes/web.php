@@ -429,7 +429,7 @@ return [
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'modules.view')) { return; }
-        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $smtpAccounts = [];
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0); $smtpAccounts = [];
         try { $pdo=PdoFactory::make($config['database']); $service=new ModuleService(new ModuleRepository($pdo)); $modules=$service->listModules(); } catch (\Throwable) { $modules=[]; $errorMessage='No se pudo guardar el módulo.'; }
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title'=>'Módulos | Ecosistema Core Admin','contentView'=>'pages/modules/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('modules','statusMessage','errorMessage')]);
@@ -526,7 +526,7 @@ return [
         startAuthSession($config);
         if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'permissions.view')) { return; }
-        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0);
         try { $pdo = PdoFactory::make($config['database']); $service = new PermissionService(new PermissionRepository($pdo)); $permissions = $service->listPermissions(); } catch (\Throwable) { $permissions=[]; $errorMessage='No se pudo guardar el permiso.'; }
         header('Content-Type: text/html; charset=UTF-8');
         View::render('layouts.admin', ['title'=>'Permisos | Ecosistema Core Admin','contentView'=>'pages/permissions/index','auth'=>AuthSession::getAuth(),'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('permissions','statusMessage','errorMessage')]);
@@ -729,9 +729,9 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.view')) { return; }
         $auth = AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
-        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $messages=$service->listMessages($tenantId,$userId); $smtpAccounts=(new MailSmtpAccountRepository($pdo))->listForUser($tenantId,$userId);} catch (\Throwable) { $messages=[]; $smtpAccounts=[]; $errorMessage='Mensaje no encontrado.'; }
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage','smtpAccounts')]);
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage','smtpAccounts','imported','skipped','attachmentsPending','syncErrors')]);
     },
 
     'POST /mail/imap-sync' => static function (array $config): void {
@@ -751,8 +751,14 @@ return [
                 header('Location: /mail?error=' . urlencode($msg));
                 return;
             }
-            $msg = 'Sincronización IMAP completada. imported=' . (int) ($result['imported'] ?? 0) . ', skipped=' . (int) ($result['skipped'] ?? 0) . ', errors=' . count((array) ($result['errors'] ?? []));
-            header('Location: /mail?ok=' . urlencode($msg));
+            $query = http_build_query([
+                'imported' => (int) ($result['imported'] ?? 0),
+                'skipped' => (int) ($result['skipped'] ?? 0),
+                'attachments_pending' => (int) ($result['attachments_pending'] ?? 0),
+                'errors' => count((array) ($result['errors'] ?? [])),
+                'ok' => 'Sincronización IMAP completada.',
+            ]);
+            header('Location: /mail?' . $query);
             return;
         } catch (\Throwable) {
             header('Location: /mail?error=' . urlencode('No se pudo sincronizar IMAP.'));
@@ -786,7 +792,7 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
-        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0);
         try {
             $pdo=PdoFactory::make($config['database']);
             $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
@@ -894,14 +900,14 @@ return [
                 $emptyAccountsMessage = 'No hay cuentas SMTP visibles para tu usuario. Verifica asignación de mailbox o política de tenant.';
             }
         } catch (\Throwable) { $accounts=[]; }
-        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0);
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'SMTP Accounts | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('accounts','statusMessage','errorMessage','emptyAccountsMessage','auth')]);
     },
     'GET /mail/smtp-accounts/create' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth);
-        $mailboxes=[]; $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $mailboxesLoadError = false; try { $pdo=PdoFactory::make($config['database']); $mailboxes=(new MailboxRepository($pdo))->listActiveForUser($tenantId,$userId); } catch (\Throwable $exception) { $mailboxesLoadError = true; error_log('[mail.smtp_accounts.create] mailbox_list_load_failed tenant_id=' . $tenantId . ' user_id=' . $userId . ' error=' . $exception->getMessage()); if ($errorMessage === null || $errorMessage == '') { $errorMessage = 'No se pudo cargar la lista de mailboxes operativas por incompatibilidad de esquema.'; } }
+        $mailboxes=[]; $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0); $mailboxesLoadError = false; try { $pdo=PdoFactory::make($config['database']); $mailboxes=(new MailboxRepository($pdo))->listActiveForUser($tenantId,$userId); } catch (\Throwable $exception) { $mailboxesLoadError = true; error_log('[mail.smtp_accounts.create] mailbox_list_load_failed tenant_id=' . $tenantId . ' user_id=' . $userId . ' error=' . $exception->getMessage()); if ($errorMessage === null || $errorMessage == '') { $errorMessage = 'No se pudo cargar la lista de mailboxes operativas por incompatibilidad de esquema.'; } }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Crear SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-create','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('mailboxes','statusMessage','errorMessage','mailboxesLoadError','auth')]);
     },
     'POST /mail/smtp-accounts' => static function (array $config): void {
@@ -923,7 +929,7 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
         $account=null; $mailboxes=[]; $mailboxesLoadError = false; try { $pdo=PdoFactory::make($config['database']); $repo=new MailSmtpAccountRepository($pdo); $account=$repo->findForUserOrTenant($tenantId,$userId,$id); $mailboxes=(new MailboxRepository($pdo))->listActiveForUser($tenantId,$userId);} catch (\Throwable $exception) { $mailboxesLoadError = true; error_log('[mail.smtp_accounts.edit] mailbox_list_load_failed tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $id . ' error=' . $exception->getMessage()); if (!is_array($account)) { $account = null; } }
         if (!is_array($account)) { header('Location: /mail/smtp-accounts?error='.urlencode('Cuenta SMTP no encontrada.')); return; }
-        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; if ($mailboxesLoadError && ($errorMessage === null || $errorMessage === '')) { $errorMessage = 'No se pudo cargar la lista de mailboxes operativas por incompatibilidad de esquema.'; }
+        $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0); if ($mailboxesLoadError && ($errorMessage === null || $errorMessage === '')) { $errorMessage = 'No se pudo cargar la lista de mailboxes operativas por incompatibilidad de esquema.'; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Editar SMTP Account | Ecosistema Core Admin','contentView'=>'pages/mail/smtp-accounts-edit','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('account','mailboxes','statusMessage','errorMessage','auth')]);
     },
 
@@ -1210,7 +1216,7 @@ return [
     'GET /mail/compose' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'mail.manage')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null;
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0);
         try { $pdo=PdoFactory::make($config['database']); $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo)); $mailboxes=$service->listActiveMailboxes($tenantId,$userId);} catch (\Throwable) { $mailboxes=[]; }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Compose | Ecosistema Core Admin','contentView'=>'pages/mail/compose','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('mailboxes','statusMessage','errorMessage','mailboxesLoadError','auth')]);
     },

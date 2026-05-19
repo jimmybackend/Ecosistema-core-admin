@@ -37,8 +37,9 @@ final readonly class MailImapSyncService
 
         [$password, $validationError] = $this->resolveImapPassword($account);
         if ($validationError !== null) {
-            $safeError = $this->buildSafeImapErrorMessage($account, $validationError, null);
-            $this->updateSyncStatus($account, false, $safeError);
+            $safeContext = $this->buildSafeExceptionContext($account, $validationError, null);
+            $safeError = $this->buildSafeImapErrorMessage($safeContext);
+            $this->updateSyncStatus($account, false, $safeError, $safeContext);
             return ['ok' => false, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => [$safeError]];
         }
 
@@ -128,22 +129,26 @@ final readonly class MailImapSyncService
             $this->updateSyncStatus($account, $result['errors'] === [], $result['errors'] === [] ? null : 'Error parcial de sincronización IMAP');
         } catch (Throwable $e) {
             $result['ok'] = false;
-            $errorType = $this->classifyImapError($e);
-            $safeError = $this->buildSafeImapErrorMessage($account, $errorType, $e);
+            $errorType = $this->classifyImapError($e, $password);
+            $safeContext = $this->buildSafeExceptionContext($account, $errorType, $e);
+            $safeError = $this->buildSafeImapErrorMessage($safeContext);
             $result['errors'][] = $safeError;
-            $this->logSafeSyncError($account, $userId, $errorType, $e);
-            $this->updateSyncStatus($account, false, $safeError);
+            $this->logSafeSyncError($account, $userId, $safeContext);
+            $this->updateSyncStatus($account, false, $safeError, $safeContext);
         }
 
         return $result;
     }
 
 
-    private function buildSafeImapErrorMessage(array $account, string $errorType, ?Throwable $e): string
+    private function buildSafeImapErrorMessage(array $safeContext): string
     {
-        $host = trim((string) ($account['imap_host'] ?? ''));
-        $port = (int) ($account['imap_port'] ?? 0);
-        $sslIn = strtolower(trim((string) ($account['imap_encryption'] ?? 'none'))) ?: 'none';
+        $host = (string) ($safeContext['host'] ?? '');
+        $port = (int) ($safeContext['port'] ?? 0);
+        $sslIn = (string) ($safeContext['encryption'] ?? 'none');
+        $errorType = (string) ($safeContext['type'] ?? 'unknown_imap_error');
+        $exceptionClass = (string) ($safeContext['exception_class'] ?? 'n/a');
+        $message = (string) ($safeContext['message'] ?? '');
         $suggestion = match ($errorType) {
             'auth_failed' => 'Verifica usuario y contraseña del buzón.',
             'connection_failed' => 'Verifica host, puerto y conectividad de red.',
@@ -153,7 +158,7 @@ final readonly class MailImapSyncService
             default => 'Reintenta la sincronización y revisa la configuración IMAP.',
         };
 
-        return "No se pudo sincronizar IMAP con {$host}:{$port} {$sslIn}. Tipo: {$errorType}. {$suggestion}";
+        return "No se pudo sincronizar IMAP. host_in={$host} port_in={$port} ssl_in={$sslIn}. Tipo: {$errorType}. exception_class={$exceptionClass}. detalle={$message}. {$suggestion}";
     }
 
     private function buildClientConfig(array $account, string $password): array {
@@ -202,11 +207,14 @@ final readonly class MailImapSyncService
     private function insertEvent(int $tenantId,int $messageId,int $userId,int $uid,string $mailbox): void { $stmt=$this->pdo->prepare('INSERT INTO mail_message_events (tenant_id,message_id,user_id,event_type,metadata_json,created_at) VALUES (:tenant_id,:message_id,:user_id,:event_type,:metadata_json,NOW())'); $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':user_id'=>$userId,':event_type'=>'received',':metadata_json'=>json_encode(['provider'=>'imap','uid'=>$uid,'mailbox'=>$mailbox,'folder'=>'INBOX'], JSON_UNESCAPED_UNICODE)]); }
     private function insertExternalAttachment(int $tenantId,int $messageId,array $attachment): void { $stmt=$this->pdo->prepare('INSERT INTO mail_external_attachments (tenant_id,message_id,cloud_file_id,legacy_source,legacy_table,legacy_attachment_id,original_filename,mime_type,size_bytes,import_status,raw_payload_json,created_at,updated_at) VALUES (:tenant_id,:message_id,NULL,:legacy_source,:legacy_table,:legacy_attachment_id,:original_filename,:mime_type,:size_bytes,:import_status,:raw_payload_json,NOW(),NOW())'); $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':legacy_source'=>'imap',':legacy_table'=>'imap',':legacy_attachment_id'=>(string)$attachment['legacy_attachment_id'],':original_filename'=>$attachment['original_filename'],':mime_type'=>$attachment['mime_type'],':size_bytes'=>$attachment['size_bytes'],':import_status'=>'pending',':raw_payload_json'=>json_encode($attachment, JSON_UNESCAPED_UNICODE)]); }
     private function updateInboundSyncStatus(array $account, bool $ok, ?string $error): void { if (($account['source_type'] ?? '') !== 'inbound') { return; } $stmt = $this->pdo->prepare('UPDATE mail_inbound_accounts SET last_sync_at = NOW(), last_error = :last_error, status = :status, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $stmt->execute([':last_error'=>$ok?null:$error, ':status'=>$ok?'active':'error', ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
-    private function updateSmtpSyncStatus(array $account, ?string $error): void { if (($account['source_type'] ?? '') !== 'smtp') { return; } $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET last_error = :last_error, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $stmt->execute([':last_error'=>$error, ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
-    private function updateSyncStatus(array $account, bool $ok, ?string $error): void { $this->updateInboundSyncStatus($account,$ok,$error); $this->updateSmtpSyncStatus($account,$ok?null:$error); }
-    private function classifyImapError(Throwable $e): string { $raw=strtolower(trim($e->getMessage())); if($raw===''){return 'unknown_imap_error';} if(str_contains($raw,'auth')||str_contains($raw,'login')||str_contains($raw,'invalid credentials')){return 'auth_failed';} if(str_contains($raw,'ssl')||str_contains($raw,'tls')||str_contains($raw,'certificate')||str_contains($raw,'handshake')){return 'ssl_tls_failed';} if(str_contains($raw,'inbox')&&str_contains($raw,'not found')){return 'mailbox_not_found';} if(str_contains($raw,'connection')||str_contains($raw,'refused')||str_contains($raw,'timeout')||str_contains($raw,'timed out')||str_contains($raw,'unable to connect')||str_contains($raw,'network')){return 'connection_failed';} return 'unknown_imap_error'; }
+    private function updateSmtpSyncStatus(array $account, ?string $error, ?array $safeContext = null): void { if (($account['source_type'] ?? '') !== 'smtp') { return; } $stmt = $this->pdo->prepare('UPDATE mail_smtp_accounts SET last_error = :last_error, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $payload = $error; if ($safeContext !== null) { $payload = (string) json_encode(['type'=>(string)($safeContext['type'] ?? 'unknown_imap_error'),'exception_class'=>(string)($safeContext['exception_class'] ?? ''),'message'=>(string)($safeContext['message'] ?? ''),'host'=>(string)($safeContext['host'] ?? ''),'port'=>(int)($safeContext['port'] ?? 0),'encryption'=>(string)($safeContext['encryption'] ?? 'none')], JSON_UNESCAPED_UNICODE); } $stmt->execute([':last_error'=>$payload, ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
+    private function updateSyncStatus(array $account, bool $ok, ?string $error, ?array $safeContext = null): void { $this->updateInboundSyncStatus($account,$ok,$error); $this->updateSmtpSyncStatus($account,$ok?null:$error,$ok?null:$safeContext); }
+    private function classifyImapError(Throwable $e, ?string $decryptedPassword = null): string { if ($decryptedPassword !== null && trim($decryptedPassword) === '') { return 'decrypt_failed'; } $raw=strtolower(trim($e->getMessage())); if($raw===''){return 'unknown_imap_error';} if(str_contains($raw,'authentication failed')||str_contains($raw,'login failed')||str_contains($raw,'invalid credentials')||str_contains($raw,'failed to authenticate')){return 'auth_failed';} if(str_contains($raw,'certificate')||str_contains($raw,'ssl')||str_contains($raw,'tls')||str_contains($raw,'crypto')){return 'ssl_tls_failed';} if(str_contains($raw,'timeout')||str_contains($raw,'timed out')){return 'timeout';} if(str_contains($raw,'connection refused')||str_contains($raw,'network')||str_contains($raw,'unreachable')){return 'connection_failed';} if(str_contains($raw,'folder')||str_contains($raw,'mailbox')||str_contains($raw,'inbox')){return 'mailbox_not_found';} return 'unknown_imap_error'; }
     private function resolveImapPassword(array $account): array { $encrypted=trim((string)($account['password_encrypted']??'')); $username=trim((string)($account['imap_username']??'')); if($encrypted===''||$username===''){ return [null,'decrypt_failed']; } $password=(string)$this->secretBox->decrypt($encrypted); if(trim($password)===''){ return [null,'decrypt_failed']; } return [$password,null]; }
-    private function logSafeSyncError(array $account, int $userId, string $errorType, Throwable $e): void { error_log('[mail.imap.sync] tenant_id='.(int)($account['tenant_id']??0).' user_id='.$userId.' smtp_account_id='.(int)($account['source_type']==='smtp' ? ($account['source_id']??0):0).' host_in='.(string)($account['imap_host']??'').' port_in='.(int)($account['imap_port']??0).' ssl_in='.(string)($account['imap_encryption']??'').' error_type='.$errorType.' exception_class='.get_class($e)); }
+    private function logSafeSyncError(array $account, int $userId, array $safeContext): void { error_log('[mail.imap.sync] tenant_id='.(int)($account['tenant_id']??0).' user_id='.$userId.' smtp_account_id='.(int)($account['source_type']==='smtp' ? ($account['source_id']??0):0).' host_in='.(string)($safeContext['host']??'').' port_in='.(int)($safeContext['port']??0).' ssl_in='.(string)($safeContext['encryption']??'').' error_type='.(string)($safeContext['type']??'unknown_imap_error').' exception_class='.(string)($safeContext['exception_class']??'n/a').' exception_message='.(string)($safeContext['message']??'').' previous_exception_class='.(string)($safeContext['previous_exception_class']??'').' previous_exception_message='.(string)($safeContext['previous_message']??'')); }
+    private function buildSafeExceptionContext(array $account, string $errorType, ?Throwable $e): array { $host = trim((string)($account['imap_host'] ?? '')); $port = (int)($account['imap_port'] ?? 0); $enc = strtolower(trim((string)($account['imap_encryption'] ?? 'none'))) ?: 'none'; $message = $e ? $this->sanitizeSensitiveText($e->getMessage(), $account) : $this->sanitizeSensitiveText($errorType, $account); $previous = $e?->getPrevious(); return ['type'=>$errorType,'exception_class'=>$e ? get_class($e) : 'n/a','message'=>$this->shortText($message, 220),'host'=>$host,'port'=>$port,'encryption'=>$enc,'previous_exception_class'=>$previous ? get_class($previous) : null,'previous_message'=>$previous ? $this->shortText($this->sanitizeSensitiveText($previous->getMessage(), $account), 220) : null]; }
+    private function sanitizeSensitiveText(string $text, array $account): string { $sanitized = $text; $tokens = [trim((string)($account['password_encrypted'] ?? '')), trim((string)($account['imap_username'] ?? '')), trim((string)($account['imap_host'] ?? ''))]; foreach ($tokens as $token) { if ($token !== '') { $sanitized = str_ireplace($token, '[redacted]', $sanitized); } } $sanitized = str_ireplace('.env', '[redacted]', $sanitized); $patterns = ['/(password_encrypted\s*[:=]\s*)([^,\s]+)/i', '/(password\s*[:=]\s*)([^,\s]+)/i', '/(token\s*[:=]\s*)([^,\s]+)/i', '/(bearer\s+)([a-z0-9\-\._~\+\/]+=*)/i', '/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i']; foreach ($patterns as $pattern) { $sanitized = (string)preg_replace($pattern, '$1[redacted]', $sanitized); } return trim($sanitized); }
+    private function shortText(string $text, int $max): string { $clean = trim(preg_replace('/\s+/', ' ', $text) ?? ''); if (mb_strlen($clean) <= $max) { return $clean; } return mb_substr($clean, 0, $max - 3).'...'; }
     private function extractMessageId(string $messageId, string $headers): ?string { $trim=trim($messageId); if($trim!==''){return $trim;} if(preg_match('/^Message-ID:\s*(.+)$/mi',$headers,$m)===1){ return trim((string)$m[1]); } return null; }
     private function safeFileName(string $name): string { $base = basename(str_replace('\\','/',$name)); $clean = preg_replace('/[^a-zA-Z0-9._-]/', '_', $base); return $clean !== '' ? $clean : 'attachment'; }
     private function toMysqlDateTime(string $value): ?string { $ts = strtotime($value); return $ts === false ? null : date('Y-m-d H:i:s', $ts); }

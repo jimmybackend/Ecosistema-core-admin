@@ -3193,5 +3193,28 @@ if (str_contains($mailboxRepositoryContent, 'available_to_everyone')) {
     }
 }
 
+
+$mailSettingsView = (string) file_get_contents($root . '/resources/views/pages/mail/settings.php');
+if (str_contains($mailSettingsView, 'host_in') && str_contains($mailSettingsView, 'host_out')) { ok('Vista mail/settings muestra host_in y host_out (o equivalentes seguros).'); }
+else { fail('Vista mail/settings no evidencia host_in/host_out.', $criticalFailures); }
+
+$smtpAccountsIndexView = (string) file_get_contents($root . '/resources/views/pages/mail/smtp-accounts-index.php');
+if (str_contains($smtpAccountsIndexView, 'Entrada') && str_contains($smtpAccountsIndexView, 'Salida') && str_contains($smtpAccountsIndexView, 'host_in') && str_contains($smtpAccountsIndexView, 'host_out')) { ok('Vista smtp-accounts-index muestra entrada/salida completas.'); }
+else { fail('Vista smtp-accounts-index no evidencia entrada/salida completas.', $criticalFailures); }
+
+$smtpDryRunView = (string) file_get_contents($root . '/resources/views/pages/mail/smtp-accounts-dry-run.php');
+if (str_contains((string) $routesContent, 'GET /mail/smtp-accounts/{id}/test-dry-run') && str_contains((string) $routesContent, 'host_in') && str_contains((string) $routesContent, 'host_out')) { ok('Dry-run SMTP expone host_in/host_out seguros desde ruta.'); }
+else { fail('Dry-run SMTP no evidencia host_in/host_out seguros.', $criticalFailures); }
+
+foreach (['resources/views/pages/mail/settings.php','resources/views/pages/mail/smtp-accounts-index.php','resources/views/pages/mail/smtp-accounts-dry-run.php'] as $mailViewPath) {
+    $mailView = (string) file_get_contents($root . '/' . $mailViewPath);
+    if (!str_contains($mailView, 'password_encrypted')) { ok('Vista mail no imprime password_encrypted: ' . $mailViewPath); }
+    else { fail('Vista mail no debe imprimir password_encrypted: ' . $mailViewPath, $criticalFailures); }
+}
+
+$routesForMail = (string) file_get_contents($root . '/routes/web.php');
+if (!str_contains($routesForMail, 'jimmybackend@gmail.com') && !str_contains($routesForMail, 'soporte@esforzados.com')) { ok('Sin hardcode de correos prohibidos en lógica mail.'); }
+else { fail('Se detectó hardcode de correos prohibidos en lógica mail.', $criticalFailures); }
+
 report('SUMMARY', sprintf('Smoke check completado con %d falla(s) crítica(s) y %d warning(s).', $criticalFailures, $warnings));
 exit($criticalFailures > 0 ? 1 : 0);

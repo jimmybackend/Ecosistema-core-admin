@@ -778,8 +778,13 @@ return [
             header('Location: /mail?' . $query);
             return;
         } catch (\Throwable $e) {
-            error_log('[mail.imap.sync.route] tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $smtpAccountId . ' error_type=unknown_imap_error exception_class=' . get_class($e));
-            header('Location: /mail?error=' . urlencode('No se pudo sincronizar IMAP. Tipo: unknown_imap_error. Reintenta la sincronización.'));
+            $raw = trim((string) $e->getMessage());
+            $safe = (string) preg_replace('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', '[redacted]', $raw);
+            $safe = (string) preg_replace('/(password|token|secret|aws[_-]?secret[_-]?access[_-]?key)\s*[:=]\s*[^,\s]+/i', '$1=[redacted]', $safe);
+            $safe = mb_substr(trim(preg_replace('/\s+/', ' ', $safe) ?: ''), 0, 180);
+            $msg = 'No se pudo sincronizar IMAP. Tipo: unknown_imap_error. Clase: ' . get_class($e) . '. Detalle: ' . ($safe !== '' ? $safe : 'sin detalle') . '.';
+            error_log('[mail.imap.sync.route] tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $smtpAccountId . ' error_type=unknown_imap_error exception_class=' . get_class($e) . ' detail=' . $safe);
+            header('Location: /mail?error=' . urlencode($msg));
             return;
         }
     },
@@ -811,8 +816,13 @@ return [
             header('Location: /mail?' . $query);
             return;
         } catch (\Throwable $e) {
-            error_log('[mail.imap.sync.route] tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $smtpAccountId . ' error_type=unknown_imap_error exception_class=' . get_class($e));
-            header('Location: /mail?error=' . urlencode('No se pudo sincronizar IMAP. Tipo: unknown_imap_error. Reintenta la sincronización.'));
+            $raw = trim((string) $e->getMessage());
+            $safe = (string) preg_replace('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', '[redacted]', $raw);
+            $safe = (string) preg_replace('/(password|token|secret|aws[_-]?secret[_-]?access[_-]?key)\s*[:=]\s*[^,\s]+/i', '$1=[redacted]', $safe);
+            $safe = mb_substr(trim(preg_replace('/\s+/', ' ', $safe) ?: ''), 0, 180);
+            $msg = 'No se pudo sincronizar IMAP. Tipo: unknown_imap_error. Clase: ' . get_class($e) . '. Detalle: ' . ($safe !== '' ? $safe : 'sin detalle') . '.';
+            error_log('[mail.imap.sync.route] tenant_id=' . $tenantId . ' user_id=' . $userId . ' smtp_account_id=' . $smtpAccountId . ' error_type=unknown_imap_error exception_class=' . get_class($e) . ' detail=' . $safe);
+            header('Location: /mail?error=' . urlencode($msg));
             return;
         }
     },

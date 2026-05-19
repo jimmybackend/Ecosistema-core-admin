@@ -56,3 +56,16 @@ Base canónica esperada: `adbbmis1_eco`
 - Verificación en modo read-only (sin INSERT/UPDATE/DELETE durante comprobación).
 - No se agregaron migraciones ni seeds.
 - No se inventaron rutas ni módulos nuevos; se documentó sólo lo presente en el código/documentación actual.
+
+## Actualización de validación real en VM (2026-05-19)
+
+Ejecución real de `composer schema:usage` conectada a DB remota detectó **5 incompatibilidades pendientes**:
+- `mail_messages.status`
+- `os_ai_proposals.id`
+- `os_ai_proposals.module_code`
+- `os_ai_proposals.entity_table`
+- `os_ai_proposals.entity_id`
+
+Estas incompatibilidades deben tratarse como pendiente técnico de alineación código/checker vs DB real (sin crear migraciones a ciegas ni inventar columnas).
+
+Importante: el login funcional en VM (`POST /login => 302` a `/dashboard`) **no** quedó bloqueado por este punto.

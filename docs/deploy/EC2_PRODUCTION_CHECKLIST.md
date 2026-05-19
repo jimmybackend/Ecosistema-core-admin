@@ -222,3 +222,16 @@ Recomendaciones:
   - `composer smoke`
   - `composer backup:check`
   - `composer ops:monitor`
+
+## 17) Permisos seguros de `.env` para PHP-FPM
+
+- Si runtime PHP-FPM usa `www-data` y el owner del repo es usuario de despliegue (`jimmybackend`), no usar `chmod 600` para `.env`.
+- Configuración recomendada: `owner=deploy user`, `group=runtime web`, `chmod 640`.
+- No usar `chmod 644` para `.env`.
+
+```bash
+sudo chown jimmybackend:www-data .env
+sudo chmod 640 .env
+sudo nginx -t && sudo systemctl reload nginx
+sudo systemctl reload php8.5-fpm
+```

@@ -92,7 +92,13 @@ final readonly class UserCloudRootProvisioner
         return [
             ['name' => basename(rtrim($rootPrefix, '/')), 'prefix' => $rootPrefix, 'folder_type' => 'root', 'parent_prefix' => null],
             ['name' => 'mail', 'prefix' => $rootPrefix . 'mail/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix],
-            ['name' => 'attachments', 'prefix' => $rootPrefix . 'mail/attachments/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/'],
+            ['name' => 'inbound', 'prefix' => $rootPrefix . 'mail/inbound/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/'],
+            ['name' => 'attachments', 'prefix' => $rootPrefix . 'mail/inbound/attachments/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/inbound/'],
+            ['name' => 'outbound', 'prefix' => $rootPrefix . 'mail/outbound/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/'],
+            ['name' => 'attachments', 'prefix' => $rootPrefix . 'mail/outbound/attachments/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/outbound/'],
+            ['name' => 'drafts', 'prefix' => $rootPrefix . 'mail/drafts/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/'],
+            ['name' => 'attachments', 'prefix' => $rootPrefix . 'mail/drafts/attachments/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/drafts/'],
+            ['name' => 'temp', 'prefix' => $rootPrefix . 'mail/temp/', 'folder_type' => 'mail', 'parent_prefix' => $rootPrefix . 'mail/'],
             ['name' => 'products', 'prefix' => $rootPrefix . 'products/', 'folder_type' => 'custom', 'parent_prefix' => $rootPrefix],
             ['name' => 'images', 'prefix' => $rootPrefix . 'products/images/', 'folder_type' => 'custom', 'parent_prefix' => $rootPrefix . 'products/'],
             ['name' => 'videos', 'prefix' => $rootPrefix . 'products/videos/', 'folder_type' => 'custom', 'parent_prefix' => $rootPrefix . 'products/'],
@@ -100,7 +106,6 @@ final readonly class UserCloudRootProvisioner
             ['name' => 'campaigns', 'prefix' => $rootPrefix . 'campaigns/', 'folder_type' => 'custom', 'parent_prefix' => $rootPrefix],
             ['name' => 'assets', 'prefix' => $rootPrefix . 'campaigns/assets/', 'folder_type' => 'custom', 'parent_prefix' => $rootPrefix . 'campaigns/'],
             ['name' => 'generated', 'prefix' => $rootPrefix . 'generated/', 'folder_type' => 'custom', 'parent_prefix' => $rootPrefix],
-            ['name' => 'temp', 'prefix' => $rootPrefix . 'temp/', 'folder_type' => 'custom', 'parent_prefix' => $rootPrefix],
         ];
     }
 }

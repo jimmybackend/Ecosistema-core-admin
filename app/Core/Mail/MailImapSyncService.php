@@ -43,14 +43,14 @@ final readonly class MailImapSyncService
         $result = ['ok' => true, 'imported' => 0, 'skipped' => 0, 'attachments_pending' => 0, 'errors' => []];
 
         try {
-            $clientManager = new ClientManager(['options' => ['fetch' => \IMAP::FT_PEEK ?? 2]]);
+            $clientManager = new ClientManager(['options' => ['fetch' => 2]]);
             $client = $clientManager->make($this->buildClientConfig($account, $password));
 
             try {
                 $client->connect();
-            } catch (Throwable) {
+            } catch (Throwable $e) {
                 $result['ok'] = false;
-                $result['errors'][] = 'No se pudo conectar al servidor IMAP con la configuración indicada.';
+                $result['errors'][] = $this->buildSafeImapConnectionError($account, $e);
                 $this->updateInboundSyncStatus($account, false, $result['errors'][0]);
                 return $result;
             }
@@ -137,6 +137,38 @@ final readonly class MailImapSyncService
         return $result;
     }
 
+
+    private function buildSafeImapConnectionError(array $account, Throwable $e): string
+    {
+        $host = trim((string) ($account['imap_host'] ?? ''));
+        $port = (int) ($account['imap_port'] ?? 0);
+        $encryption = strtolower(trim((string) ($account['imap_encryption'] ?? 'none')));
+        if ($encryption === '') {
+            $encryption = 'none';
+        }
+
+        $raw = strtolower(trim($e->getMessage()));
+        $failureType = 'connection failed';
+        if ($raw !== '') {
+            if (str_contains($raw, 'auth') || str_contains($raw, 'login') || str_contains($raw, 'invalid credentials')) {
+                $failureType = 'auth failed';
+            } elseif (str_contains($raw, 'refused')) {
+                $failureType = 'connection refused';
+            } elseif (str_contains($raw, 'timeout') || str_contains($raw, 'timed out')) {
+                $failureType = 'timeout';
+            } elseif (str_contains($raw, 'ssl') || str_contains($raw, 'tls') || str_contains($raw, 'certificate') || str_contains($raw, 'handshake')) {
+                $failureType = 'TLS/SSL error';
+            }
+        }
+
+        $message = "No se pudo conectar al servidor IMAP (host={$host}, port={$port}, encryption={$encryption}, tipo={$failureType}).";
+        if (str_contains(strtolower($host), 'titan') && $port === 995) {
+            $message .= ' Para IMAP Titan usa imap.titan.email puerto 993 ssl. El puerto 995 es POP.';
+        }
+
+        return $message;
+    }
+
     private function buildClientConfig(array $account, string $password): array {
         $enc = strtolower(trim((string) ($account['imap_encryption'] ?? '')));
         $encryption = match ($enc) {
@@ -183,14 +215,8 @@ final readonly class MailImapSyncService
     private function insertEvent(int $tenantId,int $messageId,int $userId,int $uid,string $mailbox): void { $stmt=$this->pdo->prepare('INSERT INTO mail_message_events (tenant_id,message_id,user_id,event_type,metadata_json,created_at) VALUES (:tenant_id,:message_id,:user_id,:event_type,:metadata_json,NOW())'); $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':user_id'=>$userId,':event_type'=>'received',':metadata_json'=>json_encode(['provider'=>'imap','uid'=>$uid,'mailbox'=>$mailbox,'folder'=>'INBOX'], JSON_UNESCAPED_UNICODE)]); }
     private function insertExternalAttachment(int $tenantId,int $messageId,array $attachment): void { $stmt=$this->pdo->prepare('INSERT INTO mail_external_attachments (tenant_id,message_id,cloud_file_id,legacy_source,legacy_table,legacy_attachment_id,original_filename,mime_type,size_bytes,import_status,raw_payload_json,created_at,updated_at) VALUES (:tenant_id,:message_id,NULL,:legacy_source,:legacy_table,:legacy_attachment_id,:original_filename,:mime_type,:size_bytes,:import_status,:raw_payload_json,NOW(),NOW())'); $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':legacy_source'=>'imap',':legacy_table'=>'imap',':legacy_attachment_id'=>(string)$attachment['legacy_attachment_id'],':original_filename'=>$attachment['original_filename'],':mime_type'=>$attachment['mime_type'],':size_bytes'=>$attachment['size_bytes'],':import_status'=>'pending',':raw_payload_json'=>json_encode($attachment, JSON_UNESCAPED_UNICODE)]); }
     private function updateInboundSyncStatus(array $account, bool $ok, ?string $error): void { if (($account['source_type'] ?? '') !== 'inbound') { return; } $stmt = $this->pdo->prepare('UPDATE mail_inbound_accounts SET last_sync_at = NOW(), last_error = :last_error, status = :status, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id'); $stmt->execute([':last_error'=>$ok?null:$error, ':status'=>$ok?'active':'error', ':id'=>(int)$account['source_id'], ':tenant_id'=>(int)$account['tenant_id']]); }
-    private function imapMailboxPath(string $host, int $port, string $encryption): string { $enc = strtolower(trim($encryption)); $flags='/imap'; if($enc==='ssl'||$enc==='tls'){ $flags.='/' . $enc . '/novalidate-cert'; } elseif($enc==='none'||$enc===''){ $flags.='/notls'; } return '{'.$host.':'.$port.$flags.'}INBOX'; }
     private function extractMessageId(string $messageId, string $headers): ?string { $trim=trim($messageId); if($trim!==''){return $trim;} if(preg_match('/^Message-ID:\s*(.+)$/mi',$headers,$m)===1){ return trim((string)$m[1]); } return null; }
-    private function extractAddressList(string $raw): array { preg_match_all('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i',$raw,$m); return array_values(array_unique(array_map('strtolower',$m[0]??[]))); }
-    private function collectAttachmentMetadata(mixed $structure, string $uid, string $prefix = ''): array { if(!is_object($structure)){return [];} $attachments=[]; $parts=is_array($structure->parts??null)?$structure->parts:[]; foreach($parts as $index=>$part){ $partNo = $prefix === '' ? (string) ($index + 1) : $prefix . '.' . ($index + 1); $filename = $this->extractPartFilename($part); $isAttachment = $filename !== null || ((int)($part->ifdisposition ?? 0) === 1 && in_array(strtolower((string)($part->disposition ?? '')), ['attachment','inline'], true)); if($isAttachment){ $original = $filename ?? ('attachment-' . $partNo); $attachments[]=['legacy_attachment_id'=>$uid . ':' . $partNo,'original_filename'=>$original,'safe_filename'=>$this->safeFileName($original),'mime_type'=>$this->resolveMimeType($part),'size_bytes'=>isset($part->bytes)?(int)$part->bytes:null,'part_number'=>$partNo,'uid'=>$uid]; } if(isset($part->parts) && is_array($part->parts)){ $attachments=array_merge($attachments,$this->collectAttachmentMetadata($part,$uid,$partNo)); }} return $attachments; }
-    private function extractPartFilename(object $part): ?string { foreach (['dparameters','parameters'] as $prop){ if(!isset($part->{$prop}) || !is_array($part->{$prop})){continue;} foreach($part->{$prop} as $entry){ $attribute=strtolower((string)($entry->attribute ?? '')); if($attribute==='filename' || $attribute==='name'){ return (string) imap_utf8((string)($entry->value ?? '')); } } } return null; }
     private function safeFileName(string $name): string { $base = basename(str_replace('\\','/',$name)); $clean = preg_replace('/[^a-zA-Z0-9._-]/', '_', $base); return $clean !== '' ? $clean : 'attachment'; }
-    private function resolveMimeType(object $part): string { $primary=['text','multipart','message','application','audio','image','video','other']; $type=(int)($part->type ?? 0); $main=$primary[$type] ?? 'application'; $sub=strtolower((string)($part->subtype ?? 'octet-stream')); return $main . '/' . $sub; }
-    private function fetchBodyBySubtype($imap, int $uid, string $subtype): ?string { $structure=imap_fetchstructure($imap,(string)$uid,FT_UID); if(!is_object($structure) || !isset($structure->parts) || !is_array($structure->parts)){ return null;} foreach($structure->parts as $index=>$part){ if(strtoupper((string)($part->subtype ?? ''))!==$subtype){continue;} $body=imap_fetchbody($imap,(string)$uid,(string)($index+1),FT_UID); if(!is_string($body)){continue;} $enc=(int)($part->encoding ?? 0); if($enc===3){$body=base64_decode($body,true)?:'';} if($enc===4){$body=quoted_printable_decode($body);} return trim($body);} return null; }
     private function toMysqlDateTime(string $value): ?string { $ts = strtotime($value); return $ts === false ? null : date('Y-m-d H:i:s', $ts); }
     private function uuidV4(): string { $data=random_bytes(16); $data[6]=chr((ord($data[6])&0x0f)|0x40); $data[8]=chr((ord($data[8])&0x3f)|0x80); return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4)); }
 }

@@ -51,5 +51,5 @@ echo json_encode([
     'imported' => (int) ($c['imported'] ?? 0),
     'failed' => (int) ($c['failed'] ?? 0),
     'skipped' => (int) ($c['skipped'] ?? 0),
-    'errors' => [],
+    'errors' => array_values((array) ($c['errors'] ?? [])),
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL;

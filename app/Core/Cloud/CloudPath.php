@@ -43,6 +43,17 @@ final class CloudPath
         return $key;
     }
 
+
+    public static function buildInboundAttachmentKey(int $userId, int $messageId, string $storedName, ?DateTimeInterface $date = null): string
+    {
+        if ($storedName === '' || preg_match('/[\x00-\x1F\x7F]/', $storedName) === 1) throw new InvalidArgumentException('Nombre interno inválido.');
+        $date ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $base = self::joinS3Prefix(self::normalizeRootPrefix($userId), 'mail', 'inbound', 'attachments', $date->format('Y'), $date->format('m'), (string) $messageId);
+        $key = $base . ltrim($storedName, '/');
+        self::assertSafeScope($userId, $key);
+        return $key;
+    }
+
     public static function keyScope(int $userId, string $key): string
     {
         $root = self::normalizeRootPrefix($userId);

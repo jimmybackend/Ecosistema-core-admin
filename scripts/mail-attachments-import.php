@@ -44,7 +44,12 @@ if (($result['ok'] ?? false) !== true) {
     exit(2);
 }
 $c = (array) ($result['counts'] ?? []);
-echo 'pending=' . (int) ($c['pending'] ?? 0) . PHP_EOL;
-echo 'imported=' . (int) ($c['imported'] ?? 0) . PHP_EOL;
-echo 'failed=' . (int) ($c['failed'] ?? 0) . PHP_EOL;
-echo 'imap_pending=' . (int) ($c['imap_pending'] ?? 0) . PHP_EOL;
+echo json_encode([
+    'ok' => true,
+    'message_id' => $messageId,
+    'pending' => (int) ($c['pending'] ?? 0),
+    'imported' => (int) ($c['imported'] ?? 0),
+    'failed' => (int) ($c['failed'] ?? 0),
+    'skipped' => (int) ($c['skipped'] ?? 0),
+    'errors' => [],
+], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL;

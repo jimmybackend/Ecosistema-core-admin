@@ -2675,7 +2675,9 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null; $statusFilter=isset($_GET['status'])?(string)$_GET['status']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId,$statusFilter==='deleted'?'deleted':null);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
         $s3 = new CloudS3Service($config);
-        $downloadsEnabled = (bool)($config['cloud']['allow_downloads'] ?? false) && (bool)($config['cloud']['s3_enabled'] ?? false) && (bool)($config['cloud']['controlled_live_tests'] ?? false) && (($s3->checkBucket()['ok'] ?? false) === true);
+        $liveTests = (bool)($config['cloud']['controlled_live_tests'] ?? false);
+        $bucketOk = (($s3->checkBucket()['ok'] ?? false) === true);
+        $downloadsEnabled = (bool)($config['cloud']['allow_downloads'] ?? false) && (bool)($config['cloud']['s3_enabled'] ?? false) && ($bucketOk || $liveTests);
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage','downloadsEnabled','statusFilter')]);
     },
     'GET /cloud/drive' => static function (array $config): void {

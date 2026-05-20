@@ -18,15 +18,18 @@ $cloudDangerFlags = ['CLOUD_S3_ENABLED', 'CLOUD_ALLOW_UPLOADS', 'CLOUD_ALLOW_DOW
 
 function parseEnvFile(string $path): array {
     $data = [];
+    $counts = [];
     foreach (file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
         $trim = trim($line);
         if ($trim === '' || str_starts_with($trim, '#') || !str_contains($line, '=')) {
             continue;
         }
         [$k, $v] = explode('=', $line, 2);
-        $data[trim($k)] = trim($v, " \"'");
+        $key = trim($k);
+        $counts[$key] = ($counts[$key] ?? 0) + 1;
+        $data[$key] = trim($v, " \"'");
     }
-    return $data;
+    return ['values' => $data, 'counts' => $counts];
 }
 
 $errors = [];
@@ -46,7 +49,14 @@ if (!is_file($envPath)) {
         if (($perms & 0x020) === 0) $warnings[] = '.env sin lectura de grupo (g+r)';
     }
 
-    $env = parseEnvFile($envPath);
+    $parsed = parseEnvFile($envPath);
+    $env = $parsed['values'];
+    $counts = $parsed['counts'];
+    foreach (['CLOUD_DISK', 'CLOUD_S3_ENABLED', 'CLOUD_ALLOW_DOWNLOADS', 'CLOUD_ALLOW_UPLOADS', 'CLOUD_CONTROLLED_LIVE_TESTS'] as $duplicateKey) {
+        if (($counts[$duplicateKey] ?? 0) > 1) {
+            $warnings[] = "{$duplicateKey} duplicated";
+        }
+    }
     if (($env['APP_DEBUG'] ?? '') !== 'false') $errors[] = 'APP_DEBUG debe estar en false';
 
     foreach ($mailDangerFlags as $flag) {

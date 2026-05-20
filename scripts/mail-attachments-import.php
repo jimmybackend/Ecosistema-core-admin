@@ -13,7 +13,7 @@ if (!is_file($autoload)) {
     exit(1);
 }
 require_once $autoload;
-require $root . '/bootstrap/app.php';
+$app = require $root . '/bootstrap/app.php';
 
 $options = getopt('', ['tenant:', 'user:', 'account::', 'message:', 'limit::']);
 $tenantId = (int) ($options['tenant'] ?? 0);
@@ -24,8 +24,19 @@ if ($tenantId <= 0 || $userId <= 0 || $messageId <= 0) {
     fwrite(STDERR, "Uso: php scripts/mail-attachments-import.php --tenant=1 --user=1 --account=1 --message=123 --limit=5\n");
     exit(1);
 }
-$config = require __DIR__ . '/../config/app.php';
-$pdo = PdoFactory::make($config['database']);
+$config = is_array($app['config'] ?? null) ? $app['config'] : [];
+$databaseConfig = is_array($config['database'] ?? null) ? $config['database'] : [];
+if ($databaseConfig === []) {
+    fwrite(STDERR, "CLOUD_CONFIG_ERROR: configuración de base de datos no disponible.\n");
+    exit(1);
+}
+
+try {
+    $pdo = PdoFactory::make($databaseConfig);
+} catch (Throwable $e) {
+    fwrite(STDERR, "CLOUD_CONFIG_ERROR: no fue posible inicializar la conexión PDO.\n");
+    exit(1);
+}
 $service = new MailAttachmentImportService($pdo, $config, new SecretBox());
 $result = $service->importPendingForMessage($tenantId, $userId, $messageId, $limit);
 if (($result['ok'] ?? false) !== true) {

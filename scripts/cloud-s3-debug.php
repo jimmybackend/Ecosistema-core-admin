@@ -19,13 +19,32 @@ if (!class_exists(\Aws\S3\S3Client::class)) {
     echo "AWS_SDK_MISSING: ejecuta composer require aws/aws-sdk-php:^3.325\n";
     exit(2);
 }
-require $root . '/bootstrap/app.php';
-$config = require __DIR__ . '/../config/app.php';
+$app = require $root . '/bootstrap/app.php';
+$config = is_array($app['config'] ?? null) ? $app['config'] : [];
 $options = getopt('', ['tenant::', 'user::', 'check-s3', 'ensure-root']);
 $tenant = (int)($options['tenant'] ?? 1);
 $user = (int)($options['user'] ?? 1);
 
-$pdo = PdoFactory::make($config['database']);
+$databaseConfig = is_array($config['database'] ?? null) ? $config['database'] : [];
+if ($databaseConfig === []) {
+    echo json_encode([
+        'ok' => false,
+        'error_code' => 'CLOUD_CONFIG_ERROR',
+        'message' => 'Configuración de base de datos no disponible.',
+    ], JSON_PRETTY_PRINT) . PHP_EOL;
+    exit(1);
+}
+
+try {
+    $pdo = PdoFactory::make($databaseConfig);
+} catch (Throwable $e) {
+    echo json_encode([
+        'ok' => false,
+        'error_code' => 'CLOUD_CONFIG_ERROR',
+        'message' => 'No fue posible inicializar la conexión PDO.',
+    ], JSON_PRETTY_PRINT) . PHP_EOL;
+    exit(1);
+}
 $s3 = new CloudS3Service($config);
 $check = isset($options['check-s3']) ? $s3->checkBucket() : ['ok' => null, 'message' => 'skip'];
 

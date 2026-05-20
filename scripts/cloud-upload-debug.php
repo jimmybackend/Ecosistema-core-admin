@@ -15,8 +15,17 @@ if (!is_file($autoload)) {
     exit(1);
 }
 require_once $autoload;
-require $root . '/bootstrap/app.php';
-$config = require __DIR__ . '/../config/app.php';
+if (!class_exists(\Aws\S3\S3Client::class)) {
+    echo json_encode([
+        'ok' => false,
+        'error_code' => 'AWS_SDK_MISSING',
+        'message' => 'AWS SDK no está disponible después de Composer autoload.',
+    ], JSON_PRETTY_PRINT) . PHP_EOL;
+    exit(2);
+}
+
+$app = require $root . '/bootstrap/app.php';
+$config = is_array($app['config'] ?? null) ? $app['config'] : [];
 $options = getopt('', ['tenant::', 'user::', 'file::', 'folder::']);
 $tenant = (int)($options['tenant'] ?? 1);
 $user = (int)($options['user'] ?? 1);
@@ -32,7 +41,26 @@ if (!is_file($file)) {
     file_put_contents($file, 'test ' . date('c'));
 }
 
-$pdo = PdoFactory::make($config['database']);
+$databaseConfig = is_array($config['database'] ?? null) ? $config['database'] : [];
+if ($databaseConfig === []) {
+    echo json_encode([
+        'ok' => false,
+        'error_code' => 'CLOUD_CONFIG_ERROR',
+        'message' => 'Configuración de base de datos no disponible.',
+    ], JSON_PRETTY_PRINT) . PHP_EOL;
+    exit(1);
+}
+
+try {
+    $pdo = PdoFactory::make($databaseConfig);
+} catch (Throwable $e) {
+    echo json_encode([
+        'ok' => false,
+        'error_code' => 'CLOUD_CONFIG_ERROR',
+        'message' => 'No fue posible inicializar la conexión PDO.',
+    ], JSON_PRETTY_PRINT) . PHP_EOL;
+    exit(1);
+}
 $service = new CloudUploadService(new CloudFileRepository($pdo), new CloudStorageService($config, class_exists('Aws\\S3\\S3Client')), $config);
 $result = $service->upload($tenant, $user, [
     'name' => basename($file),

@@ -40,7 +40,7 @@ final readonly class CloudStorageService
     {
         $normalized = rtrim($this->normalizeKey($prefix), '/') . '/';
         if ($normalized === '/') { return false; }
-        $result = $this->putObject($normalized, '');
+        $result = $this->putObject($normalized . '.keep', '');
         return (bool) ($result['ok'] ?? false);
     }
 

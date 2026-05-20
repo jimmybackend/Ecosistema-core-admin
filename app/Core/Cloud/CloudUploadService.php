@@ -40,7 +40,7 @@ final readonly class CloudUploadService
         if (in_array($extension, $blockedAlways, true) || !in_array($extension, $allowedExtensions, true)) return ['ok' => false, 'message' => 'La extensión del archivo no está permitida.'];
 
         $storedName = bin2hex(random_bytes(16)) . ($extension !== '' ? ('.' . $extension) : '');
-        try { $s3Key = $this->buildSafeS3Key($userId, $folder, $storedName); } catch (InvalidArgumentException $e) { return ['ok' => false, 'message' => $e->getMessage()]; }
+        try { $s3Key = CloudPath::buildFileKey($userId, $folder, $storedName, null); } catch (InvalidArgumentException $e) { return ['ok' => false, 'message' => $e->getMessage()]; }
         $mimeType = (string) ($fileInput['type'] ?? 'application/octet-stream');
         $sourcePath = (string) ($fileInput['tmp_name'] ?? '');
         $checksum = $this->computeChecksum($sourcePath);
@@ -57,23 +57,6 @@ final readonly class CloudUploadService
 
         return $id > 0 ? ['ok' => true, 'id' => $id, 'message' => 'Archivo subido correctamente.'] : ['ok' => false, 'message' => 'No se pudo registrar metadata del archivo.'];
     }
-
-    private function buildSafeS3Key(int $userId, ?array $folder, string $storedName): string
-    {
-        if ($storedName === '' || preg_match('/[\x00-\x1F\x7F]/', $storedName) === 1) throw new InvalidArgumentException('Nombre interno inválido.');
-        $prefix = 'users/' . $userId . '/';
-        $path = $prefix . 'uploads/' . gmdate('Y') . '/' . gmdate('m') . '/';
-        if (is_array($folder) && trim((string)($folder['prefix'] ?? '')) !== '') $path = trim((string)$folder['prefix']);
-        $normalized = trim(str_replace('\\', '/', $path));
-        $normalized = preg_replace('#/+#', '/', $normalized) ?? '';
-        $normalized = trim($normalized, '/') . '/';
-        if ($normalized === '/' || str_starts_with($normalized, '/') || str_contains($normalized, '..') || preg_match('/[\x00-\x1F\x7F]/', $normalized) === 1) throw new InvalidArgumentException('Prefijo de carpeta inválido.');
-        if (!str_starts_with($normalized, $prefix)) throw new InvalidArgumentException('Prefijo fuera de la raíz de usuario.');
-        $key = $normalized . $storedName;
-        if (str_contains($key, '//') || str_contains($key, '../') || !str_ends_with($key, '/' . $storedName)) throw new InvalidArgumentException('s3_key inválida por política de seguridad.');
-        return $key;
-    }
-
     private function sanitizeOriginalName(string $name): string { $base = basename(str_replace('\\', '/', $name)); $clean = preg_replace('/[^a-zA-Z0-9._-]/', '_', $base); return $clean !== '' ? $clean : 'archivo'; }
     private function computeChecksum(string $path): ?string { if ($path === '' || !is_file($path) || !is_readable($path)) return null; $checksum = hash_file('sha256', $path); return is_string($checksum) && $checksum !== '' ? $checksum : null; }
 }

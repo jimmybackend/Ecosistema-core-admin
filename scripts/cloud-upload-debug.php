@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 declare(strict_types=1);
-use App\Core\Cloud\CloudFileRepository;use App\Core\Cloud\CloudStorageService;use App\Core\Cloud\CloudUploadService;use App\Core\Database\PdoFactory;
+use App\Core\Cloud\CloudFileRepository;use App\Core\Cloud\CloudPath;use App\Core\Cloud\CloudStorageService;use App\Core\Cloud\CloudUploadService;use App\Core\Database\PdoFactory;
 $root=dirname(__DIR__);require_once $root.'/vendor/autoload.php'; if(!class_exists(\Aws\S3\S3Client::class)){echo json_encode(['ok'=>false,'message'=>'AWS SDK no disponible'],JSON_PRETTY_PRINT).PHP_EOL;exit(2);} $app=require $root.'/bootstrap/app.php'; $config=is_array($app['config']??null)?$app['config']:[];
 $options=getopt('', ['tenant::','user::','file::','folder::','head-object']);$tenant=(int)($options['tenant']??1);$user=(int)($options['user']??1);$file=(string)($options['file']??'/tmp/test-cloud.txt');
 $pdo=PdoFactory::make((array)($config['database']??[])); if(!is_file($file)){file_put_contents($file,'test '.date('c'));}
@@ -9,5 +9,5 @@ $folder=null; if(isset($options['folder'])){ $f=(string)$options['folder']; if(c
 $service=new CloudUploadService(new CloudFileRepository($pdo),new CloudStorageService($config,class_exists('Aws\\S3\\S3Client')),$config);
 $result=$service->upload($tenant,$user,['name'=>basename($file),'tmp_name'=>$file,'size'=>filesize($file)?:0,'error'=>0,'type'=>mime_content_type($file)?:'text/plain'],$folder);
 $payload=['ok'=>(bool)($result['ok']??false),'file_id'=>$result['id']??null,'message'=>$result['message']??null,'found_in_s3'=>null,'key_scope'=>null,'head_object_ok'=>null];
-if(($result['ok']??false)&&isset($result['id'])){$id=(int)$result['id'];$q=$pdo->prepare('SELECT found_in_s3,status,s3_key FROM cloud_files WHERE id=:id AND tenant_id=:t AND user_id=:u');$q->execute([':id'=>$id,':t'=>$tenant,':u'=>$user]);$r=$q->fetch(PDO::FETCH_ASSOC)?:[];$payload['found_in_s3']=((int)($r['found_in_s3']??0))===1;$payload['key_scope']=str_starts_with((string)($r['s3_key']??''),'users/'.$user.'/')?'ok':'outside_user_root'; if(array_key_exists('head-object',$options)){ $s3=new App\Core\Cloud\CloudS3Service($config); $h=$s3->getObject((string)($r['s3_key']??'')); $payload['head_object_ok']=(bool)($h['ok']??false);} }
+if(($result['ok']??false)&&isset($result['id'])){$id=(int)$result['id'];$q=$pdo->prepare('SELECT found_in_s3,status,s3_key FROM cloud_files WHERE id=:id AND tenant_id=:t AND user_id=:u');$q->execute([':id'=>$id,':t'=>$tenant,':u'=>$user]);$r=$q->fetch(PDO::FETCH_ASSOC)?:[];$payload['found_in_s3']=((int)($r['found_in_s3']??0))===1;$scope=CloudPath::keyScope($user,(string)($r['s3_key']??''));$payload['key_scope']=$scope;$payload['duplicated_user_segment']=$scope==='duplicated_user_segment';$payload['expected_prefix']='users/'.$user.'/uploads/'; if(array_key_exists('head-object',$options)){ $s3=new App\Core\Cloud\CloudS3Service($config); $h=$s3->getObject((string)($r['s3_key']??'')); $payload['head_object_ok']=(bool)($h['ok']??false);} }
 echo json_encode($payload,JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).PHP_EOL;

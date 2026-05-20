@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Mail;
 
 use App\Core\Cloud\CloudDriveRepository;
+use App\Core\Cloud\CloudFileRepository;
 use App\Core\Cloud\CloudPath;
 use App\Core\Cloud\CloudS3Service;
 use App\Support\SecretBox;
@@ -26,6 +27,7 @@ final class MailAttachmentImportService
         $cloud = new CloudS3Service($this->config);
         if (!$cloud->isConfigured()) { return ['ok' => false, 'error' => 'Cloud/S3 no configurado.']; }
         $drive = new CloudDriveRepository($this->pdo, $this->config);
+        $cloudFiles = new CloudFileRepository($this->pdo);
         $bucketId = (int) (($drive->findOrCreateDefaultBucket($tenantId)['id'] ?? 0));
         if ($bucketId <= 0) { return ['ok' => false, 'error' => 'No se pudo resolver bucket Cloud.']; }
         $items = $this->loadPending($tenantId, $userId, $messageId, $limit);
@@ -33,6 +35,7 @@ final class MailAttachmentImportService
         foreach ($items as $row) {
             $id = (int) $row['id'];
             try {
+                $this->clearLegacyAccessTypeError($id, (string)($row['error_message'] ?? ''));
                 $meta = json_decode((string) ($row['raw_payload_json'] ?? ''), true);
                 if (!is_array($meta)) { $meta = []; }
                 $folder = trim((string) ($meta['imap_folder'] ?? ''));
@@ -76,17 +79,25 @@ final class MailAttachmentImportService
                 @unlink($tmp);
                 if (($put['ok'] ?? false) !== true) { throw new \RuntimeException((string) ($put['message'] ?? 'cloud_upload_error')); }
 
-                $cloudId = $this->insertCloudFile($tenantId, $userId, $bucketId, $key, $filename, $mime, strlen($binary), $id);
-                $this->insertMailAttachment($tenantId, $messageId, $cloudId, $filename, $mime, strlen($binary));
+                $cloudId = $this->insertCloudFile($cloudFiles, $tenantId, $userId, $bucketId, $key, $filename, $mime, strlen($binary), $id);
+                $this->insertMailAttachment($tenantId, $messageId, $cloudId, $row, $filename, $mime, strlen($binary));
                 $this->markImported($id, $cloudId);
                 $counts['imported']++;
+                $counts['pending'] = max(0, (int)$counts['pending'] - 1);
             } catch (Throwable $e) {
                 $counts['failed']++;
-                $reason=$this->sanitize($e->getMessage());
+                $reason = $this->normalizeFailure($e);
                 $this->markFailed($id, 'failed', $reason);
-                $counts['errors'][] = ['external_attachment_id'=>$id,'reason'=>$reason];
+                $errorPayload = ['external_attachment_id' => $id, 'reason' => $reason];
+                $decoded = json_decode($e->getMessage(), true);
+                if (is_array($decoded) && (($decoded['reason'] ?? '') === 'cloud_validation_error')) {
+                    $errorPayload['field'] = (string) ($decoded['field'] ?? '');
+                    $errorPayload['invalid_value'] = (string) ($decoded['invalid_value'] ?? '');
+                }
+                $counts['errors'][] = $errorPayload;
             }
         }
+        $counts['pending'] = max(0, count($items) - (int)$counts['imported'] - (int)$counts['failed'] - (int)$counts['skipped']);
         return ['ok' => true, 'counts' => $counts];
     }
 
@@ -128,18 +139,61 @@ final class MailAttachmentImportService
         $client->disconnect();
         return null;
     }
-    private function insertCloudFile(int $tenantId,int $userId,int $bucketId,string $key,string $name,string $mime,int $size,int $externalAttachmentId): int {
+    private function insertCloudFile(CloudFileRepository $cloudFiles,int $tenantId,int $userId,int $bucketId,string $key,string $name,string $mime,int $size,int $externalAttachmentId): int {
         $ext = pathinfo($name, PATHINFO_EXTENSION);
-        $stmt = $this->pdo->prepare('INSERT INTO cloud_files (tenant_id,user_id,bucket_id,original_name,stored_name,s3_key,mime_type,extension,size_bytes,status,access_type,encrypted,found_in_s3,origin_module,origin_table,origin_id,uploaded_by_user_id,uploaded_at,updated_at) VALUES (:tenant_id,:user_id,:bucket_id,:original_name,:stored_name,:s3_key,:mime_type,:extension,:size_bytes,"active","private",1,1,"mail","mail_external_attachments",:origin_id,:uploaded_by_user_id,NOW(),NOW())');
-        $stmt->execute([':tenant_id'=>$tenantId,':user_id'=>$userId,':bucket_id'=>$bucketId,':original_name'=>$name,':stored_name'=>basename($key),':s3_key'=>$key,':mime_type'=>$mime,':extension'=>$ext !== '' ? mb_strtolower($ext) : null,':size_bytes'=>$size,':origin_id'=>$externalAttachmentId,':uploaded_by_user_id'=>$userId]);
+        $payload = [
+            'tenant_id' => $tenantId,
+            'user_id' => $userId,
+            'bucket_id' => $bucketId,
+            'root_id' => 0,
+            'folder_id' => null,
+            'original_name' => $name,
+            'stored_name' => basename($key),
+            's3_key' => $key,
+            'mime_type' => $mime,
+            'extension' => $ext !== '' ? mb_strtolower($ext) : '',
+            'size_bytes' => $size,
+            'checksum_sha256' => null,
+            'etag' => null,
+            'origin_module' => 'mail',
+            'access_type' => 'normal',
+            'found_in_s3' => 1,
+            'virus_scan_status' => 'pending',
+            'status' => 'active',
+            'uploaded_by_user_id' => $userId,
+        ];
+        $validationError = $cloudFiles->validateCloudFileEnums($payload);
+        if ($validationError !== null) {
+            throw new \RuntimeException((string) json_encode($validationError, JSON_UNESCAPED_UNICODE));
+        }
+        $stmt = $this->pdo->prepare('INSERT INTO cloud_files (tenant_id,user_id,bucket_id,original_name,stored_name,s3_key,mime_type,extension,size_bytes,status,access_type,encrypted,found_in_s3,virus_scan_status,origin_module,origin_table,origin_id,uploaded_by_user_id,uploaded_at,updated_at) VALUES (:tenant_id,:user_id,:bucket_id,:original_name,:stored_name,:s3_key,:mime_type,:extension,:size_bytes,:status,:access_type,1,:found_in_s3,:virus_scan_status,:origin_module,:origin_table,:origin_id,:uploaded_by_user_id,NOW(),NOW())');
+        $stmt->execute([':tenant_id'=>$tenantId,':user_id'=>$userId,':bucket_id'=>$bucketId,':original_name'=>$name,':stored_name'=>basename($key),':s3_key'=>$key,':mime_type'=>$mime,':extension'=>$payload['extension'] !== '' ? $payload['extension'] : null,':size_bytes'=>$size,':status'=>'active',':access_type'=>'normal',':found_in_s3'=>1,':virus_scan_status'=>'pending',':origin_module'=>'mail',':origin_table'=>'mail_external_attachments',':origin_id'=>$externalAttachmentId,':uploaded_by_user_id'=>$userId]);
         return (int) $this->pdo->lastInsertId();
     }
-    private function insertMailAttachment(int $tenantId,int $messageId,int $cloudFileId,string $name,string $mime,int $size): void {
-        $stmt = $this->pdo->prepare('INSERT INTO mail_attachments (tenant_id,message_id,cloud_file_id,original_filename,mime_type,size_bytes,created_at) VALUES (:tenant_id,:message_id,:cloud_file_id,:filename,:mime_type,:size_bytes,NOW())');
-        $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':cloud_file_id'=>$cloudFileId,':filename'=>$name,':mime_type'=>$mime,':size_bytes'=>$size]);
+    private function insertMailAttachment(int $tenantId,int $messageId,int $cloudFileId,array $row,string $name,string $mime,int $size): void {
+        $stmt = $this->pdo->prepare('INSERT INTO mail_attachments (tenant_id,message_id,cloud_file_id,original_filename,content_id,disposition,mime_type,size_bytes,created_at) VALUES (:tenant_id,:message_id,:cloud_file_id,:filename,:content_id,:disposition,:mime_type,:size_bytes,NOW())');
+        $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':cloud_file_id'=>$cloudFileId,':filename'=>$name,':content_id'=>$row['content_id'] ?? null,':disposition'=>$row['disposition'] ?? null,':mime_type'=>$mime,':size_bytes'=>$size]);
     }
     private function markImported(int $id, int $cloudFileId): void { $s=$this->pdo->prepare('UPDATE mail_external_attachments SET cloud_file_id=:cloud_file_id, import_status="imported", imported_at=NOW(), error_message=NULL WHERE id=:id'); $s->execute([':cloud_file_id'=>$cloudFileId,':id'=>$id]); }
     private function markFailed(int $id, string $status, string $error): void { $this->markStatus($id, $status, $error); }
     private function markStatus(int $id, string $status, string $error): void { $s=$this->pdo->prepare('UPDATE mail_external_attachments SET import_status=:status, error_message=:error WHERE id=:id'); $s->execute([':status'=>$status,':error'=>$this->sanitize($error),':id'=>$id]); }
     private function sanitize(string $text): string { $t = preg_replace('/\s+/', ' ', $text) ?? 'error'; $t = preg_replace('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', '[redacted]', $t) ?? $t; return mb_substr(trim($t), 0, 180); }
+    private function normalizeFailure(Throwable $e): string
+    {
+        $decoded = json_decode($e->getMessage(), true);
+        if (is_array($decoded) && (($decoded['reason'] ?? '') === 'cloud_validation_error')) {
+            return 'cloud_validation_error';
+        }
+
+        return $this->sanitize($e->getMessage());
+    }
+
+    private function clearLegacyAccessTypeError(int $id, string $errorMessage): void
+    {
+        if (!str_contains($errorMessage, "Data truncated for column 'access_type'")) {
+            return;
+        }
+        $stmt = $this->pdo->prepare('UPDATE mail_external_attachments SET import_status = "pending", error_message = NULL WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+    }
 }

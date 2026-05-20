@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Core\Database\PdoFactory;
+use App\Core\Mail\MailSmtpAccountRepository;
 use App\Support\SecretBox;
 use Webklex\PHPIMAP\ClientManager;
 use Webklex\PHPIMAP\Message;
@@ -24,16 +25,39 @@ if ($tenantId <= 0 || $userId <= 0 || $accountId <= 0 || $messageId <= 0) {
     exit(1);
 }
 
-$pdo = PdoFactory::make((array) ($app['config']['database'] ?? []));
-$m = $pdo->prepare("SELECT m.*, f.name AS folder_name, f.system_name AS folder_system_name FROM mail_messages m LEFT JOIN mail_folders f ON f.id=m.folder_id AND f.tenant_id=m.tenant_id WHERE m.tenant_id=:t AND m.user_id=:u AND m.id=:id LIMIT 1");
-$m->execute([':t' => $tenantId, ':u' => $userId, ':id' => $messageId]);
-$msg = $m->fetch(PDO::FETCH_ASSOC);
-if (!is_array($msg)) { echo json_encode(['ok' => false, 'error' => 'message_not_found'], JSON_PRETTY_PRINT) . PHP_EOL; exit(2); }
+/**
+ * @return never
+ */
+function failJson(string $error, string $stage, int $messageId, int $exitCode = 2, ?Throwable $exception = null): void
+{
+    $payload = ['ok' => false, 'message_id' => $messageId, 'error' => $error, 'stage' => $stage];
+    if ($exception !== null) {
+        $payload['exception_class'] = get_class($exception);
+        $payload['message'] = mb_substr(trim(preg_replace('/\s+/', ' ', $exception->getMessage()) ?? ''), 0, 220);
+    }
+    echo json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    exit($exitCode);
+}
 
-$a = $pdo->prepare('SELECT mailbox_id, host_in, port_in, ssl_in, username, password_encrypted FROM mail_smtp_accounts WHERE tenant_id=:t AND user_id=:u AND id=:id AND status="active" LIMIT 1');
-$a->execute([':t'=>$tenantId, ':u'=>$userId, ':id'=>$accountId]);
-$account = $a->fetch(PDO::FETCH_ASSOC);
-if (!is_array($account)) { echo json_encode(['ok'=>false,'error'=>'mail_account_not_found'], JSON_PRETTY_PRINT).PHP_EOL; exit(2); }
+$pdo = PdoFactory::make((array) ($app['config']['database'] ?? []));
+try {
+    $m = $pdo->prepare("SELECT m.*, f.name AS folder_name, f.system_name AS folder_system_name FROM mail_messages m LEFT JOIN mail_folders f ON f.id = m.folder_id AND f.tenant_id = m.tenant_id AND f.mailbox_id = m.mailbox_id WHERE m.tenant_id = :t AND m.user_id = :u AND m.id = :id LIMIT 1");
+    $m->execute([':t' => $tenantId, ':u' => $userId, ':id' => $messageId]);
+    $msg = $m->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    failJson('db_query_error', 'resolve_message', $messageId, 2, $e);
+}
+if (!is_array($msg)) { failJson('message_not_found', 'resolve_message', $messageId); }
+
+try {
+    $account = (new MailSmtpAccountRepository($pdo))->findForUserOrTenant($tenantId, $userId, $accountId);
+} catch (PDOException $e) {
+    failJson('db_query_error', 'resolve_account', $messageId, 2, $e);
+}
+if (!is_array($account) || (string) ($account['status'] ?? '') !== 'active') { failJson('mail_account_not_found', 'resolve_account', $messageId); }
+if (trim((string) ($account['host_in'] ?? '')) === '' || (int) ($account['port_in'] ?? 0) <= 0 || trim((string) ($account['username'] ?? '')) === '' || trim((string) ($account['password_encrypted'] ?? '')) === '') {
+    failJson('mail_account_imap_incomplete', 'resolve_account', $messageId);
+}
 
 $folderSystem = mb_strtolower(trim((string) ($msg['folder_system_name'] ?? '')));
 $folderName = trim((string) ($msg['folder_name'] ?? ''));
@@ -46,9 +70,13 @@ $externalMessageId = trim((string) ($msg['external_message_id'] ?? ''));
 $messageIdHeader = null;
 if (preg_match('/^Message-ID:\s*<([^>]+)>/mi', $headers, $mh)) { $messageIdHeader = '<' . trim($mh[1]) . '>'; }
 
-$r = $pdo->prepare('SELECT id, original_filename, mime_type, size_bytes, raw_payload_json, error_message, import_status FROM mail_external_attachments WHERE tenant_id=:t AND message_id=:m ORDER BY id ASC');
-$r->execute([':t' => $tenantId, ':m' => $messageId]);
-$rows = $r->fetchAll(PDO::FETCH_ASSOC) ?: [];
+try {
+    $r = $pdo->prepare('SELECT id, original_filename, mime_type, size_bytes, raw_payload_json, error_message, import_status FROM mail_external_attachments WHERE tenant_id=:t AND message_id=:m ORDER BY id ASC');
+    $r->execute([':t' => $tenantId, ':m' => $messageId]);
+    $rows = $r->fetchAll(PDO::FETCH_ASSOC) ?: [];
+} catch (PDOException $e) {
+    failJson('db_query_error', 'resolve_message', $messageId, 2, $e);
+}
 $targetNames = array_values(array_filter(array_map(fn($x)=>(string)($x['original_filename']??''), $rows)));
 
 $uidHints = [];
@@ -165,7 +193,8 @@ try {
     if ($verboseSafe) { $resp['verbose_safe'] = $verbose; }
     echo json_encode($resp, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).PHP_EOL;
     $client->disconnect();
+} catch (PDOException $e) {
+    failJson('db_query_error', 'search_imap', $messageId, 2, $e);
 } catch (Throwable $e) {
-    echo json_encode(['ok'=>false,'message_id'=>$messageId,'error'=>'imap_message_not_found','verbose_safe'=>$verbose], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).PHP_EOL;
-    exit(2);
+    failJson('imap_message_not_found', 'search_imap', $messageId);
 }

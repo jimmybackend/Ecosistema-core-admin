@@ -4,7 +4,8 @@
   "type": "project",
   "require": {
     "php": "^8.3",
-    "webklex/php-imap": "^6.2"
+    "webklex/php-imap": "^6.2",
+    "aws/aws-sdk-php": "^3.325"
   },
   "autoload": {
     "psr-4": {

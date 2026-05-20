@@ -14,7 +14,7 @@ final readonly class CloudFileRepository
 
     public function listByUser(int $tenantId, int $userId, int $limit = 100, ?string $status = null): array
     {
-        $sql = 'SELECT id, original_name, extension, mime_type, size_bytes, status, virus_scan_status, access_type, found_in_s3, uploaded_at FROM cloud_files WHERE tenant_id = :tenant_id AND user_id = :user_id';
+        $sql = 'SELECT id, original_name, extension, mime_type, size_bytes, status, virus_scan_status, access_type, found_in_s3, uploaded_at, s3_key FROM cloud_files WHERE tenant_id = :tenant_id AND user_id = :user_id';
         if ($status !== null && $status !== '') {
             $sql .= ' AND status = :status';
         } else {

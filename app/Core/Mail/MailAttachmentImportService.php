@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Core\Mail;
 
 use App\Core\Cloud\CloudDriveRepository;
+use App\Core\Cloud\CloudPath;
 use App\Core\Cloud\CloudS3Service;
 use App\Support\SecretBox;
 use DateTimeImmutable;
@@ -28,7 +29,7 @@ final class MailAttachmentImportService
         $bucketId = (int) (($drive->findOrCreateDefaultBucket($tenantId)['id'] ?? 0));
         if ($bucketId <= 0) { return ['ok' => false, 'error' => 'No se pudo resolver bucket Cloud.']; }
         $items = $this->loadPending($tenantId, $userId, $messageId, $limit);
-        $counts = ['pending' => count($items), 'imported' => 0, 'failed' => 0, 'imap_pending' => 0];
+        $counts = ['pending' => count($items), 'imported' => 0, 'failed' => 0, 'skipped' => 0];
         foreach ($items as $row) {
             $id = (int) $row['id'];
             try {
@@ -42,22 +43,20 @@ final class MailAttachmentImportService
                     if (preg_match('/^(\d+)\:(.+)$/', $legacy, $m)) { $uid = (int) $m[1]; $part = trim($m[2]); }
                 }
                 if ($uid <= 0 || $part === '') {
-                    $this->markFailed($id, 'pending_imap_retrieval', 'Falta metadata IMAP para recuperar binario.');
-                    $counts['imap_pending']++;
+                    $this->markStatus($id, 'pending', 'Falta metadata IMAP para recuperar binario.');
                     continue;
                 }
 
                 $binary = $this->fetchAttachmentBinary($tenantId, (int) $row['mailbox_id'], $folder, $uid, $part);
                 if ($binary === null) {
-                    $this->markFailed($id, 'pending_imap_retrieval', 'Adjunto aún no disponible desde IMAP.');
-                    $counts['imap_pending']++;
+                    $this->markStatus($id, 'pending', 'Adjunto aún no disponible desde IMAP.');
                     continue;
                 }
 
                 $filename = (string) ($row['original_filename'] ?: ('attachment-' . $id));
                 $safe = preg_replace('/[^A-Za-z0-9._-]/', '_', $filename) ?: ('attachment-' . $id);
                 $dt = new DateTimeImmutable();
-                $key = sprintf('users/%d/mail/inbound/attachments/%s/%s/%d/%s', $userId, $dt->format('Y'), $dt->format('m'), $messageId, $safe);
+                $key = CloudPath::buildInboundAttachmentKey($userId, $messageId, $safe, $dt);
                 $tmp = tempnam(sys_get_temp_dir(), 'mail_att_');
                 if (!is_string($tmp)) { throw new \RuntimeException('tmp_unavailable'); }
                 file_put_contents($tmp, $binary);
@@ -66,7 +65,7 @@ final class MailAttachmentImportService
                 @unlink($tmp);
                 if (($put['ok'] ?? false) !== true) { throw new \RuntimeException((string) ($put['message'] ?? 'cloud_upload_error')); }
 
-                $cloudId = $this->insertCloudFile($tenantId, $userId, $bucketId, $key, $filename, $mime, strlen($binary), $messageId);
+                $cloudId = $this->insertCloudFile($tenantId, $userId, $bucketId, $key, $filename, $mime, strlen($binary), $id);
                 $this->insertMailAttachment($tenantId, $messageId, $cloudId, $filename, $mime, strlen($binary));
                 $this->markImported($id, $cloudId);
                 $counts['imported']++;
@@ -79,7 +78,7 @@ final class MailAttachmentImportService
     }
 
     private function loadPending(int $tenantId, int $userId, int $messageId, int $limit): array {
-        $stmt = $this->pdo->prepare('SELECT ea.*, m.mailbox_id FROM mail_external_attachments ea INNER JOIN mail_messages m ON m.id=ea.message_id AND m.tenant_id=ea.tenant_id WHERE ea.tenant_id=:tenant_id AND m.user_id=:user_id AND ea.message_id=:message_id AND ea.cloud_file_id IS NULL AND ea.import_status IN ("pending","failed","pending_imap_retrieval") ORDER BY ea.id ASC LIMIT :lim');
+        $stmt = $this->pdo->prepare('SELECT ea.*, m.mailbox_id FROM mail_external_attachments ea INNER JOIN mail_messages m ON m.id=ea.message_id AND m.tenant_id=ea.tenant_id WHERE ea.tenant_id=:tenant_id AND m.user_id=:user_id AND ea.message_id=:message_id AND ea.cloud_file_id IS NULL AND ea.import_status IN ("pending","failed") ORDER BY ea.id ASC LIMIT :lim');
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT); $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT); $stmt->bindValue(':message_id', $messageId, PDO::PARAM_INT); $stmt->bindValue(':lim', $limit, PDO::PARAM_INT); $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
@@ -107,15 +106,16 @@ final class MailAttachmentImportService
     }
     private function insertCloudFile(int $tenantId,int $userId,int $bucketId,string $key,string $name,string $mime,int $size,int $messageId): int {
         $ext = pathinfo($name, PATHINFO_EXTENSION);
-        $stmt = $this->pdo->prepare('INSERT INTO cloud_files (tenant_id,user_id,bucket_id,original_name,stored_name,s3_key,mime_type,extension,size_bytes,status,access_type,encrypted,found_in_s3,origin_module,origin_table,origin_id,uploaded_by_user_id,uploaded_at,updated_at) VALUES (:tenant_id,:user_id,:bucket_id,:original_name,:stored_name,:s3_key,:mime_type,:extension,:size_bytes,"active","private",1,1,"mail","mail_messages",:origin_id,:uploaded_by_user_id,NOW(),NOW())');
+        $stmt = $this->pdo->prepare('INSERT INTO cloud_files (tenant_id,user_id,bucket_id,original_name,stored_name,s3_key,mime_type,extension,size_bytes,status,access_type,encrypted,found_in_s3,origin_module,origin_table,origin_id,uploaded_by_user_id,uploaded_at,updated_at) VALUES (:tenant_id,:user_id,:bucket_id,:original_name,:stored_name,:s3_key,:mime_type,:extension,:size_bytes,"active","private",1,1,"mail","mail_external_attachments",:origin_id,:uploaded_by_user_id,NOW(),NOW())');
         $stmt->execute([':tenant_id'=>$tenantId,':user_id'=>$userId,':bucket_id'=>$bucketId,':original_name'=>$name,':stored_name'=>basename($key),':s3_key'=>$key,':mime_type'=>$mime,':extension'=>$ext !== '' ? mb_strtolower($ext) : null,':size_bytes'=>$size,':origin_id'=>$messageId,':uploaded_by_user_id'=>$userId]);
         return (int) $this->pdo->lastInsertId();
     }
     private function insertMailAttachment(int $tenantId,int $messageId,int $cloudFileId,string $name,string $mime,int $size): void {
-        $stmt = $this->pdo->prepare('INSERT INTO mail_attachments (tenant_id,message_id,cloud_file_id,filename,mime_type,size_bytes,created_at) VALUES (:tenant_id,:message_id,:cloud_file_id,:filename,:mime_type,:size_bytes,NOW())');
+        $stmt = $this->pdo->prepare('INSERT INTO mail_attachments (tenant_id,message_id,cloud_file_id,original_filename,mime_type,size_bytes,created_at) VALUES (:tenant_id,:message_id,:cloud_file_id,:filename,:mime_type,:size_bytes,NOW())');
         $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':cloud_file_id'=>$cloudFileId,':filename'=>$name,':mime_type'=>$mime,':size_bytes'=>$size]);
     }
     private function markImported(int $id, int $cloudFileId): void { $s=$this->pdo->prepare('UPDATE mail_external_attachments SET cloud_file_id=:cloud_file_id, import_status="imported", imported_at=NOW(), error_message=NULL WHERE id=:id'); $s->execute([':cloud_file_id'=>$cloudFileId,':id'=>$id]); }
-    private function markFailed(int $id, string $status, string $error): void { $s=$this->pdo->prepare('UPDATE mail_external_attachments SET import_status=:status, error_message=:error WHERE id=:id'); $s->execute([':status'=>$status,':error'=>$this->sanitize($error),':id'=>$id]); }
+    private function markFailed(int $id, string $status, string $error): void { $this->markStatus($id, $status, $error); }
+    private function markStatus(int $id, string $status, string $error): void { $s=$this->pdo->prepare('UPDATE mail_external_attachments SET import_status=:status, error_message=:error WHERE id=:id'); $s->execute([':status'=>$status,':error'=>$this->sanitize($error),':id'=>$id]); }
     private function sanitize(string $text): string { $t = preg_replace('/\s+/', ' ', $text) ?? 'error'; $t = preg_replace('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', '[redacted]', $t) ?? $t; return mb_substr(trim($t), 0, 180); }
 }

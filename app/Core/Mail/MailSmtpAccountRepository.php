@@ -28,6 +28,38 @@ final readonly class MailSmtpAccountRepository
         return is_array($row) ? $row : null;
     }
 
+    public function findActiveForUser(int $tenantId, int $userId, ?int $accountId = null): ?array
+    {
+        $sql = 'SELECT s.id AS account_id, s.mailbox_id, m.full_address AS mailbox_address, s.host_in, s.port_in, s.ssl_in, s.email_address, s.last_error
+                FROM mail_smtp_accounts s
+                INNER JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id
+                WHERE s.tenant_id = :tenant_id
+                  AND s.status = :account_status
+                  AND m.status = :mailbox_status
+                  AND (s.created_by_user_id = :user_id_created_by OR s.available_to_everyone = 1 OR m.user_id = :user_id_mailbox OR m.available_to_everyone = 1)';
+
+        $params = [
+            ':tenant_id' => $tenantId,
+            ':account_status' => 'active',
+            ':mailbox_status' => 'active',
+            ':user_id_created_by' => $userId,
+            ':user_id_mailbox' => $userId,
+        ];
+
+        if (($accountId ?? 0) > 0) {
+            $sql .= ' AND s.id = :account_id ORDER BY s.id ASC LIMIT 1';
+            $params[':account_id'] = (int) $accountId;
+        } else {
+            $sql .= ' ORDER BY CASE WHEN s.created_by_user_id = :user_id_sort THEN 0 ELSE 1 END ASC, s.id ASC LIMIT 1';
+            $params[':user_id_sort'] = $userId;
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return is_array($row) ? $row : null;
+    }
+
     public function listForUser(int $tenantId, int $userId): array
     {
         $stmt = $this->pdo->prepare("SELECT s.id, s.name, s.email_address, s.host_in, s.port_in, s.ssl_in, s.host_out, s.port_out, s.ssl_out, s.username, s.status, s.last_error, s.mailbox_id, s.max_daily_email, s.enable_limit, s.available_to_everyone, CASE WHEN TRIM(COALESCE(s.password_encrypted, '')) = '' THEN 'no' ELSE 'yes' END AS password_encrypted_present, m.full_address AS mailbox_full_address FROM mail_smtp_accounts s LEFT JOIN mail_mailboxes m ON m.id = s.mailbox_id AND m.tenant_id = s.tenant_id WHERE s.tenant_id = :tenant_id_account AND (m.user_id = :user_id_mailbox OR m.available_to_everyone = 1 OR s.created_by_user_id = :user_id_created_by OR s.available_to_everyone = 1) ORDER BY s.id DESC LIMIT 100");

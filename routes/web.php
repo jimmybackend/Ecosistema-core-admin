@@ -740,16 +740,25 @@ return [
             $pdo = PdoFactory::make($config['database']);
             $messageRepo = new MailMessageRepository($pdo);
             $smtpRepo = new MailSmtpAccountRepository($pdo);
-            if ($selectedAccountId > 0) {
-                $selected = $smtpRepo->findForUser($tenantId, $userId, $selectedAccountId);
+            $selected = $smtpRepo->findActiveForUser($tenantId, $userId, $selectedAccountId > 0 ? $selectedAccountId : null);
+            if ($selectedAccountId > 0 && !is_array($selected)) {
+                $errorMessage = 'La cuenta IMAP seleccionada no está activa o no está autorizada.';
+            }
+            if (!is_array($selected)) {
+                $selected = $smtpRepo->findActiveForUser($tenantId, $userId, null);
+            }
+            if (is_array($selected)) {
+                $selectedAccountId = (int)($selected['account_id'] ?? $selectedAccountId);
                 $mailboxId = (int)($selected['mailbox_id'] ?? 0);
+                if ($mailboxId > 0) {
+                    $messages = $messageRepo->listMessagesForMailbox($tenantId, $userId, $mailboxId, 100);
+                }
+            } else {
+                $selectedAccountId = 0;
+                $mailboxId = 0;
+                $messages = [];
+                $errorMessage = $errorMessage ?? 'No hay cuenta IMAP activa configurada.';
             }
-            if ($mailboxId <= 0) {
-                $fallback = $smtpRepo->findActiveForUser($tenantId, $userId);
-                $selectedAccountId = (int)($fallback['id'] ?? $selectedAccountId);
-                $mailboxId = (int)($fallback['mailbox_id'] ?? 0);
-            }
-            $messages = $messageRepo->listMessagesForMailbox($tenantId, $userId, $mailboxId, 100);
             $smtpAccounts = $smtpRepo->listForImapSyncForUser($tenantId, $userId);
         } catch (\Throwable $e) {
             $safe = (string)preg_replace('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', '[redacted-email]', trim((string)$e->getMessage()));

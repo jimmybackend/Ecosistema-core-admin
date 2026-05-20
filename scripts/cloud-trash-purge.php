@@ -1,0 +1,9 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+use App\Core\Cloud\CloudPath;use App\Core\Database\PdoFactory;use Aws\S3\S3Client;
+$root=dirname(__DIR__);require_once $root.'/vendor/autoload.php';$app=require $root.'/bootstrap/app.php';$config=(array)($app['config']??[]);
+$o=getopt('', ['tenant:','user:','dry-run','apply']);$tenant=(int)($o['tenant']??0);$user=(int)($o['user']??0);$apply=array_key_exists('apply',$o);
+$pdo=PdoFactory::make((array)($config['database']??[]));$s3cfg=(array)(($config['cloud']??[])['s3']??[]);$bucket=(string)($s3cfg['bucket']??'');$s3=new S3Client(['version'=>'latest','region'=>(string)($s3cfg['region']??'us-east-1'),'credentials'=>['key'=>(string)($s3cfg['access_key_id']??''),'secret'=>(string)($s3cfg['secret_access_key']??'')]]);
+$stmt=$pdo->prepare('SELECT id,s3_key,status,deleted_at FROM cloud_files WHERE tenant_id=:t AND user_id=:u AND status=:s AND deleted_at <= (NOW() - INTERVAL 15 DAY)');$stmt->execute([':t'=>$tenant,':u'=>$user,':s'=>'deleted']);$rows=$stmt->fetchAll(PDO::FETCH_ASSOC)?:[];
+foreach($rows as $r){$key=(string)$r['s3_key'];$scope=CloudPath::keyScope($user,$key);$trashOk=str_starts_with($key,CloudPath::normalizeRootPrefix($user).'trash/');echo json_encode(['file_id'=>(int)$r['id'],'key_scope'=>$trashOk? 'trash_ok':$scope,'apply'=>$apply],JSON_UNESCAPED_UNICODE).PHP_EOL; if(!$apply||!$trashOk){continue;} $s3->deleteObject(['Bucket'=>$bucket,'Key'=>$key]);$pdo->prepare('UPDATE cloud_files SET found_in_s3=0, updated_at=NOW() WHERE id=:id AND tenant_id=:t AND user_id=:u')->execute([':id'=>(int)$r['id'],':t'=>$tenant,':u'=>$user]);$pdo->prepare('INSERT INTO cloud_file_access_logs (tenant_id,file_id,user_id,action,metadata_json,created_at) VALUES (:t,:f,:u,:a,:m,NOW())')->execute([':t'=>$tenant,':f'=>(int)$r['id'],':u'=>$user,':a'=>'delete',':m'=>json_encode(['reason'=>'trash_purge_15d'])]);}

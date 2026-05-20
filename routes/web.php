@@ -2672,11 +2672,11 @@ return [
     'GET /cloud' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.view')) { return; }
-        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
-        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null; $statusFilter=isset($_GET['status'])?(string)$_GET['status']:null;
+        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId,$statusFilter==='deleted'?'deleted':null);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
         $s3 = new CloudS3Service($config);
         $downloadsEnabled = (bool)($config['cloud']['allow_downloads'] ?? false) && (bool)($config['cloud']['s3_enabled'] ?? false) && (bool)($config['cloud']['controlled_live_tests'] ?? false) && (($s3->checkBucket()['ok'] ?? false) === true);
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage','downloadsEnabled')]);
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage','downloadsEnabled','statusFilter')]);
     },
     'GET /cloud/drive' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
@@ -3478,8 +3478,24 @@ return [
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
         $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
-        try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $message=$service->trashFile($tenantId,$userId,$id);}catch(\Throwable){$message='Archivo no encontrado.';}
+        try{$pdo=PdoFactory::make($config['database']); $repo=new CloudFileRepository($pdo); $f=$repo->findDownloadableByIdForUser($tenantId,$userId,$id); if(!is_array($f)||($f['status']??'')!=='active'){throw new \RuntimeException();} $old=(string)($f['s3_key']??''); $new='users/'.$userId.'/trash/'.gmdate('Y').'/'.gmdate('m').'/'.(string)($f['stored_name']??''); $s3=new \App\Core\Cloud\CloudS3Service($config); $copied=$s3->copyObject($old,$new); if(($copied['ok']??false)!==true){throw new \RuntimeException();} $repo->updateAfterMove($tenantId,$userId,$id,$new,'deleted',gmdate('Y-m-d H:i:s')); $pdo->prepare('INSERT INTO cloud_file_access_logs (tenant_id,file_id,user_id,action,metadata_json,created_at) VALUES (:t,:f,:u,:a,:m,NOW())')->execute([':t'=>$tenantId,':f'=>$id,':u'=>$userId,':a'=>'delete',':m'=>json_encode(['flow'=>'trash'])]); $message='Archivo enviado a papelera.';}catch(\Throwable){$message='Archivo no encontrado.';}
         header('Location: /cloud?'.(($message==='Archivo enviado a papelera.')?'ok=':'error=').urlencode($message));
+    },
+    'POST /cloud/files/{id}/restore' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $repo=new CloudFileRepository($pdo); $f=$repo->findDownloadableByIdForUser($tenantId,$userId,$id); if(!is_array($f)||($f['status']??'')!=='deleted'){throw new \RuntimeException();} $old=(string)($f['s3_key']??''); $new='users/'.$userId.'/uploads/'.gmdate('Y').'/'.gmdate('m').'/'.(string)($f['stored_name']??''); $s3=new \App\Core\Cloud\CloudS3Service($config); $copied=$s3->copyObject($old,$new); if(($copied['ok']??false)!==true){throw new \RuntimeException();} $repo->updateAfterMove($tenantId,$userId,$id,$new,'active',null); $pdo->prepare('INSERT INTO cloud_file_access_logs (tenant_id,file_id,user_id,action,metadata_json,created_at) VALUES (:t,:f,:u,:a,:m,NOW())')->execute([':t'=>$tenantId,':f'=>$id,':u'=>$userId,':a'=>'restore',':m'=>json_encode(['flow'=>'restore'])]); $message='Archivo restaurado.';}catch(\Throwable){$message='Archivo no encontrado.';}
+        header('Location: /cloud?'.(($message==='Archivo restaurado.')?'ok=':'error=').urlencode($message));
+    },
+    'POST /cloud/files/{id}/purge' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'cloud.manage')) { return; }
+        $csrfToken=$_POST['_csrf']??null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0);
+        try{$pdo=PdoFactory::make($config['database']); $repo=new CloudFileRepository($pdo); $f=$repo->findDownloadableByIdForUser($tenantId,$userId,$id); if(!is_array($f)||($f['status']??'')!=='deleted'){throw new \RuntimeException();} $s3Key=(string)($f['s3_key']??''); if(!str_starts_with($s3Key,'users/'.$userId.'/trash/')){throw new \RuntimeException();} (new \App\Core\Cloud\CloudS3Service($config))->deleteObject($s3Key); $repo->markPurged($tenantId,$userId,$id); $pdo->prepare('INSERT INTO cloud_file_access_logs (tenant_id,file_id,user_id,action,metadata_json,created_at) VALUES (:t,:f,:u,:a,:m,NOW())')->execute([':t'=>$tenantId,':f'=>$id,':u'=>$userId,':a'=>'delete',':m'=>json_encode(['flow'=>'purge'])]); $message='Archivo eliminado definitivamente.';}catch(\Throwable){$message='Archivo no encontrado.';}
+        header('Location: /cloud?'.(($message==='Archivo eliminado definitivamente.')?'ok=':'error=').urlencode($message));
     },
     'GET /cloud/folders' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }

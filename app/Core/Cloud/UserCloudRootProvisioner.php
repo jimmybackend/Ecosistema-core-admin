@@ -90,13 +90,21 @@ final readonly class UserCloudRootProvisioner
     {
         return [
             ['name' => 'uploads', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'uploads'), 'folder_type' => 'custom', 'parent_prefix' => null],
+            ['name' => 'trash', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'trash'), 'folder_type' => 'custom', 'parent_prefix' => null],
             ['name' => 'mail', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail'), 'folder_type' => 'mail', 'parent_prefix' => null],
             ['name' => 'inbound', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'inbound'), 'folder_type' => 'mail', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail')],
             ['name' => 'attachments', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'inbound', 'attachments'), 'folder_type' => 'mail', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'inbound')],
             ['name' => 'outbound', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'outbound'), 'folder_type' => 'mail', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail')],
             ['name' => 'attachments', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'outbound', 'attachments'), 'folder_type' => 'mail', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'outbound')],
+            ['name' => 'drafts', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'drafts'), 'folder_type' => 'mail', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail')],
+            ['name' => 'attachments', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'drafts', 'attachments'), 'folder_type' => 'mail', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'drafts')],
+            ['name' => 'temp', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail', 'temp'), 'folder_type' => 'mail', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'mail')],
             ['name' => 'products', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'products'), 'folder_type' => 'custom', 'parent_prefix' => null],
+            ['name' => 'images', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'products', 'images'), 'folder_type' => 'custom', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'products')],
+            ['name' => 'videos', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'products', 'videos'), 'folder_type' => 'custom', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'products')],
+            ['name' => 'documents', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'products', 'documents'), 'folder_type' => 'custom', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'products')],
             ['name' => 'campaigns', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'campaigns'), 'folder_type' => 'custom', 'parent_prefix' => null],
+            ['name' => 'assets', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'campaigns', 'assets'), 'folder_type' => 'custom', 'parent_prefix' => CloudPath::joinS3Prefix($rootPrefix, 'campaigns')],
             ['name' => 'generated', 'prefix' => CloudPath::joinS3Prefix($rootPrefix, 'generated'), 'folder_type' => 'custom', 'parent_prefix' => null],
         ];
     }

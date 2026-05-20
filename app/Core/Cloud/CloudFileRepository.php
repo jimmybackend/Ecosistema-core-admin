@@ -12,12 +12,19 @@ final readonly class CloudFileRepository
     {
     }
 
-    public function listByUser(int $tenantId, int $userId, int $limit = 100): array
+    public function listByUser(int $tenantId, int $userId, int $limit = 100, ?string $status = null): array
     {
-        $stmt = $this->pdo->prepare('SELECT id, original_name, extension, mime_type, size_bytes, status, virus_scan_status, access_type, found_in_s3, uploaded_at FROM cloud_files WHERE tenant_id = :tenant_id AND user_id = :user_id AND status <> :status_deleted ORDER BY uploaded_at DESC, id DESC LIMIT :limit');
+        $sql = 'SELECT id, original_name, extension, mime_type, size_bytes, status, virus_scan_status, access_type, found_in_s3, uploaded_at FROM cloud_files WHERE tenant_id = :tenant_id AND user_id = :user_id';
+        if ($status !== null && $status !== '') {
+            $sql .= ' AND status = :status';
+        } else {
+            $sql .= ' AND status <> :status_deleted';
+        }
+        $sql .= ' ORDER BY uploaded_at DESC, id DESC LIMIT :limit';
+        $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':tenant_id', $tenantId, PDO::PARAM_INT);
         $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
-        $stmt->bindValue(':status_deleted', 'deleted');
+        if ($status !== null && $status !== '') { $stmt->bindValue(':status', $status); } else { $stmt->bindValue(':status_deleted', 'deleted'); }
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
 
@@ -54,6 +61,16 @@ final readonly class CloudFileRepository
         $stmt = $this->pdo->prepare('UPDATE cloud_files SET status = :status, deleted_at = NOW(), updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id');
 
         return $stmt->execute([':status' => 'deleted', ':id' => $id, ':tenant_id' => $tenantId, ':user_id' => $userId]) && $stmt->rowCount() > 0;
+    }
+    public function updateAfterMove(int $tenantId, int $userId, int $id, string $s3Key, string $status, ?string $deletedAt): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE cloud_files SET s3_key = :s3_key, status = :status, deleted_at = :deleted_at, found_in_s3 = 1, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id');
+        return $stmt->execute([':s3_key' => $s3Key, ':status' => $status, ':deleted_at' => $deletedAt, ':id' => $id, ':tenant_id' => $tenantId, ':user_id' => $userId]) && $stmt->rowCount() > 0;
+    }
+    public function markPurged(int $tenantId, int $userId, int $id): bool
+    {
+        $stmt = $this->pdo->prepare('UPDATE cloud_files SET found_in_s3 = 0, updated_at = NOW() WHERE id = :id AND tenant_id = :tenant_id AND user_id = :user_id AND status = :status');
+        return $stmt->execute([':id' => $id, ':tenant_id' => $tenantId, ':user_id' => $userId, ':status' => 'deleted']) && $stmt->rowCount() > 0;
     }
 
     public function createUploaded(array $data): int

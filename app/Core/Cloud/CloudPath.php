@@ -49,6 +49,7 @@ final class CloudPath
         if (!str_starts_with($key, 'users/')) return 'root_bucket';
         if (!str_starts_with($key, $root)) return 'outside_user_root';
         if (str_starts_with($key, $root . $userId . '/')) return 'duplicated_user_segment';
+        if (str_starts_with($key, $root . 'trash/')) return 'trash_ok';
         return 'ok';
     }
 
@@ -56,6 +57,6 @@ final class CloudPath
     {
         if (str_contains($key, '..') || str_contains($key, '//') || preg_match('/[\x00-\x1F\x7F]/', $key) === 1) throw new InvalidArgumentException('s3_key inválida por política de seguridad.');
         $scope = self::keyScope($userId, $key);
-        if ($scope !== 'ok') throw new InvalidArgumentException('s3_key fuera de alcance permitido: ' . $scope);
+        if ($scope !== 'ok' && $scope !== 'trash_ok') throw new InvalidArgumentException('s3_key fuera de alcance permitido: ' . $scope);
     }
 }

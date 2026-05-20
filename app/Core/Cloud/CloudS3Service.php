@@ -57,6 +57,20 @@ final class CloudS3Service
             return ['ok' => false, 'error_type' => 'cloud_download_error', 'message' => $this->sanitize($e->getMessage())];
         }
     }
+    public function copyObject(string $sourceKey, string $targetKey): array
+    {
+        try {
+            $this->client()->copyObject(['Bucket' => $this->bucket(), 'CopySource' => $this->bucket() . '/' . $sourceKey, 'Key' => $targetKey, 'ServerSideEncryption' => 'AES256']);
+            return ['ok' => true];
+        } catch (Throwable $e) {
+            return ['ok' => false, 'error_type' => 'cloud_copy_error', 'message' => $this->sanitize($e->getMessage())];
+        }
+    }
+    public function deleteObject(string $key): array
+    {
+        try { $this->client()->deleteObject(['Bucket' => $this->bucket(), 'Key' => $key]); return ['ok' => true]; }
+        catch (Throwable $e) { return ['ok' => false, 'error_type' => 'cloud_delete_error', 'message' => $this->sanitize($e->getMessage())]; }
+    }
 
     private function client(): S3Client
     {

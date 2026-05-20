@@ -6,6 +6,7 @@ use App\Support\Env;
 
 return [
     'name' => Env::get('APP_NAME', 'Ecosistema Core Admin'),
+    'key' => Env::get('APP_KEY', ''),
     'env' => Env::get('APP_ENV', 'local'),
     'debug' => filter_var(Env::get('APP_DEBUG', true), FILTER_VALIDATE_BOOL),
     'url' => Env::get('APP_URL', 'http://127.0.0.1:8000'),

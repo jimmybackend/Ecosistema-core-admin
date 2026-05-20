@@ -119,9 +119,17 @@ final class MailAttachmentImportService
         if ($host === '' || $port <= 0 || $username === '' || $encrypted === '' || !in_array($encryptionRaw, ['ssl', 'tls', 'none', ''], true)) {
             throw new \RuntimeException('mail_account_config_error');
         }
-        $pwd = (string) $this->secretBox->decrypt($encrypted);
+        try {
+            $pwd = (string) $this->secretBox->decrypt($encrypted);
+        } catch (Throwable $e) {
+            $message = mb_strtolower(trim($e->getMessage()));
+            if (str_contains($message, 'app_key')) {
+                throw new \RuntimeException('config_error: APP_KEY missing from runtime config');
+            }
+            throw new \RuntimeException('decrypt_failed');
+        }
         if (trim($pwd) === '') {
-            throw new \RuntimeException('mail_account_config_error');
+            throw new \RuntimeException('decrypt_failed');
         }
         $client = (new ClientManager(['options' => ['fetch' => 2]]))->make(['host'=>$host,'port'=>$port,'encryption'=>$encryption,'validate_cert'=>true,'username'=>$username,'password'=>$pwd,'protocol'=>'imap']);
         $client->connect();
@@ -183,6 +191,13 @@ final class MailAttachmentImportService
         $decoded = json_decode($e->getMessage(), true);
         if (is_array($decoded) && (($decoded['reason'] ?? '') === 'cloud_validation_error')) {
             return 'cloud_validation_error';
+        }
+        $raw = mb_strtolower(trim($e->getMessage()));
+        if (str_contains($raw, 'app_key missing from runtime config') || str_contains($raw, 'config_error')) {
+            return 'config_error: APP_KEY missing from runtime config';
+        }
+        if (str_contains($raw, 'decrypt_failed') || str_contains($raw, 'descifrar secreto')) {
+            return 'decrypt_failed';
         }
 
         return $this->sanitize($e->getMessage());

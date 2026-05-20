@@ -39,9 +39,9 @@ final class SecretBox
 
     private function key(): string
     {
-        $appKey = trim((string) ($_ENV['APP_KEY'] ?? ''));
+        $appKey = trim((string) Env::get('APP_KEY', ''));
         if ($appKey === '') {
-            throw new \RuntimeException('APP_KEY no configurado.');
+            throw new \RuntimeException('APP_KEY missing from runtime config');
         }
         if (str_starts_with($appKey, 'base64:')) {
             $decoded = base64_decode(substr($appKey, 7), true);

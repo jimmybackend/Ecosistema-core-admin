@@ -2674,7 +2674,9 @@ return [
         if (!requirePermission($config, 'cloud.view')) { return; }
         $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage')]);
+        $s3 = new CloudS3Service($config);
+        $downloadsEnabled = (bool)($config['cloud']['allow_downloads'] ?? false) && (bool)($config['cloud']['s3_enabled'] ?? false) && (($s3->checkBucket()['ok'] ?? false) === true);
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage','downloadsEnabled')]);
     },
     'GET /cloud/drive' => static function (array $config): void {
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
@@ -3424,14 +3426,29 @@ return [
             }
             $file = (array)($result['file'] ?? []);
             $downloadName = (string)($file['original_name'] ?? 'archivo');
+            $downloadBody = null;
+            $downloadLength = null;
+            if ((int)($file['found_in_s3'] ?? 0) === 1) {
+                $obj = (new CloudS3Service($config))->getObject((string)($file['s3_key'] ?? ''));
+                if (!(bool)($obj['ok'] ?? false)) {
+                    http_response_code(404);
+                    header('Content-Type: text/html; charset=UTF-8');
+                    View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>['files'=>[],'statusMessage'=>null,'errorMessage'=>'No se pudo descargar desde S3.']]);
+                    return;
+                }
+                $downloadBody = (string)($obj['body'] ?? '');
+                $downloadLength = strlen($downloadBody);
+            }
             header('Content-Description: File Transfer');
             header('Content-Type: ' . (string)($file['mime_type'] ?? 'application/octet-stream'));
             header('Content-Disposition: attachment; filename="' . str_replace('"', '', $downloadName) . '"');
-            header('Content-Length: ' . (string) filesize((string) $result['path']));
+            header('Content-Length: ' . (string) ($downloadLength ?? filesize((string) $result['path'])));
             header('X-Content-Type-Options: nosniff');
             header('Cache-Control: private, no-store, no-cache, must-revalidate');
+            $stmt = $pdo->prepare('INSERT INTO cloud_file_access_logs (tenant_id, file_id, user_id, action, metadata_json, created_at) VALUES (:tenant_id,:file_id,:user_id,:action,:metadata_json,NOW())');
+            $stmt->execute([':tenant_id'=>$tenantId, ':file_id'=>(int)($file['id'] ?? 0), ':user_id'=>$userId, ':action'=>'download', ':metadata_json'=>json_encode(['source'=>'cloud'], JSON_UNESCAPED_UNICODE)]);
             auditLog($pdo,['action'=>'cloud.file_downloaded','entity_type'=>'cloud_files','entity_id'=>(int)($file['id'] ?? 0),'new_values'=>['status'=>(string)($file['status'] ?? 'active')]]);
-            readfile((string) $result['path']);
+            if ($downloadBody !== null) { echo $downloadBody; } else { readfile((string) $result['path']); }
             exit;
         } catch (\Throwable) {
             renderError($config, 404);

@@ -27,8 +27,8 @@ final readonly class CloudDownloadService
             return ['ok' => false, 'code' => 403, 'message' => 'El archivo no está disponible para descarga.'];
         }
 
-        if ((int) ($file['found_in_s3'] ?? 0) === 1) {
-            return ['ok' => false, 'code' => 403, 'message' => 'Descarga no disponible en este almacenamiento.'];
+        if (!((bool) ($cloud['s3_enabled'] ?? false))) {
+            return ['ok' => false, 'code' => 403, 'message' => 'S3 deshabilitado por configuración.'];
         }
 
         $basePath = $this->buildBasePath((string) ($cloud['local_storage_path'] ?? 'storage/app/cloud'));
@@ -64,6 +64,8 @@ final readonly class CloudDownloadService
                 'original_name' => $safeName,
                 'mime_type' => $mime,
                 'status' => $status,
+                'found_in_s3' => (int) ($file['found_in_s3'] ?? 0),
+                's3_key' => (string) ($file['s3_key'] ?? ''),
             ],
         ];
     }

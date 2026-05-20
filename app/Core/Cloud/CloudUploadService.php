@@ -47,15 +47,16 @@ final readonly class CloudUploadService
             return ['ok' => false, 'message' => 'La extensión del archivo no está permitida.'];
         }
 
-        $internalName = bin2hex(random_bytes(16)) . ($extension !== '' ? ('.' . $extension) : '');
+        $internalName = 'users/' . $userId . '/' . bin2hex(random_bytes(16)) . ($extension !== '' ? ('.' . $extension) : '');
         $mimeType = (string) ($fileInput['type'] ?? 'application/octet-stream');
+        $sourcePath = (string) ($fileInput['tmp_name'] ?? '');
+        $checksum = $this->computeChecksum($sourcePath);
 
         $store = $this->storage->storeUploadedFile($fileInput, $internalName);
         if (!($store['ok'] ?? false)) {
             return ['ok' => false, 'message' => (string) ($store['message'] ?? 'No se pudo almacenar el archivo.')];
         }
 
-        $checksum = hash_file('sha256', (string) $this->buildStoredAbsolutePath((string) $store['key']));
         $id = $this->files->createUploaded([
             'tenant_id' => $tenantId,
             'user_id' => $userId,
@@ -83,10 +84,19 @@ final readonly class CloudUploadService
         return $clean !== '' ? $clean : 'archivo';
     }
 
-    private function buildStoredAbsolutePath(string $key): string
+    private function computeChecksum(string $path): ?string
     {
-        $cloud = $this->config['cloud'] ?? [];
-        $basePath = trim((string) ($cloud['local_storage_path'] ?? 'storage/app/cloud'), '/');
-        return dirname(__DIR__, 3) . '/' . $basePath . '/' . ltrim($key, '/');
+        if ($path === '' || !is_file($path) || !is_readable($path)) {
+            error_log('[cloud-upload] checksum_sha256 omitted: source file missing or unreadable.');
+            return null;
+        }
+
+        $checksum = hash_file('sha256', $path);
+        if (!is_string($checksum) || $checksum === '') {
+            error_log('[cloud-upload] checksum_sha256 omitted: hash calculation failed.');
+            return null;
+        }
+
+        return $checksum;
     }
 }

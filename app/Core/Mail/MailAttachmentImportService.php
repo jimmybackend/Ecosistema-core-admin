@@ -29,7 +29,7 @@ final class MailAttachmentImportService
         $bucketId = (int) (($drive->findOrCreateDefaultBucket($tenantId)['id'] ?? 0));
         if ($bucketId <= 0) { return ['ok' => false, 'error' => 'No se pudo resolver bucket Cloud.']; }
         $items = $this->loadPending($tenantId, $userId, $messageId, $limit);
-        $counts = ['pending' => count($items), 'imported' => 0, 'failed' => 0, 'skipped' => 0];
+        $counts = ['pending' => count($items), 'imported' => 0, 'failed' => 0, 'skipped' => 0, 'errors' => []];
         foreach ($items as $row) {
             $id = (int) $row['id'];
             try {
@@ -43,13 +43,17 @@ final class MailAttachmentImportService
                     if (preg_match('/^(\d+)\:(.+)$/', $legacy, $m)) { $uid = (int) $m[1]; $part = trim($m[2]); }
                 }
                 if ($uid <= 0 || $part === '') {
-                    $this->markStatus($id, 'pending', 'Falta metadata IMAP para recuperar binario.');
+                    $counts['failed']++;
+                    $this->markStatus($id, 'failed', 'missing_imap_attachment_metadata: imap_folder/imap_uid/imap_part_number not available');
+                    $counts['errors'][] = ['external_attachment_id'=>$id,'reason'=>'missing_imap_attachment_metadata','missing'=>['imap_folder','imap_uid','imap_part_number']];
                     continue;
                 }
 
                 $binary = $this->fetchAttachmentBinary($tenantId, (int) $row['mailbox_id'], $folder, $uid, $part);
                 if ($binary === null) {
-                    $this->markStatus($id, 'pending', 'Adjunto aún no disponible desde IMAP.');
+                    $counts['failed']++;
+                    $this->markStatus($id, 'failed', 'imap_attachment_binary_not_found');
+                    $counts['errors'][] = ['external_attachment_id'=>$id,'reason'=>'imap_attachment_binary_not_found'];
                     continue;
                 }
 
@@ -71,7 +75,9 @@ final class MailAttachmentImportService
                 $counts['imported']++;
             } catch (Throwable $e) {
                 $counts['failed']++;
-                $this->markFailed($id, 'failed', $this->sanitize($e->getMessage()));
+                $reason=$this->sanitize($e->getMessage());
+                $this->markFailed($id, 'failed', $reason);
+                $counts['errors'][] = ['external_attachment_id'=>$id,'reason'=>$reason];
             }
         }
         return ['ok' => true, 'counts' => $counts];
@@ -83,7 +89,7 @@ final class MailAttachmentImportService
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
     private function fetchAttachmentBinary(int $tenantId, int $mailboxId, string $folder, int $uid, string $part): ?string {
-        $acc = $this->pdo->prepare('SELECT * FROM mail_smtp_accounts WHERE tenant_id=:tenant_id AND mailbox_id=:mailbox_id AND is_active=1 ORDER BY id DESC LIMIT 1');
+        $acc = $this->pdo->prepare('SELECT * FROM mail_smtp_accounts WHERE tenant_id=:tenant_id AND mailbox_id=:mailbox_id ORDER BY id DESC LIMIT 1');
         $acc->execute([':tenant_id'=>$tenantId, ':mailbox_id'=>$mailboxId]); $account = $acc->fetch(PDO::FETCH_ASSOC);
         if (!is_array($account)) { throw new \RuntimeException('imap_account_not_found'); }
         $pwd = trim((string) ($account['imap_password'] ?? ''));
@@ -104,10 +110,10 @@ final class MailAttachmentImportService
         $client->disconnect();
         return null;
     }
-    private function insertCloudFile(int $tenantId,int $userId,int $bucketId,string $key,string $name,string $mime,int $size,int $messageId): int {
+    private function insertCloudFile(int $tenantId,int $userId,int $bucketId,string $key,string $name,string $mime,int $size,int $externalAttachmentId): int {
         $ext = pathinfo($name, PATHINFO_EXTENSION);
         $stmt = $this->pdo->prepare('INSERT INTO cloud_files (tenant_id,user_id,bucket_id,original_name,stored_name,s3_key,mime_type,extension,size_bytes,status,access_type,encrypted,found_in_s3,origin_module,origin_table,origin_id,uploaded_by_user_id,uploaded_at,updated_at) VALUES (:tenant_id,:user_id,:bucket_id,:original_name,:stored_name,:s3_key,:mime_type,:extension,:size_bytes,"active","private",1,1,"mail","mail_external_attachments",:origin_id,:uploaded_by_user_id,NOW(),NOW())');
-        $stmt->execute([':tenant_id'=>$tenantId,':user_id'=>$userId,':bucket_id'=>$bucketId,':original_name'=>$name,':stored_name'=>basename($key),':s3_key'=>$key,':mime_type'=>$mime,':extension'=>$ext !== '' ? mb_strtolower($ext) : null,':size_bytes'=>$size,':origin_id'=>$messageId,':uploaded_by_user_id'=>$userId]);
+        $stmt->execute([':tenant_id'=>$tenantId,':user_id'=>$userId,':bucket_id'=>$bucketId,':original_name'=>$name,':stored_name'=>basename($key),':s3_key'=>$key,':mime_type'=>$mime,':extension'=>$ext !== '' ? mb_strtolower($ext) : null,':size_bytes'=>$size,':origin_id'=>$externalAttachmentId,':uploaded_by_user_id'=>$userId]);
         return (int) $this->pdo->lastInsertId();
     }
     private function insertMailAttachment(int $tenantId,int $messageId,int $cloudFileId,string $name,string $mime,int $size): void {

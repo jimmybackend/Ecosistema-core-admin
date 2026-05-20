@@ -57,6 +57,8 @@ use App\Core\Cloud\CloudStorageService;
 use App\Core\Cloud\CloudUploadService;
 use App\Core\Cloud\UserCloudRootProvisioner;
 use App\Core\Cloud\CloudDownloadService;
+use App\Core\Cloud\CloudS3Service;
+use App\Core\Cloud\CloudDriveRepository;
 use App\Core\Cloud\EcosistemaDriveConfig;
 use App\Core\Cloud\EcosistemaDriveAdapter;
 use App\Core\Cloud\EcosistemaDriveFileRepository;
@@ -2658,10 +2660,13 @@ return [
         startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
         if (!requirePermission($config, 'cloud.manage')) { return; }
         $auth = AuthSession::getAuth();
-        $driveConfig = new EcosistemaDriveConfig((array)($config['ecosistema_drive'] ?? []));
-        $adapter = new EcosistemaDriveAdapter($driveConfig);
-        $status = $adapter->getStatus();
-        $capabilities = $adapter->getCapabilities();
+        $tenantId = authTenantId($auth); $userId = authUserId($auth);
+        $pdo = PdoFactory::make($config['database']);
+        (new UserCloudRootProvisioner($pdo, new CloudStorageService($config, class_exists('Aws\S3\S3Client')), $config))->provisionForUser($tenantId,$userId);
+        $s3 = new CloudS3Service($config);
+        $reachable = ($s3->checkBucket()['ok'] ?? false) === true;
+        $status = ['mode' => $reachable ? 'controlled' : 'contract', 'aws_connected'=>$reachable, 'remote_calls'=>$reachable, 'db_writes'=>$reachable, 'remote_uploads'=>$reachable && (bool)($config['cloud']['allow_uploads']??false), 'remote_downloads'=>$reachable && (bool)($config['cloud']['allow_downloads']??false), 'signed_urls'=>false];
+        $capabilities = ['controlled_upload'=>['enabled'=>$status['remote_uploads']],'controlled_download'=>['enabled'=>$status['remote_downloads']]];
         try {
             $pdo = PdoFactory::make($config['database']);
             driveAuditLog($pdo, 'drive.summary.viewed', 'drive_summary', null, '/cloud/drive', 'view');
@@ -3255,10 +3260,16 @@ return [
         }
 
         if ($result !== null && ($result['allowed'] ?? false) === true) {
-            http_response_code(501);
-            header('Content-Type: text/plain; charset=UTF-8');
-            echo 'Descarga controlada aún no implementada en este entorno.';
-            return;
+            $file = (array)($result['file'] ?? []);
+            $s3 = new CloudS3Service($config);
+            $obj = $s3->getObject((string)($file['s3_key'] ?? ''));
+            if (($obj['ok'] ?? false) === true) {
+                header('Content-Type: ' . (string)($file['mime_type'] ?? 'application/octet-stream'));
+                header('Content-Disposition: attachment; filename="' . str_replace('"', '', (string)($file['original_name'] ?? 'file')) . '"');
+                echo (string)$obj['body'];
+                return;
+            }
+            $errorMessage = 'No se pudo descargar desde S3.';
         }
 
         header('Content-Type: text/html; charset=UTF-8');

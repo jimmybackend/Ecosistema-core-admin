@@ -35,17 +35,21 @@ final class MailAttachmentImportService
             try {
                 $meta = json_decode((string) ($row['raw_payload_json'] ?? ''), true);
                 if (!is_array($meta)) { $meta = []; }
-                $folder = trim((string) ($meta['imap_folder'] ?? 'INBOX'));
+                $folder = trim((string) ($meta['imap_folder'] ?? ''));
                 $uid = (int) ($meta['imap_uid'] ?? 0);
                 $part = trim((string) ($meta['imap_part_number'] ?? ''));
                 if ($uid <= 0 || $part === '') {
                     $legacy = (string) ($row['legacy_attachment_id'] ?? '');
                     if (preg_match('/^(\d+)\:(.+)$/', $legacy, $m)) { $uid = (int) $m[1]; $part = trim($m[2]); }
                 }
-                if ($uid <= 0 || $part === '') {
+                $missing = [];
+                if ($folder === '') { $missing[] = 'imap_folder'; }
+                if ($uid <= 0) { $missing[] = 'imap_uid'; }
+                if ($part === '') { $missing[] = 'imap_part_number'; }
+                if ($missing !== []) {
                     $counts['failed']++;
                     $this->markStatus($id, 'failed', 'missing_imap_attachment_metadata: imap_folder/imap_uid/imap_part_number not available');
-                    $counts['errors'][] = ['external_attachment_id'=>$id,'reason'=>'missing_imap_attachment_metadata','missing'=>['imap_folder','imap_uid','imap_part_number']];
+                    $counts['errors'][] = ['external_attachment_id'=>$id,'reason'=>'missing_imap_attachment_metadata','missing'=>$missing];
                     continue;
                 }
 
@@ -89,12 +93,23 @@ final class MailAttachmentImportService
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
     private function fetchAttachmentBinary(int $tenantId, int $mailboxId, string $folder, int $uid, string $part): ?string {
-        $acc = $this->pdo->prepare('SELECT * FROM mail_smtp_accounts WHERE tenant_id=:tenant_id AND mailbox_id=:mailbox_id ORDER BY id DESC LIMIT 1');
+        $acc = $this->pdo->prepare('SELECT host_in, port_in, ssl_in, username, password_encrypted FROM mail_smtp_accounts WHERE tenant_id=:tenant_id AND mailbox_id=:mailbox_id AND status="active" ORDER BY id DESC LIMIT 1');
         $acc->execute([':tenant_id'=>$tenantId, ':mailbox_id'=>$mailboxId]); $account = $acc->fetch(PDO::FETCH_ASSOC);
-        if (!is_array($account)) { throw new \RuntimeException('imap_account_not_found'); }
-        $pwd = trim((string) ($account['imap_password'] ?? ''));
-        if ($pwd !== '' && preg_match('/^[A-Za-z0-9+\/]{20,}={0,2}$/', $pwd)) { $pwd = $this->secretBox->decrypt($pwd); }
-        $client = (new ClientManager(['options' => ['fetch' => 2]]))->make(['host'=>(string)$account['imap_host'],'port'=>(int)$account['imap_port'],'encryption'=>((string)$account['imap_encryption']) ?: false,'validate_cert'=>true,'username'=>(string)$account['imap_username'],'password'=>$pwd,'protocol'=>'imap']);
+        if (!is_array($account)) { throw new \RuntimeException('mail_account_config_error'); }
+        $host = trim((string) ($account['host_in'] ?? ''));
+        $port = (int) ($account['port_in'] ?? 0);
+        $encryptionRaw = mb_strtolower(trim((string) ($account['ssl_in'] ?? '')));
+        $username = trim((string) ($account['username'] ?? ''));
+        $encrypted = trim((string) ($account['password_encrypted'] ?? ''));
+        $encryption = in_array($encryptionRaw, ['ssl', 'tls'], true) ? $encryptionRaw : false;
+        if ($host === '' || $port <= 0 || $username === '' || $encrypted === '' || !in_array($encryptionRaw, ['ssl', 'tls', 'none', ''], true)) {
+            throw new \RuntimeException('mail_account_config_error');
+        }
+        $pwd = (string) $this->secretBox->decrypt($encrypted);
+        if (trim($pwd) === '') {
+            throw new \RuntimeException('mail_account_config_error');
+        }
+        $client = (new ClientManager(['options' => ['fetch' => 2]]))->make(['host'=>$host,'port'=>$port,'encryption'=>$encryption,'validate_cert'=>true,'username'=>$username,'password'=>$pwd,'protocol'=>'imap']);
         $client->connect();
         $imapFolder = $client->getFolder($folder);
         if ($imapFolder === null) { $client->disconnect(); return null; }

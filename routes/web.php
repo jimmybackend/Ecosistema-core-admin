@@ -733,11 +733,29 @@ return [
         $statusMessage = isset($_GET['ok']) ? (string) $_GET['ok'] : null; $errorMessage = isset($_GET['error']) ? (string) $_GET['error'] : null; $imported=(int)($_GET['imported'] ?? 0); $skipped=(int)($_GET['skipped'] ?? 0); $attachmentsPending=(int)($_GET['attachments_pending'] ?? 0); $syncErrors=(int)($_GET['errors'] ?? 0);
         $messages = [];
         $smtpAccounts = [];
+        $selectedAccountId = (int)($_GET['account_id'] ?? 0);
+        $mailboxId = 0;
+        $mailDebug = null;
         try {
             $pdo = PdoFactory::make($config['database']);
-            $mailService = new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
-            $messages = $mailService->listMessages($tenantId, $userId);
-        } catch (\Throwable) {
+            $messageRepo = new MailMessageRepository($pdo);
+            $smtpRepo = new MailSmtpAccountRepository($pdo);
+            if ($selectedAccountId > 0) {
+                $selected = $smtpRepo->findForUser($tenantId, $userId, $selectedAccountId);
+                $mailboxId = (int)($selected['mailbox_id'] ?? 0);
+            }
+            if ($mailboxId <= 0) {
+                $fallback = $smtpRepo->findActiveForUser($tenantId, $userId);
+                $selectedAccountId = (int)($fallback['id'] ?? $selectedAccountId);
+                $mailboxId = (int)($fallback['mailbox_id'] ?? 0);
+            }
+            $messages = $messageRepo->listMessagesForMailbox($tenantId, $userId, $mailboxId, 100);
+            $smtpAccounts = $smtpRepo->listForImapSyncForUser($tenantId, $userId);
+        } catch (\Throwable $e) {
+            $safe = (string)preg_replace('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', '[redacted-email]', trim((string)$e->getMessage()));
+            $safe = (string)preg_replace('/(password|token|secret|aws[_-]?secret[_-]?access[_-]?key)\s*[:=]\s*[^,\s]+/i', '$1=[redacted]', $safe);
+            $safe = mb_substr(trim((string)preg_replace('/\s+/', ' ', $safe)), 0, 200);
+            $mailDebug = ['error_type' => ($e instanceof \PDOException ? 'db_query_error' : 'mailbox_load_error'),'exception_class' => get_class($e),'exception_message_sanitized' => $safe,'db_table' => str_contains(mb_strtolower($safe),'mail_') ? 'mail_*' : null,'db_operation' => 'select_messages','tenant_id' => $tenantId,'user_id' => $userId,'account_id' => $selectedAccountId,'mailbox_id' => $mailboxId];
             $errorMessage = 'No se pudo cargar el buzón.';
         }
         try {
@@ -748,7 +766,7 @@ return [
         } catch (\Throwable) {
             $smtpAccounts = [];
         }
-        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage','smtpAccounts','imported','skipped','attachmentsPending','syncErrors')]);
+        header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail | Ecosistema Core Admin','contentView'=>'pages/mail/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('messages','statusMessage','errorMessage','smtpAccounts','imported','skipped','attachmentsPending','syncErrors','mailDebug','selectedAccountId')]);
     },
 
     'POST /mail/imap-sync' => static function (array $config): void {
@@ -839,8 +857,9 @@ return [
             $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
             $message=$service->findMessage($tenantId,$userId,$id);
             if ($message !== null) {
-                $attachmentService = new MailAttachmentService(new MailAttachmentRepository($pdo));
-                $attachments = $attachmentService->listMessageAttachments($tenantId, $userId, $id);
+                $stmt = $pdo->prepare('SELECT message_id, original_filename, mime_type, size_bytes, import_status, created_at FROM mail_external_attachments WHERE tenant_id = :tenant_id AND message_id = :message_id ORDER BY id DESC LIMIT 100');
+                $stmt->execute([':tenant_id'=>$tenantId, ':message_id'=>$id]);
+                $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             }
         } catch (\Throwable) {
             $message=null;

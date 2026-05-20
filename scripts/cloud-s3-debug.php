@@ -11,20 +11,19 @@ use App\Core\Database\PdoFactory;
 $root = dirname(__DIR__);
 $autoload = $root . '/vendor/autoload.php';
 if (!is_file($autoload)) {
-    echo "AWS_SDK_MISSING: ejecuta composer require aws/aws-sdk-php:^3.325\n";
+    echo "VENDOR_AUTOLOAD_MISSING: ejecuta composer install\n";
     exit(2);
 }
 require_once $autoload;
+if (!class_exists(\Aws\S3\S3Client::class)) {
+    echo "AWS_SDK_MISSING: ejecuta composer require aws/aws-sdk-php:^3.325\n";
+    exit(2);
+}
 require $root . '/bootstrap/app.php';
 $config = require __DIR__ . '/../config/app.php';
 $options = getopt('', ['tenant::', 'user::', 'check-s3', 'ensure-root']);
 $tenant = (int)($options['tenant'] ?? 1);
 $user = (int)($options['user'] ?? 1);
-
-if (!class_exists(\Aws\S3\S3Client::class)) {
-    echo "AWS_SDK_MISSING: ejecuta composer require aws/aws-sdk-php:^3.325\n";
-    exit(2);
-}
 
 $pdo = PdoFactory::make($config['database']);
 $s3 = new CloudS3Service($config);

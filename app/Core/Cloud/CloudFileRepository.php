@@ -8,6 +8,10 @@ use PDO;
 
 final readonly class CloudFileRepository
 {
+    private const ALLOWED_ACCESS_TYPES = ['normal', 'secure', 'unlocked'];
+    private const ALLOWED_STATUSES = ['active', 'archived', 'deleted', 'quarantined', 'missing'];
+    private const ALLOWED_VIRUS_SCAN_STATUSES = ['pending', 'clean', 'infected', 'skipped', 'error'];
+
     public function __construct(private PDO $pdo)
     {
     }
@@ -75,6 +79,11 @@ final readonly class CloudFileRepository
 
     public function createUploaded(array $data): int
     {
+        $validationError = $this->validateCloudFileEnums($data);
+        if ($validationError !== null) {
+            throw new \InvalidArgumentException(json_encode($validationError, JSON_UNESCAPED_UNICODE) ?: 'cloud_validation_error');
+        }
+
         $bucketId = $this->resolveBucketId((int) $data['tenant_id'], (int) $data['user_id']);
         if ($bucketId <= 0) {
             return 0;
@@ -117,6 +126,37 @@ final readonly class CloudFileRepository
         }
 
         return $id;
+    }
+
+    public function validateCloudFileEnums(array $data): ?array
+    {
+        $enumMap = [
+            'access_type' => self::ALLOWED_ACCESS_TYPES,
+            'status' => self::ALLOWED_STATUSES,
+            'virus_scan_status' => self::ALLOWED_VIRUS_SCAN_STATUSES,
+        ];
+        foreach ($enumMap as $field => $allowed) {
+            $value = isset($data[$field]) ? (string) $data[$field] : '';
+            if (!in_array($value, $allowed, true)) {
+                return [
+                    'reason' => 'cloud_validation_error',
+                    'field' => $field,
+                    'invalid_value' => $this->sanitizeValidationValue($value),
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    private function sanitizeValidationValue(string $value): string
+    {
+        $trimmed = trim(preg_replace('/\s+/', ' ', $value) ?? '');
+        if ($trimmed === '') {
+            return '(empty)';
+        }
+
+        return mb_substr($trimmed, 0, 60);
     }
 
     private function resolveBucketId(int $tenantId, int $userId): int

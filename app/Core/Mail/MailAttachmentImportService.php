@@ -35,7 +35,7 @@ final class MailAttachmentImportService
         foreach ($items as $row) {
             $id = (int) $row['id'];
             try {
-                $this->clearLegacyAccessTypeError($id, (string)($row['error_message'] ?? ''));
+                $this->clearRetriableImportError($id, (string) ($row['error_message'] ?? ''));
                 $meta = json_decode((string) ($row['raw_payload_json'] ?? ''), true);
                 if (!is_array($meta)) { $meta = []; }
                 $folder = trim((string) ($meta['imap_folder'] ?? ''));
@@ -79,9 +79,19 @@ final class MailAttachmentImportService
                 @unlink($tmp);
                 if (($put['ok'] ?? false) !== true) { throw new \RuntimeException((string) ($put['message'] ?? 'cloud_upload_error')); }
 
-                $cloudId = $this->insertCloudFile($cloudFiles, $tenantId, $userId, $bucketId, $key, $filename, $mime, strlen($binary), $id);
-                $this->insertMailAttachment($tenantId, $messageId, $cloudId, $row, $filename, $mime, strlen($binary));
-                $this->markImported($id, $cloudId);
+                $sizeBytes = $this->normalizeSizeBytes($binary, $row['size_bytes'] ?? null);
+                $this->pdo->beginTransaction();
+                try {
+                    $cloudId = $this->insertCloudFile($cloudFiles, $tenantId, $userId, $bucketId, $key, $filename, $mime, $sizeBytes, $id);
+                    $this->insertMailAttachment($tenantId, $messageId, $cloudId, $row, $filename, $mime, $sizeBytes);
+                    $this->markImported($id, $cloudId);
+                    $this->pdo->commit();
+                } catch (Throwable $transactionError) {
+                    if ($this->pdo->inTransaction()) {
+                        $this->pdo->rollBack();
+                    }
+                    throw $transactionError;
+                }
                 $counts['imported']++;
                 $counts['pending'] = max(0, (int)$counts['pending'] - 1);
             } catch (Throwable $e) {
@@ -180,7 +190,7 @@ final class MailAttachmentImportService
     }
     private function insertMailAttachment(int $tenantId,int $messageId,int $cloudFileId,array $row,string $name,string $mime,int $size): void {
         $stmt = $this->pdo->prepare('INSERT INTO mail_attachments (tenant_id,message_id,cloud_file_id,original_filename,content_id,disposition,mime_type,size_bytes,created_at) VALUES (:tenant_id,:message_id,:cloud_file_id,:filename,:content_id,:disposition,:mime_type,:size_bytes,NOW())');
-        $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':cloud_file_id'=>$cloudFileId,':filename'=>$name,':content_id'=>$row['content_id'] ?? null,':disposition'=>$row['disposition'] ?? null,':mime_type'=>$mime,':size_bytes'=>$size]);
+        $stmt->execute([':tenant_id'=>$tenantId,':message_id'=>$messageId,':cloud_file_id'=>$cloudFileId,':filename'=>$name,':content_id'=>$this->normalizeContentId($row['content_id'] ?? null),':disposition'=>$this->normalizeAttachmentDisposition($row['disposition'] ?? null),':mime_type'=>$mime,':size_bytes'=>max(0, $size)]);
     }
     private function markImported(int $id, int $cloudFileId): void { $s=$this->pdo->prepare('UPDATE mail_external_attachments SET cloud_file_id=:cloud_file_id, import_status="imported", imported_at=NOW(), error_message=NULL WHERE id=:id'); $s->execute([':cloud_file_id'=>$cloudFileId,':id'=>$id]); }
     private function markFailed(int $id, string $status, string $error): void { $this->markStatus($id, $status, $error); }
@@ -203,12 +213,41 @@ final class MailAttachmentImportService
         return $this->sanitize($e->getMessage());
     }
 
-    private function clearLegacyAccessTypeError(int $id, string $errorMessage): void
+    private function clearRetriableImportError(int $id, string $errorMessage): void
     {
-        if (!str_contains($errorMessage, "Data truncated for column 'access_type'")) {
+        $retriablePatterns = [
+            "Data truncated for column 'access_type'",
+            "Column 'disposition' cannot be null",
+        ];
+        foreach ($retriablePatterns as $pattern) {
+            if (!str_contains($errorMessage, $pattern)) {
+                continue;
+            }
+            $stmt = $this->pdo->prepare('UPDATE mail_external_attachments SET import_status = "pending", error_message = NULL WHERE id = :id');
+            $stmt->execute([':id' => $id]);
             return;
         }
-        $stmt = $this->pdo->prepare('UPDATE mail_external_attachments SET import_status = "pending", error_message = NULL WHERE id = :id');
-        $stmt->execute([':id' => $id]);
+    }
+
+    private function normalizeAttachmentDisposition(mixed $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value));
+        return in_array($normalized, ['attachment', 'inline'], true) ? $normalized : 'attachment';
+    }
+
+    private function normalizeContentId(mixed $value): ?string
+    {
+        $contentId = trim((string) $value);
+        return $contentId !== '' ? $contentId : null;
+    }
+
+    private function normalizeSizeBytes(?string $binary, mixed $metadataSize): int
+    {
+        $binarySize = is_string($binary) ? strlen($binary) : 0;
+        if ($binarySize > 0) {
+            return $binarySize;
+        }
+        $sizeFromMeta = (int) $metadataSize;
+        return max(0, $sizeFromMeta);
     }
 }

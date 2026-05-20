@@ -13,6 +13,7 @@ use DateTimeInterface;
 use Webklex\PHPIMAP\ClientManager;
 use Webklex\PHPIMAP\Message;
 use Webklex\PHPIMAP\Attribute;
+use Webklex\PHPIMAP\Address;
 
 final class MailImapSyncService
 {
@@ -90,10 +91,24 @@ final class MailImapSyncService
                     $plainBody = trim((string) $message->getTextBody());
                     $htmlBody = trim((string) $message->getHTMLBody());
                     if ($plainBody === '') { $plainBody = trim(strip_tags($htmlBody)); }
-                    $to = $this->normalizeAddressList($message->getTo());
-                    $cc = $this->normalizeAddressList($message->getCc());
-                    $bcc = $this->normalizeAddressList($message->getBcc());
-                    $from = $this->normalizeAddressList($message->getFrom());
+                    $to = $this->webklexAddressesToEmailList($message->getTo());
+                    $cc = $this->webklexAddressesToEmailList($message->getCc());
+                    $bcc = $this->webklexAddressesToEmailList($message->getBcc());
+                    $fromAddress = $this->extractFromAddress($message);
+                    if ($fromAddress === null) {
+                        $result['skipped']++;
+                        $result['errors'][] = $this->safeJsonEncode([
+                            'error_type' => 'imap_parse_error',
+                            'stage' => 'message_parse',
+                            'reason' => 'missing_from_address',
+                            'folder' => 'INBOX',
+                            'message_uid' => $uid,
+                            'account_id' => $accountId,
+                            'tenant_id' => $tenantId,
+                            'user_id' => $userId,
+                        ]);
+                        continue;
+                    }
                     $isRead = (bool) $message->getFlag('seen');
                     $isStarred = (bool) $message->getFlag('flagged');
                     $receivedDt = $this->webklexAttributeToDateTime($message->getDate()) ?? new DateTimeImmutable();
@@ -111,17 +126,19 @@ final class MailImapSyncService
                         ];
                     }
 
-                    $messageId = $this->insertMessage([
+                    $payload = [
                     ':tenant_id' => $tenantId, ':mailbox_id' => $mailboxId, ':folder_id' => $folderId, ':user_id' => $ownerUserId,
                     ':message_uuid' => $this->uuidV4(), ':thread_uuid' => $this->uuidV4(), ':external_provider' => 'imap', ':external_message_id' => $externalMessageId,
-                    ':direction' => 'inbound', ':mail_scope' => 'normal', ':from_address' => $from[0] ?? null,
-                    ':to_addresses' => json_encode($to, JSON_UNESCAPED_UNICODE), ':cc_addresses' => $cc === [] ? null : json_encode($cc, JSON_UNESCAPED_UNICODE), ':bcc_addresses' => $bcc === [] ? null : json_encode($bcc, JSON_UNESCAPED_UNICODE),
+                    ':direction' => 'inbound', ':mail_scope' => 'normal', ':from_address' => $fromAddress,
+                    ':to_addresses' => $this->safeJsonEncode($to), ':cc_addresses' => $cc === [] ? null : $this->safeJsonEncode($cc), ':bcc_addresses' => $bcc === [] ? null : $this->safeJsonEncode($bcc),
                     ':subject' => $subject,
                     ':body_text' => $plainBody, ':body_html' => $htmlBody, ':raw_headers' => $headers,
                     ':has_attachments' => $attachmentParts === [] ? 0 : 1, ':is_read' => $isRead ? 1 : 0, ':read_at' => $isRead ? date('Y-m-d H:i:s') : null,
                     ':is_starred' => $isStarred ? 1 : 0, ':is_draft' => 0, ':is_spam' => 0, ':is_deleted' => 0,
                     ':received_at' => $receivedAt, ':sent_at' => $receivedAt,
-                ]);
+                ];
+                    if (!$this->isValidInboundPayload($payload)) { $result['skipped']++; continue; }
+                    $messageId = $this->insertMessage($payload);
                     if ($messageId <= 0) { $result['skipped']++; continue; }
                     $this->insertRecipients($tenantId, $messageId, $to, 'to');
                     $this->insertRecipients($tenantId, $messageId, $cc, 'cc');
@@ -190,6 +207,39 @@ final class MailImapSyncService
             return ['ok' => false, 'error' => $this->buildSafeImapErrorMessage($ctx), 'context' => $ctx];
         }
     }
+    public function debugMessageForUser(int $tenantId, int $userId, int $accountId, string $folderName, int $uid): array
+    {
+        $account = $this->findAuthorizedAccount($tenantId, $userId, $accountId);
+        if ($account === null) { return ['ok' => false, 'error' => 'Cuenta IMAP no autorizada o inactiva.']; }
+        [$password, $validationError] = $this->resolveImapPassword($account);
+        if ($validationError !== null) { return ['ok' => false, 'error' => $validationError]; }
+        try {
+            $client = (new ClientManager(['options' => ['fetch' => 2]]))->make($this->buildClientConfig($account, (string) $password));
+            $client->connect();
+            $folder = $client->getFolder($folderName);
+            if ($folder === null) { return ['ok' => false, 'error' => 'Carpeta no encontrada']; }
+            $message = $folder->query()->getMessageByUid($uid);
+            if (!$message instanceof Message) { return ['ok' => false, 'error' => 'Mensaje no encontrado']; }
+            $headersRaw = $this->webklexAttributeToString($message->getHeader()?->raw) ?? '';
+            preg_match_all('/^([\w\-]+):/m', $headersRaw, $headerMatches);
+            $headers = array_values(array_unique(array_map('strtolower', (array)($headerMatches[1] ?? []))));
+            $parsedFrom = $this->extractFromAddress($message);
+            return ['ok' => true, 'message' => [
+                'uid' => (int) ($message->getUid() ?? 0),
+                'folder' => $folderName,
+                'subject' => $this->shortText((string)($this->webklexAttributeToString($message->getSubject()) ?? ''), 180),
+                'date' => $this->webklexAttributeToDateTime($message->getDate())?->format('Y-m-d H:i:s'),
+                'from' => $parsedFrom,
+                'to' => $this->webklexAddressesToEmailList($message->getTo()),
+                'cc' => $this->webklexAddressesToEmailList($message->getCc()),
+                'bcc' => $this->webklexAddressesToEmailList($message->getBcc()),
+                'missing_from_address' => $parsedFrom === null,
+                'header_names' => $headers,
+            ]];
+        } catch (Throwable $e) {
+            return ['ok' => false, 'error' => $this->shortText($this->sanitizeSensitiveText($e->getMessage(), $account), 220)];
+        }
+    }
 
     private function buildSafeImapErrorMessage(array $safeContext): string
     {
@@ -206,7 +256,73 @@ final class MailImapSyncService
         $enc = strtolower(trim((string) ($account['imap_encryption'] ?? '')));
         return ['host'=>(string) $account['imap_host'],'port'=>(int) $account['imap_port'],'encryption'=>$enc === 'ssl' ? 'ssl' : ($enc === 'tls' ? 'tls' : false),'validate_cert'=>true,'username'=>(string) $account['imap_username'],'password'=>$password,'protocol'=>'imap','authentication'=>null,'timeout'=>30];
     }
-    private function normalizeAddressList(mixed $addresses): array { $emails=[]; foreach ((array)$addresses as $address){ $email=(string)($address->mail ?? $address->address ?? ''); if($email!==''){$emails[] = strtolower(trim($email));}} return array_values(array_unique(array_filter($emails))); }
+    private function normalizeAddressList(mixed $addresses): array { return $this->webklexAddressesToEmailList($addresses); }
+    private function webklexAddressesToEmailList(mixed $value): array {
+        $emails = [];
+        $queue = [$value];
+        while ($queue !== []) {
+            $current = array_shift($queue);
+            $email = $this->webklexAddressToEmail($current);
+            if ($email !== null) { $emails[] = $email; continue; }
+            if (is_array($current) || $current instanceof \Traversable) { foreach ($current as $item) { $queue[] = $item; } continue; }
+            if ($current instanceof Attribute) { $queue[] = $current->first(); continue; }
+            if (is_object($current) && method_exists($current, 'first')) { $queue[] = $current->first(); continue; }
+            if (is_object($current) && method_exists($current, 'toArray')) { $queue[] = $current->toArray(); continue; }
+        }
+        return array_values(array_unique(array_filter($emails)));
+    }
+    private function webklexAddressToEmail(mixed $value): ?string {
+        if ($value === null) { return null; }
+        if (is_string($value)) { return $this->extractEmailFromString($value); }
+        if ($value instanceof Address) {
+            $mail = $this->normalizeEmail((string) ($value->mail ?? '')); if ($mail !== null) { return $mail; }
+            $mailbox = trim((string) ($value->mailbox ?? '')); $host = trim((string) ($value->host ?? ''));
+            if ($mailbox !== '' && $host !== '') { $built = $this->normalizeEmail($mailbox.'@'.$host); if ($built !== null) { return $built; } }
+            $full = $this->extractEmailFromString((string) ($value->full ?? '')); if ($full !== null) { return $full; }
+            return $this->extractEmailFromString((string) $value);
+        }
+        if ($value instanceof Attribute) { return $this->webklexAddressToEmail($value->first()); }
+        if (is_object($value) && method_exists($value, 'toString')) { $fromString = $this->extractEmailFromString((string) $value->toString()); if ($fromString !== null) { return $fromString; } }
+        if (is_object($value) && method_exists($value, '__toString')) { $fromCast = $this->extractEmailFromString((string) $value); if ($fromCast !== null) { return $fromCast; } }
+        if (is_object($value)) {
+            $mail = $this->normalizeEmail((string) ($value->mail ?? '')); if ($mail !== null) { return $mail; }
+            $mailbox = trim((string) ($value->mailbox ?? '')); $host = trim((string) ($value->host ?? ''));
+            if ($mailbox !== '' && $host !== '') { $built = $this->normalizeEmail($mailbox.'@'.$host); if ($built !== null) { return $built; } }
+            return $this->extractEmailFromString((string) ($value->full ?? ''));
+        }
+        return null;
+    }
+    private function extractFromAddress(Message $message): ?string {
+        $candidates = [$message->getFrom(), $message->from ?? null, $this->extractHeaderValue($message, 'from'), $this->extractHeaderValue($message, 'sender'), $this->extractHeaderValue($message, 'reply-to'), $this->extractHeaderValue($message, 'return-path')];
+        foreach ($candidates as $candidate) {
+            $list = $this->webklexAddressesToEmailList($candidate);
+            if ($list !== []) { return $list[0]; }
+        }
+        return null;
+    }
+    private function extractHeaderValue(Message $message, string $headerName): ?string {
+        $headers = $this->webklexAttributeToString($message->getHeader()?->raw) ?? '';
+        if ($headers === '') { return null; }
+        if (preg_match('/^'.preg_quote($headerName, '/').':\s*(.+)$/mi', $headers, $m) !== 1) { return null; }
+        return trim((string) ($m[1] ?? ''));
+    }
+    private function extractEmailFromString(string $value): ?string {
+        $trimmed = trim($value);
+        if ($trimmed === '') { return null; }
+        if (preg_match('/<([^>]+)>/', $trimmed, $m) === 1) { return $this->normalizeEmail($m[1]); }
+        if (preg_match('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', $trimmed, $m) === 1) { return $this->normalizeEmail($m[0]); }
+        return $this->normalizeEmail($trimmed);
+    }
+    private function normalizeEmail(string $value): ?string { $email = mb_strtolower(trim($value)); return $email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false ? $email : null; }
+    private function safeJsonEncode(array $value): string { return json_encode($value, JSON_UNESCAPED_UNICODE) ?: '[]'; }
+    private function isValidInboundPayload(array $payload): bool {
+        if ($this->normalizeEmail((string) ($payload[':from_address'] ?? '')) === null) { return false; }
+        if (!is_string($payload[':to_addresses'] ?? null)) { return false; }
+        json_decode((string) $payload[':to_addresses'], true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array(json_decode((string) $payload[':to_addresses'], true))) { return false; }
+        if (trim((string)($payload[':message_uuid'] ?? '')) === '' || trim((string)($payload[':direction'] ?? '')) !== 'inbound') { return false; }
+        return ((int)($payload[':tenant_id'] ?? 0) > 0) && ((int)($payload[':mailbox_id'] ?? 0) > 0) && ((int)($payload[':user_id'] ?? 0) > 0);
+    }
     private function findAuthorizedAccount(int $tenantId, int $userId, int $accountId): ?array { /* unchanged */
         $sql = "SELECT 'inbound' AS source_type, ia.id AS source_id, ia.tenant_id, ia.mailbox_id, ia.username AS imap_username, ia.password_encrypted, ia.host AS imap_host, ia.port AS imap_port, ia.encryption AS imap_encryption, ia.status, ia.created_by_user_id, 0 AS available_to_everyone, m.user_id AS mailbox_user_id, m.full_address AS mailbox_full_address FROM mail_inbound_accounts ia INNER JOIN mail_mailboxes m ON m.id = ia.mailbox_id AND m.tenant_id = ia.tenant_id WHERE ia.id = :account_id AND ia.tenant_id = :tenant_id AND ia.status = 'active' AND m.status = 'active' AND TRIM(COALESCE(ia.host, '')) <> '' AND ia.port IS NOT NULL AND TRIM(COALESCE(ia.username, '')) <> '' AND TRIM(COALESCE(ia.password_encrypted, '')) <> '' AND (ia.created_by_user_id = :created_by_user_id OR m.user_id = :mailbox_user_id OR m.available_to_everyone = 1) LIMIT 1";
         $stmt = $this->pdo->prepare($sql);

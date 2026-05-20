@@ -37,6 +37,7 @@ use App\Support\SecretBox;
 use App\Core\Mail\MailEffectiveSenderResolver;
 use App\Core\Mail\MailSmtpAccountRepository;
 use App\Core\Mail\MailOutgoingAttachmentService;
+use App\Core\Mail\MailAttachmentImportService;
 use App\Core\MailNotifications\EcosistemaMailNotificationsAdapter;
 use App\Core\MailNotifications\EcosistemaMessagePreviewDryRunService;
 use App\Core\MailNotifications\EcosistemaNotificationTemplateRepository;
@@ -868,7 +869,7 @@ return [
             $service=new MailService(new MailboxRepository($pdo), new MailMessageRepository($pdo));
             $message=$service->findMessage($tenantId,$userId,$id);
             if ($message !== null) {
-                $stmt = $pdo->prepare('SELECT message_id, original_filename, mime_type, size_bytes, import_status, created_at FROM mail_external_attachments WHERE tenant_id = :tenant_id AND message_id = :message_id ORDER BY id DESC LIMIT 100');
+                $stmt = $pdo->prepare('SELECT message_id, original_filename, mime_type, size_bytes, import_status, cloud_file_id, error_message, created_at FROM mail_external_attachments WHERE tenant_id = :tenant_id AND message_id = :message_id ORDER BY id DESC LIMIT 100');
                 $stmt->execute([':tenant_id'=>$tenantId, ':message_id'=>$id]);
                 $attachments = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
             }
@@ -878,6 +879,25 @@ return [
         }
         if ($message===null) { http_response_code(404); }
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Mail detalle | Ecosistema Core Admin','contentView'=>'pages/mail/show','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('message','attachments')]);
+    },
+    'POST /mail/messages/{id}/attachments/import' => static function (array $config, array $params): void {
+        startAuthSession($config); if (!AuthSession::isAuthenticated()) { header('Location: /login'); return; }
+        if (!requirePermission($config, 'mail.manage')) { return; }
+        $csrfToken = $_POST['_csrf'] ?? null; if (!ensureValidCsrfToken($config, $csrfToken)) { return; }
+        $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $id=(int)($params['id']??0); $limit=(int)($_POST['limit'] ?? 5);
+        try {
+            $pdo = PdoFactory::make($config['database']);
+            $svc = new MailAttachmentImportService($pdo, $config, new SecretBox());
+            $result = $svc->importPendingForMessage($tenantId, $userId, $id, $limit);
+            if (($result['ok'] ?? false) !== true) { header('Location: /mail/messages/'.$id.'?error='.urlencode((string)($result['error'] ?? 'No se pudo importar adjuntos.'))); return; }
+            $c = (array) ($result['counts'] ?? []);
+            $msg = sprintf('Importación finalizada. pending=%d imported=%d failed=%d imap_pending=%d', (int)($c['pending']??0), (int)($c['imported']??0), (int)($c['failed']??0), (int)($c['imap_pending']??0));
+            header('Location: /mail/messages/'.$id.'?ok='.urlencode($msg));
+            return;
+        } catch (\Throwable) {
+            header('Location: /mail/messages/'.$id.'?error='.urlencode('No se pudo importar adjuntos.'));
+            return;
+        }
     },
 
 

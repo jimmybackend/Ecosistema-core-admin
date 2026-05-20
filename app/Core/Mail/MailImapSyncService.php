@@ -119,6 +119,9 @@ final class MailImapSyncService
                         $filename = $this->webklexAttributeToString($attachment->name ?? null) ?? 'attachment';
                         $attachmentParts[] = [
                             'legacy_attachment_id' => $uid . ':' . ((string) ($attachment->part_number ?? count($attachmentParts) + 1)),
+                            'imap_folder' => 'INBOX',
+                            'imap_uid' => $uid,
+                            'imap_part_number' => (string) ($attachment->part_number ?? count($attachmentParts) + 1),
                             'original_filename' => $filename,
                             'safe_filename' => $this->safeFileName($filename),
                             'mime_type' => $this->webklexAttributeToString($attachment->content_type ?? null) ?? 'application/octet-stream',

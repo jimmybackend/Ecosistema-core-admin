@@ -70,12 +70,36 @@ $result = $service->upload($tenant, $user, [
     'type' => mime_content_type($file) ?: 'text/plain',
 ]);
 
-echo json_encode([
+$payload = [
     'ok' => (bool)($result['ok'] ?? false),
     'file_id' => $result['id'] ?? null,
     'original_name' => basename($file),
     'size' => filesize($file) ?: 0,
     'mime' => mime_content_type($file) ?: 'text/plain',
     'status' => ($result['ok'] ?? false) ? 'active' : 'error',
+    'found_in_s3' => null,
+    'checksum_present' => false,
+    'etag_present' => false,
+    'version_created' => false,
+    'access_log_created' => false,
     'message' => $result['message'] ?? null,
-], JSON_PRETTY_PRINT) . PHP_EOL;
+];
+if (($result['ok'] ?? false) && isset($result['id'])) {
+    $fileId = (int)$result['id'];
+    $f = $pdo->prepare('SELECT found_in_s3, checksum_sha256, etag FROM cloud_files WHERE id = :id AND tenant_id = :tenant AND user_id = :user LIMIT 1');
+    $f->execute([':id'=>$fileId, ':tenant'=>$tenant, ':user'=>$user]);
+    $fileRow = $f->fetch(PDO::FETCH_ASSOC) ?: [];
+    $payload['found_in_s3'] = isset($fileRow['found_in_s3']) ? (int)$fileRow['found_in_s3'] : null;
+    $payload['checksum_present'] = trim((string)($fileRow['checksum_sha256'] ?? '')) !== '';
+    $payload['etag_present'] = trim((string)($fileRow['etag'] ?? '')) !== '';
+
+    $v = $pdo->prepare('SELECT COUNT(*) FROM cloud_file_versions WHERE file_id = :file_id AND tenant_id = :tenant');
+    $v->execute([':file_id'=>$fileId, ':tenant'=>$tenant]);
+    $payload['version_created'] = ((int)$v->fetchColumn()) > 0;
+
+    $a = $pdo->prepare('SELECT COUNT(*) FROM cloud_file_access_logs WHERE file_id = :file_id AND tenant_id = :tenant AND action = :action');
+    $a->execute([':file_id'=>$fileId, ':tenant'=>$tenant, ':action'=>'upload']);
+    $payload['access_log_created'] = ((int)$a->fetchColumn()) > 0;
+}
+
+echo json_encode($payload, JSON_PRETTY_PRINT) . PHP_EOL;

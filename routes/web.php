@@ -2675,7 +2675,7 @@ return [
         $auth=AuthSession::getAuth(); $tenantId=authTenantId($auth); $userId=authUserId($auth); $statusMessage=isset($_GET['ok'])?(string)$_GET['ok']:null; $errorMessage=isset($_GET['error'])?(string)$_GET['error']:null;
         try{$pdo=PdoFactory::make($config['database']); $service=new CloudService(new CloudFileRepository($pdo), new CloudFolderRepository($pdo), new CloudRootRepository($pdo)); $files=$service->listFiles($tenantId,$userId);}catch(\Throwable){$files=[];$errorMessage='Archivo no encontrado.';}
         $s3 = new CloudS3Service($config);
-        $downloadsEnabled = (bool)($config['cloud']['allow_downloads'] ?? false) && (bool)($config['cloud']['s3_enabled'] ?? false) && (($s3->checkBucket()['ok'] ?? false) === true);
+        $downloadsEnabled = (bool)($config['cloud']['allow_downloads'] ?? false) && (bool)($config['cloud']['s3_enabled'] ?? false) && (bool)($config['cloud']['controlled_live_tests'] ?? false) && (($s3->checkBucket()['ok'] ?? false) === true);
         header('Content-Type: text/html; charset=UTF-8'); View::render('layouts.admin',['title'=>'Cloud | Ecosistema Core Admin','contentView'=>'pages/cloud/index','auth'=>$auth,'csrfToken'=>AuthSession::getCsrfToken(),'contentData'=>compact('files','statusMessage','errorMessage','downloadsEnabled')]);
     },
     'GET /cloud/drive' => static function (array $config): void {
@@ -2687,8 +2687,18 @@ return [
         (new UserCloudRootProvisioner($pdo, new CloudStorageService($config, class_exists('Aws\S3\S3Client')), $config))->provisionForUser($tenantId,$userId);
         $s3 = new CloudS3Service($config);
         $reachable = ($s3->checkBucket()['ok'] ?? false) === true;
-        $status = ['mode' => $reachable ? 'controlled' : 'contract', 'aws_connected'=>$reachable, 'remote_calls'=>$reachable, 'db_writes'=>$reachable, 'remote_uploads'=>$reachable && (bool)($config['cloud']['allow_uploads']??false), 'remote_downloads'=>$reachable && (bool)($config['cloud']['allow_downloads']??false), 'signed_urls'=>false];
-        $capabilities = ['controlled_upload'=>['enabled'=>$status['remote_uploads']],'controlled_download'=>['enabled'=>$status['remote_downloads']]];
+        $live=(bool)($config['cloud']['controlled_live_tests']??false);
+        $status = ['mode' => $reachable ? 'controlled' : 'contract', 'aws_connected'=>$reachable, 'remote_calls'=>$reachable, 'db_writes'=>true, 'remote_uploads'=>$reachable && $live && (bool)($config['cloud']['allow_uploads']??false), 'remote_downloads'=>$reachable && $live && (bool)($config['cloud']['allow_downloads']??false), 'signed_urls'=>false];
+        $readOnly=true; $safeS3=$reachable && $live;
+        $capabilities = [
+            'read_metadata'=>['enabled'=>$readOnly],'read_file_detail'=>['enabled'=>$readOnly],'read_folders_metadata'=>['enabled'=>$readOnly],
+            'read_folder_detail'=>['enabled'=>$readOnly],'read_folder_navigation'=>['enabled'=>$readOnly],'read_user_root'=>['enabled'=>$readOnly],
+            'read_buckets_metadata'=>['enabled'=>$readOnly],'read_drive_summary'=>['enabled'=>$readOnly],'read_access_policy'=>['enabled'=>$readOnly],
+            'read_only_audit'=>['enabled'=>$readOnly],'read_file_versions'=>['enabled'=>$readOnly],'access_logs_read'=>['enabled'=>$readOnly],
+            'storage_usage_read'=>['enabled'=>$readOnly],'repair_jobs_read'=>['enabled'=>$readOnly],'repair_logs_read'=>['enabled'=>$readOnly],
+            'safe_s3_key_validation'=>['enabled'=>$safeS3],'signed_url_dry_run'=>['enabled'=>$safeS3],'aws_s3_config_prepared'=>['enabled'=>$reachable],
+            'upload_dry_run'=>['enabled'=>$readOnly],'controlled_upload'=>['enabled'=>$status['remote_uploads']],'controlled_download'=>['enabled'=>$status['remote_downloads']]
+        ];
         try {
             $pdo = PdoFactory::make($config['database']);
             driveAuditLog($pdo, 'drive.summary.viewed', 'drive_summary', null, '/cloud/drive', 'view');

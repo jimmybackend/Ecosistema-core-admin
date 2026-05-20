@@ -3,22 +3,24 @@
 declare(strict_types=1);
 
 use App\Core\Database\PdoFactory;
-use App\Core\Mail\MailImapSyncService;
 use App\Support\SecretBox;
+use Webklex\PHPIMAP\ClientManager;
+use Webklex\PHPIMAP\Message;
 
 $root = dirname(__DIR__);
 require_once $root . '/vendor/autoload.php';
 $app = require $root . '/bootstrap/app.php';
 
-$o = getopt('', ['tenant:', 'user:', 'account:', 'message:', 'dry-run', 'apply']);
+$o = getopt('', ['tenant:', 'user:', 'account:', 'message:', 'dry-run', 'apply', 'verbose-safe']);
 $tenantId = (int) ($o['tenant'] ?? 0);
 $userId = (int) ($o['user'] ?? 0);
 $accountId = (int) ($o['account'] ?? 0);
 $messageId = (int) ($o['message'] ?? 0);
 $dryRun = isset($o['dry-run']) || !isset($o['apply']);
+$verboseSafe = isset($o['verbose-safe']);
 
 if ($tenantId <= 0 || $userId <= 0 || $accountId <= 0 || $messageId <= 0) {
-    fwrite(STDERR, "Uso: php scripts/mail-attachments-backfill-imap-metadata.php --tenant=1 --user=1 --account=1 --message=16 --dry-run|--apply\n");
+    fwrite(STDERR, "Uso: php scripts/mail-attachments-backfill-imap-metadata.php --tenant=1 --user=1 --account=1 --message=16 --dry-run|--apply [--verbose-safe]\n");
     exit(1);
 }
 
@@ -28,44 +30,142 @@ $m->execute([':t' => $tenantId, ':u' => $userId, ':id' => $messageId]);
 $msg = $m->fetch(PDO::FETCH_ASSOC);
 if (!is_array($msg)) { echo json_encode(['ok' => false, 'error' => 'message_not_found'], JSON_PRETTY_PRINT) . PHP_EOL; exit(2); }
 
+$a = $pdo->prepare('SELECT mailbox_id, host_in, port_in, ssl_in, username, password_encrypted FROM mail_smtp_accounts WHERE tenant_id=:t AND user_id=:u AND id=:id AND status="active" LIMIT 1');
+$a->execute([':t'=>$tenantId, ':u'=>$userId, ':id'=>$accountId]);
+$account = $a->fetch(PDO::FETCH_ASSOC);
+if (!is_array($account)) { echo json_encode(['ok'=>false,'error'=>'mail_account_not_found'], JSON_PRETTY_PRINT).PHP_EOL; exit(2); }
+
 $folderSystem = mb_strtolower(trim((string) ($msg['folder_system_name'] ?? '')));
 $folderName = trim((string) ($msg['folder_name'] ?? ''));
 $imapFolder = $folderSystem === 'inbox' ? 'INBOX' : ($folderName !== '' ? $folderName : 'INBOX');
+$subject = trim((string) ($msg['subject'] ?? ''));
+$fromAddress = mb_strtolower(trim((string) ($msg['from_address'] ?? '')));
+$receivedAt = trim((string) ($msg['received_at'] ?? ''));
+$headers = (string) ($msg['raw_headers'] ?? '');
+$externalMessageId = trim((string) ($msg['external_message_id'] ?? ''));
+$messageIdHeader = null;
+if (preg_match('/^Message-ID:\s*<([^>]+)>/mi', $headers, $mh)) { $messageIdHeader = '<' . trim($mh[1]) . '>'; }
 
-$uid = (int) ($msg['provider_message_uid'] ?? 0);
-if ($uid <= 0) {
-    $ext = (string) ($msg['external_message_id'] ?? '');
-    if (preg_match('/imap-uid:(\d+)/', $ext, $mm)) {
-        $uid = (int) $mm[1];
-    }
-}
-if ($uid <= 0) {
-    echo json_encode(['ok' => false, 'message_id' => $messageId, 'error' => 'missing_message_uid_or_locator'], JSON_PRETTY_PRINT) . PHP_EOL;
-    exit(2);
-}
-
-$svc = new MailImapSyncService($pdo, new SecretBox());
-$d = $svc->debugMessageForUser($tenantId, $userId, $accountId, $imapFolder, $uid);
-if (($d['ok'] ?? false) !== true) { echo json_encode(['ok' => false, 'message_id' => $messageId, 'error' => 'imap_message_not_found'], JSON_PRETTY_PRINT) . PHP_EOL; exit(2); }
-
-$r = $pdo->prepare('SELECT id, original_filename, mime_type, size_bytes, raw_payload_json FROM mail_external_attachments WHERE tenant_id=:t AND message_id=:m ORDER BY id ASC');
+$r = $pdo->prepare('SELECT id, original_filename, mime_type, size_bytes, raw_payload_json, error_message, import_status FROM mail_external_attachments WHERE tenant_id=:t AND message_id=:m ORDER BY id ASC');
 $r->execute([':t' => $tenantId, ':m' => $messageId]);
 $rows = $r->fetchAll(PDO::FETCH_ASSOC) ?: [];
+$targetNames = array_values(array_filter(array_map(fn($x)=>(string)($x['original_filename']??''), $rows)));
 
-$matched = count($rows); $updated = 0; $missing = 0;
-foreach ($rows as $row) {
-    $raw = json_decode((string) ($row['raw_payload_json'] ?? ''), true);
-    if (!is_array($raw)) { $raw = []; }
-    $raw['imap_folder'] = $imapFolder;
-    $raw['imap_uid'] = $uid;
-    if (empty($raw['imap_part_number'])) { $raw['imap_part_number'] = '1'; }
-    $raw['imap_attachment_name'] = (string) ($row['original_filename'] ?? 'attachment');
+$uidHints = [];
+if (preg_match('/imap-uid:(\d+)/', $externalMessageId, $mm)) { $uidHints[] = (int) $mm[1]; }
+if (preg_match('/X-UID:\s*(\d+)/mi', $headers, $mx)) { $uidHints[] = (int) $mx[1]; }
+if (preg_match('/X-UIDL:\s*(\d+)/mi', $headers, $mxl)) { $uidHints[] = (int) $mxl[1]; }
+$uidHints = array_values(array_unique(array_filter($uidHints)));
 
-    if (!$dryRun) {
-        $u = $pdo->prepare('UPDATE mail_external_attachments SET raw_payload_json=:j, error_message=NULL, import_status=CASE WHEN import_status="imported" THEN import_status ELSE "pending" END WHERE id=:id');
-        $u->execute([':j' => json_encode($raw, JSON_UNESCAPED_UNICODE), ':id' => (int) $row['id']]);
-        $updated++;
+$secretBox = new SecretBox();
+$pwd = (string) $secretBox->decrypt((string) $account['password_encrypted']);
+$encRaw = mb_strtolower(trim((string) ($account['ssl_in'] ?? '')));
+$encryption = in_array($encRaw, ['ssl','tls'], true) ? $encRaw : false;
+$client = (new ClientManager(['options'=>['fetch'=>2]]))->make([
+    'host'=>(string)$account['host_in'],'port'=>(int)$account['port_in'],'encryption'=>$encryption,'validate_cert'=>true,
+    'username'=>(string)$account['username'],'password'=>$pwd,'protocol'=>'imap'
+]);
+
+$verbose = [
+    'folder_used'=>$imapFolder,
+    'has_message_id'=>$messageIdHeader !== null,
+    'has_external_message_id'=>$externalMessageId !== '',
+    'search_strategy'=>[],
+    'candidate_count'=>0,
+    'matched_attachment_count'=>0,
+    'matched_filenames'=>[],
+];
+
+try {
+    $client->connect();
+    $folder = $client->getFolder($imapFolder) ?? $client->getFolder('INBOX');
+    if ($folder === null) { throw new RuntimeException('imap_folder_not_found'); }
+
+    $candidates = [];
+    foreach ($uidHints as $uid) {
+        $message = $folder->query()->getMessageByUid($uid);
+        if ($message instanceof Message) { $candidates[] = ['message'=>$message,'strategy'=>'uid_direct']; }
     }
-}
+    if ($candidates === [] && $messageIdHeader !== null) {
+        $verbose['search_strategy'][] = 'message_id';
+        $msgs = $folder->messages()->all()->since(date('d M Y', strtotime(($receivedAt ?: 'now') . ' -2 day')))->before(date('d M Y', strtotime(($receivedAt ?: 'now') . ' +2 day')))->limit(200)->get();
+        foreach ($msgs as $mobj) {
+            if (!$mobj instanceof Message) { continue; }
+            $raw = (string) ($mobj->getHeader()?->raw ?? '');
+            if (stripos($raw, 'Message-ID: ' . $messageIdHeader) !== false) { $candidates[] = ['message'=>$mobj,'strategy'=>'message_id']; }
+        }
+    }
+    if ($candidates === []) {
+        $verbose['search_strategy'][] = 'metadata_window';
+        $since = date('d M Y', strtotime(($receivedAt ?: 'now') . ' -2 day'));
+        $before = date('d M Y', strtotime(($receivedAt ?: 'now') . ' +2 day'));
+        $msgs = $folder->messages()->all()->since($since)->before($before)->limit(300)->get();
+        foreach ($msgs as $mobj) {
+            if (!$mobj instanceof Message) { continue; }
+            $fromStr = mb_strtolower((string) ($mobj->getFrom() ?? ''));
+            $subj = trim((string) ($mobj->getSubject() ?? ''));
+            $attachments = $mobj->getAttachments();
+            if ($fromAddress !== '' && $fromStr !== '' && !str_contains($fromStr, $fromAddress)) { continue; }
+            if ($subject !== '' && $subj !== '' && mb_strtolower($subject) !== mb_strtolower($subj)) { continue; }
+            if (count($attachments) <= 0) { continue; }
+            $names = [];
+            foreach ($attachments as $att) { $names[] = (string) ($att->name ?? ''); }
+            $intersect = array_intersect(array_map('mb_strtolower',$targetNames), array_map('mb_strtolower',$names));
+            if ($targetNames !== [] && $intersect === []) { continue; }
+            $candidates[] = ['message'=>$mobj,'strategy'=>'metadata_window'];
+        }
+    }
 
-echo json_encode(['ok' => true, 'message_id' => $messageId, 'dry_run' => $dryRun, 'matched' => $matched, 'updated' => $updated, 'missing' => $missing], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    $uniqueByUid = [];
+    foreach ($candidates as $c) { $uniqueByUid[(string)((int)($c['message']->getUid() ?? 0))] = $c; }
+    $candidates = array_values($uniqueByUid);
+    $verbose['candidate_count'] = count($candidates);
+
+    if (count($candidates) > 1) {
+        echo json_encode(['ok'=>false,'message_id'=>$messageId,'error'=>'ambiguous_imap_message_match','candidate_count'=>count($candidates),'verbose_safe'=>$verbose], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).PHP_EOL;
+        $client->disconnect(); exit(2);
+    }
+    if ($candidates === []) {
+        echo json_encode(['ok'=>false,'message_id'=>$messageId,'error'=>'imap_message_not_found','verbose_safe'=>$verbose], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).PHP_EOL;
+        $client->disconnect(); exit(2);
+    }
+
+    $chosen = $candidates[0];
+    $message = $chosen['message'];
+    $verbose['search_strategy'][] = $chosen['strategy'];
+    $imapUid = (int) ($message->getUid() ?? 0);
+    $attachmentMap = [];
+    foreach ($message->getAttachments() as $att) {
+        $name = (string) ($att->name ?? 'attachment');
+        $attachmentMap[mb_strtolower($name)][] = $att;
+    }
+
+    $updated = 0;
+    foreach ($rows as $row) {
+        $nameKey = mb_strtolower((string) ($row['original_filename'] ?? ''));
+        $match = $attachmentMap[$nameKey][0] ?? null;
+        if ($match === null) { continue; }
+        $raw = json_decode((string) ($row['raw_payload_json'] ?? ''), true); if (!is_array($raw)) { $raw = []; }
+        $raw['imap_folder'] = (string) ($folder->path ?? $imapFolder);
+        $raw['imap_uid'] = $imapUid;
+        $raw['imap_part_number'] = (string) ($match->part_number ?? '1');
+        $raw['imap_attachment_name'] = (string) ($match->name ?? $row['original_filename'] ?? 'attachment');
+        $raw['imap_content_id'] = (string) ($match->id ?? '');
+        $raw['imap_mime_type'] = (string) ($match->content_type ?? $row['mime_type'] ?? 'application/octet-stream');
+
+        $verbose['matched_filenames'][] = (string) ($row['original_filename'] ?? '');
+        if (!$dryRun) {
+            $u = $pdo->prepare('UPDATE mail_external_attachments SET raw_payload_json=:j, error_message=NULL, import_status=CASE WHEN import_status="imported" THEN import_status ELSE "pending" END WHERE id=:id');
+            $u->execute([':j'=>json_encode($raw, JSON_UNESCAPED_UNICODE), ':id'=>(int)$row['id']]);
+            $updated++;
+        }
+    }
+    $verbose['matched_attachment_count'] = count($verbose['matched_filenames']);
+    $resp = ['ok'=>true,'message_id'=>$messageId,'dry_run'=>$dryRun,'updated'=>$updated,'matched'=>$verbose['matched_attachment_count']];
+    if ($verboseSafe) { $resp['verbose_safe'] = $verbose; }
+    echo json_encode($resp, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).PHP_EOL;
+    $client->disconnect();
+} catch (Throwable $e) {
+    echo json_encode(['ok'=>false,'message_id'=>$messageId,'error'=>'imap_message_not_found','verbose_safe'=>$verbose], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE).PHP_EOL;
+    exit(2);
+}

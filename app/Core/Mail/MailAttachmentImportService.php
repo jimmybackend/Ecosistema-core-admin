@@ -40,12 +40,15 @@ final class MailAttachmentImportService
                 $part = trim((string) ($meta['imap_part_number'] ?? ''));
                 if ($uid <= 0 || $part === '') {
                     $legacy = (string) ($row['legacy_attachment_id'] ?? '');
-                    if (preg_match('/^(\d+)\:(.+)$/', $legacy, $m)) { $uid = (int) $m[1]; $part = trim($m[2]); }
+                    if (preg_match('/^(\d+)\:(.+)$/', $legacy, $m)) {
+                        if ($uid <= 0) { $uid = (int) $m[1]; }
+                        if ($part === '') { $part = trim($m[2]); }
+                    }
                 }
                 $missing = [];
                 if ($folder === '') { $missing[] = 'imap_folder'; }
-                if ($uid <= 0) { $missing[] = 'imap_uid'; }
-                if ($part === '') { $missing[] = 'imap_part_number'; }
+                if ((int) ($meta['imap_uid'] ?? 0) <= 0) { $missing[] = 'imap_uid'; }
+                if (trim((string) ($meta['imap_part_number'] ?? '')) === '') { $missing[] = 'imap_part_number'; }
                 if ($missing !== []) {
                     $counts['failed']++;
                     $this->markStatus($id, 'failed', 'missing_imap_attachment_metadata: imap_folder/imap_uid/imap_part_number not available');

@@ -6,7 +6,14 @@ use App\Core\Database\PdoFactory;
 use App\Core\Mail\MailAttachmentImportService;
 use App\Support\SecretBox;
 
-require __DIR__ . '/../bootstrap/app.php';
+$root = dirname(__DIR__);
+$autoload = $root . '/vendor/autoload.php';
+if (!is_file($autoload)) {
+    fwrite(STDERR, "vendor/autoload.php faltante. Ejecuta composer install.\n");
+    exit(1);
+}
+require_once $autoload;
+require $root . '/bootstrap/app.php';
 
 $options = getopt('', ['tenant:', 'user:', 'account::', 'message:', 'limit::']);
 $tenantId = (int) ($options['tenant'] ?? 0);

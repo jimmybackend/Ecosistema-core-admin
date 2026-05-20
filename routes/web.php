@@ -4095,7 +4095,17 @@ return [
                 isset($_SERVER['REMOTE_ADDR']) ? (string) $_SERVER['REMOTE_ADDR'] : null,
                 isset($_SERVER['HTTP_USER_AGENT']) ? (string) $_SERVER['HTTP_USER_AGENT'] : null,
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            $sanitizedMessage = preg_replace('/\s+/', ' ', (string) $e->getMessage()) ?? 'error';
+            $sanitizedMessage = preg_replace('/([a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,})/i', '[redacted-email]', $sanitizedMessage) ?? $sanitizedMessage;
+            $sanitizedMessage = preg_replace('/AKIA[0-9A-Z]{8,}/', '[redacted-aws-key]', $sanitizedMessage) ?? $sanitizedMessage;
+            $sanitizedMessage = mb_substr(trim($sanitizedMessage), 0, 180);
+            error_log(json_encode([
+                'error_type' => 'login_error',
+                'exception_class' => $e::class,
+                'exception_message_sanitized' => $sanitizedMessage,
+                'stage' => 'auth_login',
+            ], JSON_UNESCAPED_UNICODE));
             http_response_code(500);
             header('Content-Type: text/html; charset=UTF-8');
             View::render('layouts.auth', [

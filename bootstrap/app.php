@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/../vendor/autoload.php';
+
 use App\Core\Database\PdoFactory;
 use App\Support\Env;
 use App\Http\Response\ErrorResponder;

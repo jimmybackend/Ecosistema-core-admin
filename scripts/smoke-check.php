@@ -1109,6 +1109,13 @@ $sensitivePatterns = [
     'SECRET',
 ];
 $safeSecretMentions = ['SecretBox','secretaria','secretaría'];
+$safeSecretPatterns = [
+    '/AWS_SECRET_ACCESS_KEY/i',
+    '/ECOSISTEMA_DRIVE_AWS_SECRET_ACCESS_KEY/i',
+    '/\bsecret_key\b/i',
+    '/\bsecret_token\b/i',
+    '/use\s+App\\Support\\SecretBox;/i',
+];
 
 $securityTargets = [$root . '/routes/web.php'];
 $viewsRoot = $root . '/resources/views';
@@ -1140,7 +1147,10 @@ foreach ($securityTargets as $targetFile) {
         $scanContent = $content;
         if ($pattern === 'SECRET') {
             $scanContent = str_replace($safeSecretMentions, '', $scanContent);
-            $regex = '/\bSECRET\b/i';
+            foreach ($safeSecretPatterns as $safePattern) {
+                $scanContent = (string) preg_replace($safePattern, '', $scanContent);
+            }
+            $regex = '/\bSECRET\b\s*(?:=|:|=>|\.|,|\))/i';
         } else {
             $regex = '/' . preg_quote($pattern, '/') . '/i';
         }

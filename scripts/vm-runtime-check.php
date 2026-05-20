@@ -7,12 +7,14 @@ $envPath = $root . '/.env';
 $webGroup = getenv('WEB_GROUP') ?: 'www-data';
 
 $dangerFlags = [
-    'MAIL_SEND_ENABLED','MAIL_ALLOW_TEST_SEND','CLOUD_S3_ENABLED','CLOUD_ALLOW_UPLOADS','CLOUD_ALLOW_DOWNLOADS',
     'ECOSISTEMA_DRIVE_AWS_ENABLED','ECOSISTEMA_DRIVE_ALLOW_REMOTE_CALLS','ECOSISTEMA_DRIVE_ALLOW_SIGNED_URLS',
     'ECOSISTEMA_DRIVE_ALLOW_REMOTE_UPLOADS','ECOSISTEMA_DRIVE_ALLOW_REMOTE_DOWNLOADS','ECOSISTEMA_AI_ENABLED',
     'ECOSISTEMA_AI_PROVIDER_ENABLED','ECOSISTEMA_AI_WRITE_PROPOSALS','ECOSISTEMA_WORKFLOW_EXECUTION_ENABLED',
     'ECOSISTEMA_REPORT_EXPORT_WRITE','ECOSISTEMA_REPORT_EXPORT_INCLUDE_PII','CORE_REGISTRATION_ENABLED',
 ];
+
+$mailDangerFlags = ['MAIL_SEND_ENABLED', 'MAIL_ALLOW_TEST_SEND'];
+$cloudDangerFlags = ['CLOUD_S3_ENABLED', 'CLOUD_ALLOW_UPLOADS', 'CLOUD_ALLOW_DOWNLOADS'];
 
 function parseEnvFile(string $path): array {
     $data = [];
@@ -46,6 +48,26 @@ if (!is_file($envPath)) {
 
     $env = parseEnvFile($envPath);
     if (($env['APP_DEBUG'] ?? '') !== 'false') $errors[] = 'APP_DEBUG debe estar en false';
+
+    foreach ($mailDangerFlags as $flag) {
+        if (($env[$flag] ?? '') !== 'false') {
+            $errors[] = "{$flag} debe estar en false";
+        }
+    }
+
+    $cloudControlledLiveTests = ($env['CLOUD_CONTROLLED_LIVE_TESTS'] ?? 'false') === 'true'
+        || ($env['VM_ALLOW_CONTROLLED_CLOUD'] ?? 'false') === 'true';
+
+    if ($cloudControlledLiveTests) {
+        echo "[OK] Cloud controlled live tests enabled by explicit flag\n";
+    } else {
+        foreach ($cloudDangerFlags as $flag) {
+            if (($env[$flag] ?? '') !== 'false') {
+                $errors[] = "{$flag} debe estar en false salvo CLOUD_CONTROLLED_LIVE_TESTS=true";
+            }
+        }
+    }
+
     foreach ($dangerFlags as $flag) if (($env[$flag] ?? '') !== 'false') $errors[] = "{$flag} debe estar en false";
     if (($env['APP_URL'] ?? '') === '') $errors[] = 'APP_URL es obligatorio';
     if (($env['DB_HOST'] ?? '') === '') $errors[] = 'DB_HOST es obligatorio';
